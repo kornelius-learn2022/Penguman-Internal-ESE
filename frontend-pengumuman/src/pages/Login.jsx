@@ -8,6 +8,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
+  const API_URL = "http://202.155.14.105:8000/api";
   // 2. Aktifkan fitur navigasi
   const navigate = useNavigate();
 
@@ -15,7 +16,7 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:8000/api/login", {
+      const response = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
