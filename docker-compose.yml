@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # 1. BACKEND (Aplikasi FastAPI / Python)
+  # ==========================================
+  backend:
+    build: ./backend-pengumuman
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend-pengumuman:/app
+    # Pastikan --host adalah 0.0.0.0
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      - db
+
+  # ==========================================
+  # 2. FRONTEND (Aplikasi React / Vite)
+  # ==========================================
+  frontend:
+    build: ./frontend-pengumuman
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    command: npm run dev -- --host 0.0.0.0
+    # Fitur Live Reload untuk React
+    volumes:
+      - ./frontend-pengumuman:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+  # ==========================================
+  # 3. DATABASE (MySQL)
+  # ==========================================
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: password_anda
+      MYSQL_DATABASE: db_pengumuman
+    ports:
+      - "3306:3306"
+    volumes:
+      - data_mysql:/var/lib/mysql
+
+  # ==========================================
+  # 4. ANTARMUKA VISUAL (phpMyAdmin)
+  # ==========================================
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "8080:80" # Akses lewat http://localhost:8080
+    environment:
+      PMA_HOST: db # Menghubungkan ke layanan 'db' di atas
+    depends_on:
+      - db
+
+# ==========================================
+# DEKLARASI VOLUME (Ini wajib mepet ke paling kiri!)
+# ==========================================
+volumes:
+  data_mysql:

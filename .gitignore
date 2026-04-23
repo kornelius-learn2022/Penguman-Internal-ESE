@@ -1,0 +1,20 @@
+# --- Lingkungan Python / Backend ---
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# --- Lingkungan Node.js / Frontend React ---
+node_modules/
+build/
+dist/
+
+# --- File Rahasia (Sangat Penting) ---
+.env
+*.env
+.env.local
+
+# --- Sistem Operasi ---
+.DS_Store
+Thumbs.db
