@@ -12,10 +12,12 @@ function Announcements() {
   // ========================================
   // KONEKSI KE BACKEND
   // ========================================
+  // Alamat IP VPS Server
+  const API_URL = "http://202.155.14.105:8000/api";
   useEffect(() => {
     // 1. Fungsi Mengambil Pengumuman
     const fetchPengumuman = () => {
-      const urlPengumuman = `http://localhost:8000/api/announcements?tanggal=${selectedDate}`;
+      const urlPengumuman = `${API_URL}/announcements?tanggal=${selectedDate}`;
 
       fetch(urlPengumuman)
         .then((res) => res.json())
@@ -25,7 +27,7 @@ function Announcements() {
 
     // 2. Fungsi Mengambil Ulang Tahun
     const fetchBirthdays = () => {
-      const urlBirthday = `http://localhost:8000/api/birthdays`;
+      const urlBirthday = `${API_URL}/birthdays`;
 
       fetch(urlBirthday)
         .then((res) => {
