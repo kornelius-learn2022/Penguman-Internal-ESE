@@ -63,7 +63,11 @@ function Announcements() {
       clearInterval(intervalId);
     };
   }, [selectedDate]);
-  console.log(birthdays);
+
+  // Mengubah judul tab browser saat halaman ini dibuka
+  useEffect(() => {
+    document.title = "Announcements - Cita Hati";
+  }, []);
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
       {/* ========================================

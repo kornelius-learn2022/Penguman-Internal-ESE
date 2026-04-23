@@ -122,6 +122,7 @@ export default function Admin() {
 
   useEffect(() => {
     fetchSemuaData();
+    document.title = "Admin Panel - Cita Hati";
     const handleResize = () => setIsSidebarOpen(window.innerWidth >= 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
