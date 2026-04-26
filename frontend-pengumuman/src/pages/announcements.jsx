@@ -13,8 +13,8 @@ function Announcements() {
   // KONEKSI KE BACKEND
   // ========================================
   // Alamat IP VPS Server
-  const API_URL = "http://localhost:8000/api";
-  // const API_URL = "http://202.155.14.105:8000/api";
+  // const API_URL = "http://localhost:8000/api";
+  const API_URL = "http://202.155.14.105:8000/api";
   useEffect(() => {
     // 1. Fungsi Mengambil Pengumuman
     const fetchPengumuman = () => {

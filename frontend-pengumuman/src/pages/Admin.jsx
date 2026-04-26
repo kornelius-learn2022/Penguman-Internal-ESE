@@ -92,9 +92,9 @@ export default function Admin() {
   // 5. FETCH DATA DARI API (GET)
   // ==========================================
   // Gunakan localhost untuk testing di laptop, ubah ke IP Wi-Fi jika tes di HP
-  const API_URL = "http://localhost:8000/api";
+  // const API_URL = "http://localhost:8000/api";
   // Alamat IP VPS Server
-  // const API_URL = "http://202.155.14.105:8000/api";
+  const API_URL = "http://202.155.14.105:8000/api";
   const fetchSemuaData = async () => {
     try {
       const headers = { Authorization: `Bearer ${tokenJWT}` };
