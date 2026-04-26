@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-
+import BannerLoading from "./BannerLoading";
 function Announcements() {
   // Get today's date in YYYY-MM-DD format
   const today = new Date().toISOString().split("T")[0];
@@ -8,19 +8,20 @@ function Announcements() {
   const [selectedDate, setSelectedDate] = useState(today);
   const [announcements, setAnnouncements] = useState([]);
   const [birthdays, setBirthdays] = useState([]);
-
+  const [isLoading, setIsLoading] = useState(true);
   // ========================================
   // KONEKSI KE BACKEND
   // ========================================
   // Alamat IP VPS Server
-  const API_URL = "http://202.155.14.105:8000/api";
+  const API_URL = "http://localhost:8000/api";
+  // const API_URL = "http://202.155.14.105:8000/api";
   useEffect(() => {
     // 1. Fungsi Mengambil Pengumuman
     const fetchPengumuman = () => {
       const urlPengumuman = `${API_URL}/announcements?tanggal=${selectedDate}`;
-
       fetch(urlPengumuman)
         .then((res) => res.json())
+        .then(setTimeout(() => setIsLoading(false), 1000))
         .then((data) => setAnnouncements(data))
         .catch((err) => console.error("Gagal mengambil pengumuman:", err));
     };
@@ -68,6 +69,9 @@ function Announcements() {
   useEffect(() => {
     document.title = "Announcements - Cita Hati";
   }, []);
+  if (isLoading) {
+    return <BannerLoading />;
+  }
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
       {/* ========================================

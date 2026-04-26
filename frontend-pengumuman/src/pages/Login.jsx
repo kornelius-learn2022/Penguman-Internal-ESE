@@ -8,7 +8,9 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  const API_URL = "http://202.155.14.105:8000/api";
+  const API_URL = "http://localhost:8000/api";
+  // const API_URL = "http://202.155.14.105:8000/api";
+
   // 2. Aktifkan fitur navigasi
   const navigate = useNavigate();
   // Mengubah judul tab browser saat masuk ke halaman Login
