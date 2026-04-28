@@ -73,7 +73,7 @@ export default function Admin() {
   const [searchBirthdays, setSearchBirthdays] = useState("");
   const [currentBdayPage, setCurrentBdayPage] = useState(1);
 
-  const itemsPerPage = 2;
+  const itemsPerPage = 10;
 
   // ==========================================
   // 4. FORM STATE (CREATE)
