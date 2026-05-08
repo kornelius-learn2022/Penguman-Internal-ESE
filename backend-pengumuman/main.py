@@ -7,6 +7,13 @@ from datetime import date
 from typing import Optional, List
 import jwt
 import datetime
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+from fastapi_cache.decorator import cache
+from redis import asyncio as aioredis
+import time
+
+
 
 # Import file lokal kita
 import models
@@ -29,15 +36,17 @@ origins = [
 ]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=origins,     # <-- Ubah bagian ini (hilangkan tanda kutip dan kurung siku)
     allow_credentials=True,
-    allow_methods=["*"], 
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # ==========================================
 # PYDANTIC SCHEMAS (Untuk Validasi Input dari React)
 # ==========================================
+class announcemetSelected(BaseModel):
+    tanggal :date
 
 class AdminCreate(BaseModel):
     name_admin : str
@@ -75,7 +84,14 @@ class AnnouncementCombinedResponse(BaseModel):
     class Config:
         from_attributes = True 
 
-
+REDIS_URL_VPS = "redis://:PasswordKuatRedis123!@localhost:6379"
+REDIS_URL_DOCKER ="redis://:PasswordKuatRedis123!@redis:6379"
+#menyimpan data diserver dengan canche
+@app.on_event("startup")
+async def startup():
+    # Pastikan server Redis sudah menyala (misal via Docker: docker run -d -p 6379:6379 redis)
+    redis = aioredis.from_url(REDIS_URL_VPS, encoding="utf8", decode_responses=True)
+    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
  
 
 # ==========================================
@@ -121,12 +137,12 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
 # ROUTES / API ENDPOINTS
 # ==========================================
 
-@app.get("/")
-def home():
-    return {"pesan": "Backend FastAPI dengan Skema Relasi aktif!"}
 
 # --- 1. API ANNOUNCEMENTS (PENGUMUMAN) ---
+
+
 @app.get("/api/announcements")
+@cache(expire=10000)
 def get_all_announcements(tanggal: Optional[date] = None, db: Session = Depends(get_db)):
     pencarian = db.query(models.Announcements)
     if tanggal:
@@ -136,13 +152,13 @@ def get_all_announcements(tanggal: Optional[date] = None, db: Session = Depends(
 
 # TAMBAHAN: Memasang satpam (get_current_user) di fungsi POST
 @app.post("/api/announcements")
-def create_announcement(
+async def create_announcement(
     data: AnnouncementCreate, 
     db: Session = Depends(get_db),
-    user_aktif: dict = Depends(get_current_user) # <-- SATPAM BERJAGA DI SINI
+    # user_aktif: dict = Depends(get_current_user) # <-- SATPAM BERJAGA DI SINI
 ):
     cek_admin = db.query(models.Admin).filter(models.Admin.id_admin == data.admin_update).first()
-    if not cek_admin:
+    if not cek_admin: 
         raise HTTPException(status_code=404, detail="Admin tidak ditemukan! Tidak bisa memposting.")
 
     pengumuman_baru = models.Announcements(
@@ -153,9 +169,11 @@ def create_announcement(
     db.add(pengumuman_baru)
     db.commit()
     db.refresh(pengumuman_baru)
+    await FastAPICache.clear()
     return {"pesan": "Pengumuman berhasil diposting!", "data": pengumuman_baru}
 
 @app.get("/api/announcements-with-admin", response_model=List[AnnouncementCombinedResponse])
+@cache(expire=10000)
 def get_announcements_with_admin_details(db: Session = Depends(get_db)):    
     try:
         pengumuman_join = db.query(models.Announcements).all()
@@ -163,19 +181,23 @@ def get_announcements_with_admin_details(db: Session = Depends(get_db)):
     except Exception as e:
         print(f"Error saat mengambil data gabungan: {e}")
         raise HTTPException(status_code=500, detail="Terjadi kesalahan server internal.")
+      
 
 # --- 2. API BIRTHDAYS (ULANG TAHUN) ---
+
+
 @app.get("/api/birthdays")
+@cache(expire=10000)
 def get_all_birthdays(db: Session = Depends(get_db)):
     ultah = db.query(models.Birthdays).all()
     return ultah
 
 # TAMBAHAN: Memasang satpam (get_current_user) di fungsi POST Ulang Tahun
 @app.post("/api/birthdays")
-def create_birthday(
+async def create_birthday(
     data: BirthdayCreate, 
     db: Session = Depends(get_db),
-    user_aktif: dict = Depends(get_current_user) # <-- SATPAM BERJAGA DI SINI
+    # user_aktif: dict = Depends(get_current_user) # <-- SATPAM BERJAGA DI SINI
 ):
     cek_admin = db.query(models.Admin).filter(models.Admin.id_admin == data.admin_update).first()
     if not cek_admin:
@@ -190,11 +212,12 @@ def create_birthday(
     db.add(ultah_baru)
     db.commit()
     db.refresh(ultah_baru)
+    await FastAPICache.clear()
     return {"pesan": "Data ulang tahun berhasil ditambahkan!", "data": ultah_baru}
 
 # TAMBAHAN: Memasang satpam (get_current_user) di fungsi PUT/UPDATE Pengumuman
 @app.put("/api/announcements/{id_announcement}")
-def update_announcement(
+async def update_announcement(
     id_announcement: int, 
     data_baru: AnnouncementCreate, 
     db: Session = Depends(get_db),
@@ -213,13 +236,13 @@ def update_announcement(
     
     db.commit()
     db.refresh(pengumuman_lama)
-    
+    await FastAPICache.clear()
     return {
         "message": "Pengumuman berhasil diupdate!", 
         "data": pengumuman_lama
     }
 @app.put("/api/birthdays/{id_birthday}")
-def update_birthday(
+async def update_birthday(
     id_birthday: int, 
     data_baru: BirthdayCreate, 
     db: Session = Depends(get_db),
@@ -239,7 +262,7 @@ def update_birthday(
     
     db.commit()
     db.refresh(birthday_lama)
-    
+    await FastAPICache.clear()
     return {
         "message": "Pengumuman berhasil diupdate!", 
         "data": birthday_lama
@@ -249,7 +272,7 @@ def update_birthday(
 # ==========================================
 # TAMBAHAN: Memasang satpam (get_current_user) di fungsi DELETE
 @app.delete("/api/announcements/{id_announcement}")
-def delete_announcement(
+async def delete_announcement(
     id_announcement: int, 
     db: Session = Depends(get_db),
     user_aktif: dict = Depends(get_current_user) # <-- SATPAM BERJAGA DI SINI
@@ -263,11 +286,11 @@ def delete_announcement(
     
     db.delete(pengumuman_target)
     db.commit()
-    
+    await FastAPICache.clear()
     return {"message": "Pengumuman berhasil dihapus secara permanen!"}
 
 @app.delete("/api/birthdays/{id_birthday}")
-def delete_birthday(
+async def delete_birthday(
     id_birthday: int, 
     db: Session = Depends(get_db),
     user_aktif: dict = Depends(get_current_user) # <-- SATPAM BERJAGA DI SINI
@@ -281,7 +304,7 @@ def delete_birthday(
     
     db.delete(list_target_birthday)
     db.commit()
-    
+    await FastAPICache.clear()
     return {"message": "List ulang Tahun berhasil dihapus secara permanen!"}
 
 
@@ -294,7 +317,7 @@ def create_access_token(data: dict):
 
 # Api untuk login
 @app.post("/api/login")
-def login_admin(data: LoginRequest, db: Session = Depends(get_db)):
+async def login_admin(data: LoginRequest, db: Session = Depends(get_db)):
     login_admin = db.query(models.Admin).filter(models.Admin.name_admin == data.username).first()
     
     if not login_admin or login_admin.password_admin != data.password:
@@ -303,6 +326,7 @@ def login_admin(data: LoginRequest, db: Session = Depends(get_db)):
     token_data ={ "username" : login_admin.name_admin, "id_admin" : login_admin.id_admin, "role":login_admin.level_admin}
 
     jwt_token = create_access_token(data=token_data)
+    await FastAPICache.clear()
     return {
         "pesan": "Login berhasil!",
         "access_token": jwt_token, 
@@ -312,21 +336,23 @@ def login_admin(data: LoginRequest, db: Session = Depends(get_db)):
         "id_admin": login_admin.id_admin
     }
 @app.get("/api/admin")
+@cache(expire=3600)
 def get_all_birthdays(db: Session = Depends(get_db)):
     admin_ambil = db.query(models.Admin).all()
     return admin_ambil
 
 # api create andmin
 @app.post("/api/admin")
-def create_admin( data: AdminCreate, db: Session = Depends(get_db), user_aktif: dict = Depends(get_current_user)):
+async def create_admin( data: AdminCreate, db: Session = Depends(get_db), user_aktif: dict = Depends(get_current_user)):
     new_admin =(models.Admin(name_admin=data.name_admin, password_admin = data.password_admin, level_admin=data.level_admin))
     db.add(new_admin)
     db.commit()
     db.refresh(new_admin)
+    await FastAPICache.clear()
     return {"pesan":"data admin sudah disimpan!", "data":new_admin}
 
 @app.put("/api/admin/{id_admin}")
-def update_admin(
+async def update_admin(
     id_admin: int, 
     data_baru: AdminCreate, 
     db: Session = Depends(get_db),
@@ -344,12 +370,13 @@ def update_admin(
     id_admin_lama.level_admin = data_baru.level_admin
     db.commit()
     db.refresh(id_admin_lama)
+    await FastAPICache.clear()
     return {
         "message": "Admin berhasil diupdate!", 
         "data": id_admin_lama
     }
 @app.delete("/api/admin/{id_admin}")
-def delete_admin(
+async def delete_admin(
     id_admin: int, 
     db: Session = Depends(get_db),
     # user_aktif: dict = Depends(get_current_user) # <-- SATPAM BERJAGA DI SINI
@@ -363,7 +390,7 @@ def delete_admin(
     
     db.delete(list_target_admin)
     db.commit()
-    
+    await FastAPICache.clear()
     return {"message": "List admin  berhasil dihapus secara permanen!"}
 
 if __name__ == "__main__":

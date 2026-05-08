@@ -56,7 +56,13 @@ services:
       PMA_HOST: db # Menghubungkan ke layanan 'db' di atas
     depends_on:
       - db
-
+  redis:
+    image: redis:alpine
+    container_name: pengumaninternalese-redis-1
+    command: redis-server --requirepass PasswordKuatRedis123!
+    ports:
+      - "6379:6379"
+    restart: always
 # ==========================================
 # DEKLARASI VOLUME (Ini wajib mepet ke paling kiri!)
 # ==========================================

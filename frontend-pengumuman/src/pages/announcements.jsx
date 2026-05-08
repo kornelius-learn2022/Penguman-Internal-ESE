@@ -19,7 +19,7 @@ function Announcements() {
     // 1. Fungsi Mengambil Pengumuman
     const fetchPengumuman = () => {
       const urlPengumuman = `${API_URL}/announcements?tanggal=${selectedDate}`;
-      fetch(urlPengumuman)
+      fetch(urlPengumuman, { cache: "no-store" })
         .then((res) => res.json())
         .then(setTimeout(() => setIsLoading(false), 1000))
         .then((data) => setAnnouncements(data))

@@ -102,21 +102,28 @@ export default function Admin() {
       // Ambil Pengumuman
       const resAnn = await fetch(`${API_URL}/announcements-with-admin`, {
         headers,
+        cache: "no-store",
       });
       const dataAnn = await resAnn.json();
       console.log(dataAnn);
       setAnnouncements(dataAnn);
 
       // Ambil Ulang Tahun
-      const resBday = await fetch(`${API_URL}/birthdays`, { headers });
+      const resBday = await fetch(`${API_URL}/birthdays`, {
+        headers,
+        cache: "no-store",
+      });
       const dataBday = await resBday.json();
-
-      const resAdmin = await fetch(`${API_URL}/admin`, { headers });
+      console.log(dataBday);
+      const resAdmin = await fetch(`${API_URL}/admin`, {
+        headers,
+        cache: "no-store",
+      });
       const dataAdmin = await resAdmin.json();
       setAdmin(dataAdmin);
       setBirthdays(dataBday);
     } catch (err) {
-      console.error("Gagal mengambil data:", err);
+      console.error("Gagal mengambil data ulang tahun:", err);
     }
   };
 
@@ -156,7 +163,6 @@ export default function Admin() {
     currentAnnPage * itemsPerPage,
   );
 
-  console.log(currentAnnPage);
   // Tabel Ulang Tahun
   const filteredBirthdays = Array.isArray(birthdays)
     ? birthdays.filter(
