@@ -716,10 +716,13 @@ async def login_admin(data: LoginRequest, db: Session = Depends(get_db)):
     )
 
     if not user or user.password_admin != data.password:
-        raise HTTPException(status_code=401, detail="Username/Password salah")
+        raise HTTPException(status_code=401, detail="Username atauPassword salah")
 
     token = create_access_token({"id_admin": user.id_admin, "role": user.level_admin})
-    await FastAPICache.clear()
+    try:
+        await FastAPICache.clear()
+    except Exception as e:
+        print(f"Error saat membersihkan cache: {e}")
 
     return {
         "access_token": token,
