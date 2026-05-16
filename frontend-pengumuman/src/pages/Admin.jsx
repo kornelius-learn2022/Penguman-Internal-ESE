@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-export default function Admin() {
-  // Tambahkan ini di bagian atas (di tempat kumpulan useState)
 
+export default function Admin() {
   // ==========================================
   // 1. AUTENTIKASI & LAYOUT STATE
   // ==========================================
@@ -11,13 +10,12 @@ export default function Admin() {
   const username = localStorage.getItem("username");
   const [role, setRole] = useState(userRole);
   const id_admin = localStorage.getItem("id_admin");
-
   const [showPassword, setShowPassword] = useState(false);
+
   // ==========================================
   // STATE UNTUK UPDATE & DELETE
   // ==========================================
-  // State untuk Update (Edit Pengumuman)
-  const [editModalData, setEditModalData] = useState(null); // Menyimpan ID pengumuman yang diedit
+  const [editModalData, setEditModalData] = useState(null);
   const [editAnnDate, setEditAnnDate] = useState("");
   const [editAnnouncementText, setEditAnnouncementText] = useState("");
   const [editModalBirth, setEditModalBirth] = useState(null);
@@ -30,29 +28,28 @@ export default function Admin() {
   const [editNewBirthName, seteditNewBirthName] = useState("");
   const [editNewBirtGender, setNewBirtGender] = useState("");
   const [editNewBirtDate, settNewBirtDat] = useState("");
+  const [editAnnUrl, setEditAnnUrl] = useState("");
+  const [editAnnImage, setEditAnnImage] = useState(null);
 
   const [newAdminName, setNewAdminName] = useState("");
   const [newAdminPassword, setNewAdminPassword] = useState("");
-  const [newAdminLevel, setNewAdminLevel] = useState("Super"); // Default Super
+  const [newAdminLevel, setNewAdminLevel] = useState("Super");
 
-  // update admin
   const [newAdminNameUpdate, setNewAdminNameUpdate] = useState("");
   const [newAdminPasswordUpdate, setNewAdminPasswordUpdate] = useState("");
   const [newAdminLevelUpdate, setNewAdminLevelUpdate] = useState("");
 
-  // State untuk Delete (Opsional jika ingin buat popup konfirmasi)
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   const [activeTab, setActiveTab] = useState("Announcements");
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
   const [profilePhoto, setProfilePhoto] = useState(null);
 
-  // Tanggal untuk Dashboard Atas
   const today = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(today);
 
   // ==========================================
-  // 2. DATA STATE (MENYIMPAN SEMUA DATA DARI DATABASE)
+  // 2. DATA STATE
   // ==========================================
   const [announcements, setAnnouncements] = useState([]);
   const [birthdays, setBirthdays] = useState([]);
@@ -61,15 +58,12 @@ export default function Admin() {
   // ==========================================
   // 3. SEARCH & PAGINATION STATE
   // ==========================================
-  // Untuk Announcements
   const [searchAnnouncements, setSearchAnnouncements] = useState("");
   const [currentAnnPage, setCurrentAnnPage] = useState(1);
 
-  //untuk admin
   const [searchAdm, setsearchAdm] = useState("");
   const [currentAdmPage, setcurrentAdmPage] = useState(1);
 
-  // Untuk Birthdays
   const [searchBirthdays, setSearchBirthdays] = useState("");
   const [currentBdayPage, setCurrentBdayPage] = useState(1);
 
@@ -80,6 +74,8 @@ export default function Admin() {
   // ==========================================
   const [newAnnDate, setNewAnnDate] = useState("");
   const [newAnnouncement, setNewAnnouncement] = useState("");
+  const [newAnnUrl, setNewAnnUrl] = useState("");
+  const [newAnnImage, setNewAnnImage] = useState(null); // Gunakan null untuk file
 
   const [newBdayName, setNewBdayName] = useState("");
   const [newBdayDate, setNewBdayDate] = useState("");
@@ -91,35 +87,31 @@ export default function Admin() {
   // ==========================================
   // 5. FETCH DATA DARI API (GET)
   // ==========================================
-  // Gunakan localhost untuk testing di laptop, ubah ke IP Wi-Fi jika tes di HP
   const API_URL = "http://localhost:8000/api";
-  // Alamat IP VPS Server
-  // const API_URL = "http://202.155.14.105:8000/api";
+
   const fetchSemuaData = async () => {
     try {
       const headers = { Authorization: `Bearer ${tokenJWT}` };
 
-      // Ambil Pengumuman
       const resAnn = await fetch(`${API_URL}/announcements-with-admin`, {
         headers,
         cache: "no-store",
       });
       const dataAnn = await resAnn.json();
-      console.log(dataAnn);
       setAnnouncements(dataAnn);
 
-      // Ambil Ulang Tahun
       const resBday = await fetch(`${API_URL}/birthdays`, {
         headers,
         cache: "no-store",
       });
       const dataBday = await resBday.json();
-      console.log(dataBday);
+
       const resAdmin = await fetch(`${API_URL}/admin`, {
         headers,
         cache: "no-store",
       });
       const dataAdmin = await resAdmin.json();
+
       setAdmin(dataAdmin);
       setBirthdays(dataBday);
     } catch (err) {
@@ -136,7 +128,7 @@ export default function Admin() {
   }, []);
 
   // ==========================================
-  // 6. LOGIKA FILTER DASHBOARD HARI INI (REALTIME)
+  // 6. LOGIKA FILTER DASHBOARD HARI INI
   // ==========================================
   const todayAnnouncements = announcements.filter(
     (item) => item.date === selectedDate,
@@ -147,9 +139,8 @@ export default function Admin() {
     : [];
 
   // ==========================================
-  // 7. LOGIKA SEARCH & PAGINATION TABEL (REALTIME)
+  // 7. LOGIKA SEARCH & PAGINATION TABEL
   // ==========================================
-  // Tabel Pengumuman
   const filteredAnnouncements = announcements.filter(
     (item) =>
       item.announcement
@@ -163,7 +154,6 @@ export default function Admin() {
     currentAnnPage * itemsPerPage,
   );
 
-  // Tabel Ulang Tahun
   const filteredBirthdays = Array.isArray(birthdays)
     ? birthdays.filter(
         (item) =>
@@ -178,7 +168,6 @@ export default function Admin() {
     currentBdayPage * itemsPerPage,
   );
 
-  //tabel admin
   const filteredAdmin = Array.isArray(admin)
     ? admin.filter(
         (item) =>
@@ -193,7 +182,6 @@ export default function Admin() {
     currentAdmPage * itemsPerPage,
   );
 
-  // Reset pagination jika user mengetik di kotak pencarian
   useEffect(() => setCurrentAnnPage(1), [searchAnnouncements]);
   useEffect(() => setCurrentBdayPage(1), [searchBirthdays]);
 
@@ -204,18 +192,27 @@ export default function Admin() {
     if (!newAnnDate || !newAnnouncement.trim())
       return alert("Isi form dengan lengkap!");
     setIsSubmitting(true);
+    console.log(newAnnImage);
     try {
+      const formData = new FormData();
+      formData.append("announcement", newAnnouncement);
+      formData.append("tanggal_masuk", newAnnDate);
+      formData.append("admin_update", id_admin);
+
+      // Cek apakah user mengisi URL dan Gambar, jika ya, masukkan ke FormData
+      if (newAnnUrl) {
+        formData.append("url_announcemet", newAnnUrl);
+      }
+      if (newAnnImage) {
+        formData.append("image", newAnnImage);
+      }
+
       const res = await fetch(`${API_URL}/announcements`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${tokenJWT}`,
         },
-        body: JSON.stringify({
-          announcement: newAnnouncement,
-          date: newAnnDate,
-          admin_update: id_admin,
-        }),
+        body: formData,
       });
       if (res.ok) {
         setPopupData({ title: "Announcement Posted!" });
@@ -262,6 +259,7 @@ export default function Admin() {
       setIsSubmitting(false);
     }
   };
+
   const handlePostAdmin = async (e) => {
     e.preventDefault();
     if (!newAdminName || !newAdminPassword || !newAdminLevel)
@@ -293,18 +291,16 @@ export default function Admin() {
       setIsSubmitting(false);
     }
   };
+
   const handleLogout = () => {
     const isConfirmed = window.confirm(
       "Apakah Anda yakin ingin keluar dari halaman Admin?",
     );
     if (isConfirmed) {
-      // 1. Bersihkan semua data dari brankas browser
       localStorage.removeItem("jwt_token");
       localStorage.removeItem("role");
       localStorage.removeItem("username");
       localStorage.removeItem("id_admin");
-
-      // 2. Tendang kembali ke halaman login
       window.location.href = "/login";
     }
   };
@@ -328,42 +324,53 @@ export default function Admin() {
     },
     {
       id: "logout_admin",
-      label: "Logout", // <--- PERBAIKAN: Menambahkan koma di sini
-      icon: "🚪", // <--- Menambahkan ikon agar tidak kosong
+      label: "Logout",
+      icon: "🚪",
       allowed: ["Normal", "Super"],
     },
   ];
   const visibleMenu = menuItems.filter((item) => item.allowed.includes(role));
-  // --- FUNGSI UPDATE (PUT) ---
-  // Fungsi ini dipanggil saat tombol "Edit" di tabel diklik untuk mengisi form
+
+  // --- FUNGSI UPDATE ---
   const handleEditClick = (item) => {
     setEditModalData(item.id_announcement);
     setEditAnnDate(item.date);
     setEditAnnouncementText(item.announcement);
+    setEditAnnImage(item.url_image);
+    setEditAnnUrl(item.url_announcemet);
   };
 
-  // Fungsi ini dipanggil saat form edit disubmit
   const handleUpdateAnnouncement = async () => {
     if (!editAnnDate || !editAnnouncementText.trim())
       return alert("Isi form dengan lengkap!");
     setIsSubmitting(true);
     try {
+      const formData = new FormData();
+      formData.append("announcement", editAnnouncementText);
+      formData.append("tanggal_masuk", editAnnDate);
+      formData.append("admin_update", id_admin);
+
+      // Kirim URL jika ada
+      if (editAnnUrl) {
+        formData.append("url_announcemet", editAnnUrl);
+      }
+
+      // 2. Kirim gambar HANYA JIKA user memilih gambar baru
+      // Jika user tidak memilih gambar, variabel ini tidak akan dikirim
+      if (editAnnImage) {
+        formData.append("image", editAnnImage);
+      }
       const res = await fetch(`${API_URL}/announcements/${editModalData}`, {
-        method: "PUT", // Gunakan PUT atau PATCH sesuai setting backend kamu
+        method: "PUT",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${tokenJWT}`,
         },
-        body: JSON.stringify({
-          announcement: editAnnouncementText,
-          date: editAnnDate,
-          admin_update: id_admin,
-        }),
+        body: formData,
       });
       if (res.ok) {
         setPopupData({ title: "Announcement Updated!" });
-        setEditModalData(null); // Tutup modal edit
-        fetchSemuaData(); // Refresh tabel
+        setEditModalData(null);
+        fetchSemuaData();
       }
     } catch (err) {
       console.error("Gagal mengupdate:", err);
@@ -378,13 +385,14 @@ export default function Admin() {
     setBirtGender(item.gender);
     settBirtDat(item.date);
   };
+
   const handleUpdateBirth = async () => {
     if (!editBirthName || !editBirtGender)
       return alert("Isi form dengan lengkap!");
     setIsSubmitting(true);
     try {
       const res = await fetch(`${API_URL}/birthdays/${editModalBirth}`, {
-        method: "PUT", // Gunakan PUT atau PATCH sesuai setting backend kamu
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${tokenJWT}`,
@@ -398,8 +406,8 @@ export default function Admin() {
       });
       if (res.ok) {
         setPopupData({ title: "Birthday List Updated!" });
-        setEditModalBirth(null); // Tutup modal edit
-        fetchSemuaData(); // Refresh tabel
+        setEditModalBirth(null);
+        fetchSemuaData();
       }
     } catch (err) {
       console.error("Gagal mengupdate:", err);
@@ -407,19 +415,21 @@ export default function Admin() {
       setIsSubmitting(false);
     }
   };
+
   const handleEditAdmin = (item) => {
     seteditModalAdm(item.id_admin);
     setNewAdminNameUpdate(item.name_admin);
     setNewAdminPasswordUpdate(item.password_admin);
     setNewAdminLevelUpdate(item.level_admin);
   };
+
   const handleupdateAdmin = async () => {
     if (!newAdminNameUpdate || !newAdminPasswordUpdate || !newAdminLevelUpdate)
       return alert("Isi form dengan lengkap!");
     setIsSubmitting(true);
     try {
       const res = await fetch(`${API_URL}/admin/${editModalAdm}`, {
-        method: "PUT", // Gunakan PUT atau PATCH sesuai setting backend kamu
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${tokenJWT}`,
@@ -432,8 +442,8 @@ export default function Admin() {
       });
       if (res.ok) {
         setPopupData({ title: "List Admin sudah dirubah" });
-        seteditModalAdm(null); // Tutup modal edit
-        fetchSemuaData(); // Refresh tabel
+        seteditModalAdm(null);
+        fetchSemuaData();
       }
     } catch (err) {
       console.error("Gagal mengupdate:", err);
@@ -441,46 +451,40 @@ export default function Admin() {
       setIsSubmitting(false);
     }
   };
-  // --- FUNGSI DELETE (DELETE) ---
+
+  // --- FUNGSI DELETE ---
   const handleDelete = async (id_announcement) => {
-    // Gunakan konfirmasi bawaan browser agar aman
     const isConfirmed = window.confirm(
       "Apakah kamu yakin ingin menghapus pengumuman ini?",
     );
     if (!isConfirmed) return;
-
     try {
       const res = await fetch(`${API_URL}/announcements/${id_announcement}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${tokenJWT}`,
-        },
+        headers: { Authorization: `Bearer ${tokenJWT}` },
       });
       if (res.ok) {
         setPopupData({ title: "Announcement Deleted!" });
-        fetchSemuaData(); // Refresh tabel setelah dihapus
+        fetchSemuaData();
       }
     } catch (err) {
       console.error("Gagal menghapus:", err);
     }
   };
+
   const handleDeleteBirh = async (id_birthday) => {
-    // Gunakan konfirmasi bawaan browser agar aman
     const isConfirmed = window.confirm(
       "Apakah kamu yakin ingin menghapus List ini?",
     );
     if (!isConfirmed) return;
-
     try {
       const res = await fetch(`${API_URL}/birthdays/${id_birthday}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${tokenJWT}`,
-        },
+        headers: { Authorization: `Bearer ${tokenJWT}` },
       });
       if (res.ok) {
         setPopupData({ title: "List Deleted!" });
-        fetchSemuaData(); // Refresh tabel setelah dihapus
+        fetchSemuaData();
       }
     } catch (err) {
       console.error("Gagal menghapus:", err);
@@ -492,343 +496,394 @@ export default function Admin() {
       "Apakah kamu yakin ingin menghapus List ini?",
     );
     if (!isConfirmed) return;
-
     try {
       const res = await fetch(`${API_URL}/admin/${id_admin}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${tokenJWT}`,
-        },
+        headers: { Authorization: `Bearer ${tokenJWT}` },
       });
       if (res.ok) {
         setPopupData({ title: "List Deleted!" });
-        fetchSemuaData(); // Refresh tabel setelah dihapus
+        fetchSemuaData();
       }
     } catch (err) {
       console.error("Gagal menghapus:", err);
     }
   };
+
   return (
-    <div className="flex h-screen bg-slate-100 font-sans overflow-hidden">
-      {/* POPUP NOTIFIKASI */}
+    <div className="flex h-screen bg-[#f1f5f9] font-sans overflow-hidden">
+      {/* ======================= MODALS & POPUPS ======================= */}
       {popupData && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 max-w-sm w-full text-center">
-            <div className="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+        <div className="fixed inset-0 bg-slate-900/40 z-[100] flex items-center justify-center p-4 backdrop-blur-sm transition-all duration-300">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center">
+            <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl shadow-inner border border-green-100">
               ✓
             </div>
-            <h3 className="text-xl font-black text-slate-800 mb-6">
+            <h3 className="text-xl font-bold text-slate-800 mb-6">
               {popupData.title}
             </h3>
             <button
               onClick={() => setPopupData(null)}
-              className="w-full bg-[#1e3a8a] text-white font-bold py-3 rounded-xl"
+              className="w-full bg-[#1e3a8a] hover:bg-blue-800 text-white font-bold py-3.5 rounded-2xl transition-all duration-200 shadow-md hover:shadow-lg"
             >
-              Close
+              Tutup
             </button>
           </div>
         </div>
       )}
 
+      {/* Modal Edit Announcement */}
       {editModalData !== null && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 max-w-md w-full">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+        <div className="fixed inset-0 bg-slate-900/40 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-2 h-full bg-[#1e3a8a]"></div>
+
+            <div className="flex justify-between items-center mb-6 pl-2">
+              <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                 ✏️ Edit Announcement
               </h3>
               <button
                 onClick={() => setEditModalData(null)}
-                className="text-slate-400 hover:text-red-500 font-bold text-xl transition-colors"
+                className="text-slate-400 hover:text-red-500 text-xl font-bold transition-colors"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 pl-2 max-h-[70vh] overflow-y-auto pr-2">
               {/* Input Tanggal */}
               <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-1">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
                   Date
                 </label>
                 <input
                   type="date"
                   value={editAnnDate}
                   onChange={(e) => setEditAnnDate(e.target.value)}
-                  className="w-full border border-slate-300 p-3 rounded-lg outline-none focus:ring-2 focus:ring-[#1e3a8a] bg-slate-50"
+                  className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-[#1e3a8a] bg-slate-50 transition-all font-medium text-slate-700"
                 />
               </div>
 
-              {/* Input Textarea */}
+              {/* Input Link/URL */}
               <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-1">
-                  Announcement Details
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                  Link URL (Optional)
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://..."
+                  value={editAnnUrl || ""} // pastikan state editAnnUrl sudah kamu buat ya
+                  onChange={(e) => setEditAnnUrl(e.target.value)}
+                  className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-[#1e3a8a] bg-slate-50 transition-all font-medium text-slate-700 text-sm"
+                />
+              </div>
+
+              {/* Teks Pengumuman */}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                  Details
                 </label>
                 <textarea
                   value={editAnnouncementText}
                   onChange={(e) => setEditAnnouncementText(e.target.value)}
-                  className="w-full border border-slate-300 p-3 rounded-lg outline-none focus:ring-2 focus:ring-[#1e3a8a] bg-slate-50 min-h-[120px] resize-y"
+                  className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-[#1e3a8a] bg-slate-50 min-h-[100px] resize-y transition-all font-medium text-slate-700 text-sm"
                   placeholder="Update event details..."
                 ></textarea>
               </div>
 
+              {/* Ganti Gambar */}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                  Change Image (Optional)
+                </label>
+                {/* Tampilkan preview gambar lama jika ada, tapi belum pilih gambar baru */}
+                {editAnnImage != null ? (
+                  <div className="mb-2">
+                    <span className="text-[10px] text-slate-400">
+                      Current Image:
+                    </span>
+                    <img
+                      src={editAnnImage}
+                      alt="current"
+                      className="h-16 w-16 object-cover rounded-lg border mt-1"
+                    />
+                  </div>
+                ) : (
+                  <div className="mb-2">
+                    <p className="text-[10px] text-slate-400">NO IMAGE </p>
+                  </div>
+                )}
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setEditAnnImage(e.target.files[0])} // pastikan state editAnnImage dibuat
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#1e3a8a] transition-all text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 text-slate-600 cursor-pointer"
+                />
+                <p className="text-[10px] text-slate-400 mt-1 italic">
+                  Kosongkan jika tidak ingin mengubah gambar.
+                </p>
+              </div>
+
               {/* Tombol Aksi */}
-              <div className="flex gap-3 mt-6 pt-2">
+              <div className="flex gap-3 pt-3">
                 <button
                   onClick={() => setEditModalData(null)}
                   disabled={isSubmitting}
-                  className="flex-1 bg-slate-100 text-slate-600 border border-slate-300 font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors"
+                  className="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-2xl hover:bg-slate-200 transition-colors text-sm"
                 >
-                  Cancel
+                  Batal
                 </button>
                 <button
                   onClick={handleUpdateAnnouncement}
                   disabled={isSubmitting}
-                  className="flex-1 bg-[#1e3a8a] text-white font-bold py-3 rounded-xl hover:bg-blue-800 transition-colors disabled:bg-slate-400 flex justify-center items-center gap-2"
+                  className="flex-1 bg-[#1e3a8a] text-white font-bold py-3 rounded-2xl hover:bg-blue-800 transition-all shadow-md hover:shadow-lg disabled:bg-slate-400 text-sm"
                 >
-                  {isSubmitting ? "⏳ Saving..." : "💾 Save Changes"}
+                  {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Modal Edit Birthday */}
       {editModalBirth !== null && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 max-w-md w-full">
-            <h3 className="text-xl font-bold text-slate-800 mb-4">
-              🎁 Update Birthday
-            </h3>
-            <form className="space-y-4">
-              <input
-                type="text"
-                placeholder="Student or Teacher Name..."
-                required
-                value={editBirthName}
-                onChange={(e) => seteditBirthName(e.target.value)}
-                className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-[#1e3a8a]"
-              />
-              <div className="grid grid-cols-2 gap-4">
+        <div className="fixed inset-0 bg-slate-900/40 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-2 h-full bg-pink-500"></div>
+            <div className="flex justify-between items-center mb-6 pl-2">
+              <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                🎁 Edit Birthday
+              </h3>
+              <button
+                onClick={() => setEditModalBirth(null)}
+                className="text-slate-400 hover:text-red-500 text-xl font-bold transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <form
+              className="space-y-5 pl-2"
+              onSubmit={(e) => e.preventDefault()}
+            >
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
+                  Name
+                </label>
                 <input
-                  type="date"
+                  type="text"
+                  placeholder="Student or Teacher Name..."
                   required
-                  value={editBirtDate}
-                  onChange={(e) => settBirtDat(e.target.value)}
-                  className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-[#1e3a8a]"
+                  value={editBirthName}
+                  onChange={(e) => seteditBirthName(e.target.value)}
+                  className="w-full border border-slate-200 p-3.5 rounded-2xl outline-none focus:ring-2 focus:ring-pink-500 bg-slate-50 transition-all font-medium text-slate-700"
                 />
-                <div className="flex gap-2">
-                  <label
-                    className={`flex-1 flex items-center justify-center border rounded-lg cursor-pointer ${editBirtGender === "Male" ? "bg-blue-50 border-blue-500 text-blue-700 font-bold" : "hover:bg-slate-50"}`}
-                  >
-                    <input
-                      type="radio"
-                      name="gender"
-                      value="Male"
-                      onChange={(e) => setBirtGender(e.target.value)}
-                      className="hidden"
-                    />
-                    👨 Male
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
+                    Date
                   </label>
-                  <label
-                    className={`flex-1 flex items-center justify-center border rounded-lg cursor-pointer ${editBirtGender === "Female" ? "bg-pink-50 border-pink-500 text-pink-700 font-bold" : "hover:bg-slate-50"}`}
-                  >
-                    <input
-                      type="radio"
-                      name="gender"
-                      value="Female"
-                      onChange={(e) => setBirtGender(e.target.value)}
-                      className="hidden"
-                    />
-                    👩 Female
+                  <input
+                    type="date"
+                    required
+                    value={editBirtDate}
+                    onChange={(e) => settBirtDat(e.target.value)}
+                    className="w-full border border-slate-200 p-3.5 rounded-2xl outline-none focus:ring-2 focus:ring-pink-500 bg-slate-50 transition-all font-medium text-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 text-center">
+                    Gender
                   </label>
+                  <div className="flex gap-2">
+                    <label
+                      className={`flex-1 flex items-center justify-center border rounded-2xl cursor-pointer py-3.5 transition-all ${editBirtGender === "Male" ? "bg-blue-50 border-blue-500 text-blue-700 font-bold shadow-sm" : "border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-500"}`}
+                    >
+                      <input
+                        type="radio"
+                        name="gender"
+                        value="Male"
+                        onChange={(e) => setBirtGender(e.target.value)}
+                        className="hidden"
+                      />
+                      👨 L
+                    </label>
+                    <label
+                      className={`flex-1 flex items-center justify-center border rounded-2xl cursor-pointer py-3.5 transition-all ${editBirtGender === "Female" ? "bg-pink-50 border-pink-500 text-pink-700 font-bold shadow-sm" : "border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-500"}`}
+                    >
+                      <input
+                        type="radio"
+                        name="gender"
+                        value="Female"
+                        onChange={(e) => setBirtGender(e.target.value)}
+                        className="hidden"
+                      />
+                      👩 P
+                    </label>
+                  </div>
                 </div>
               </div>
-              <div className="flex gap-3 mt-6 pt-2">
+              <div className="flex gap-3 pt-4">
                 <button
                   onClick={() => setEditModalBirth(null)}
                   disabled={isSubmitting}
-                  className="flex-1 bg-slate-100 text-slate-600 border border-slate-300 font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors"
+                  className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl hover:bg-slate-200 transition-colors"
                 >
-                  Cancel
+                  Batal
                 </button>
                 <button
                   onClick={handleUpdateBirth}
                   disabled={isSubmitting}
-                  className="flex-1 bg-[#1e3a8a] text-white font-bold py-3 rounded-xl hover:bg-blue-800 transition-colors disabled:bg-slate-400 flex justify-center items-center gap-2"
+                  className="flex-1 bg-pink-500 text-white font-bold py-3.5 rounded-2xl hover:bg-pink-600 transition-all shadow-md hover:shadow-lg disabled:bg-slate-400"
                 >
-                  {isSubmitting ? "⏳ Saving..." : "💾 Save Changes"}
+                  {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* Modal Edit Admin */}
       {editModalAdm !== null && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="mb-10 max-w-2xl bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-              👥 Add New Admin
-            </h3>
-
-            <form className="space-y-5">
-              {/* Input Nama Admin */}
-              <input
-                type="text"
-                placeholder="Teacher Name..."
-                required
-                value={newAdminNameUpdate}
-                onChange={(e) => setNewAdminNameUpdate(e.target.value)}
-                className="w-full border border-slate-300 p-4 rounded-xl text-slate-700 placeholder-slate-400 outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent transition-all"
-              />
-
-              {/* Input Password Admin (sebelumnya placeholder-nya sama, saya asumsikan ini untuk password) */}
-              <div className="relative">
+        <div className="fixed inset-0 bg-slate-900/40 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500"></div>
+            <div className="flex justify-between items-center mb-6 pl-2">
+              <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                👥 Edit Admin
+              </h3>
+              <button
+                onClick={() => seteditModalAdm(null)}
+                className="text-slate-400 hover:text-red-500 text-xl font-bold transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <form
+              className="space-y-5 pl-2"
+              onSubmit={(e) => e.preventDefault()}
+            >
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
+                  Admin Name
+                </label>
                 <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Password..."
+                  type="text"
+                  placeholder="Teacher Name..."
                   required
-                  value={newAdminPasswordUpdate}
-                  onChange={(e) => setNewAdminPasswordUpdate(e.target.value)}
-                  // Tambahkan pr-12 (padding-right) agar teks tidak tertimpa icon
-                  className="w-full border border-slate-300 p-4 pr-12 rounded-xl text-slate-700 placeholder-slate-400 outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent transition-all"
+                  value={newAdminNameUpdate}
+                  onChange={(e) => setNewAdminNameUpdate(e.target.value)}
+                  className="w-full border border-slate-200 p-3.5 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 transition-all font-medium text-slate-700"
                 />
-
-                {/* Tombol Show/Hide */}
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter password..."
+                    required
+                    value={newAdminPasswordUpdate}
+                    onChange={(e) => setNewAdminPasswordUpdate(e.target.value)}
+                    className="w-full border border-slate-200 p-3.5 pr-12 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 transition-all font-medium text-slate-700"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 transition-colors"
+                  >
+                    {showPassword ? "🙈" : "👁️"}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
+                  Access Level
+                </label>
+                <div className="flex gap-4">
+                  <label
+                    className={`flex-1 flex items-center justify-center py-3.5 rounded-2xl border text-sm font-bold cursor-pointer transition-all ${newAdminLevelUpdate === "Super" ? "border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm" : "border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-500"}`}
+                  >
+                    <input
+                      type="radio"
+                      name="adminLevelEdit"
+                      value="Super"
+                      onChange={(e) => setNewAdminLevelUpdate(e.target.value)}
+                      className="hidden"
+                    />
+                    Super Admin
+                  </label>
+                  <label
+                    className={`flex-1 flex items-center justify-center py-3.5 rounded-2xl border text-sm font-bold cursor-pointer transition-all ${newAdminLevelUpdate === "Normal" ? "border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm" : "border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-500"}`}
+                  >
+                    <input
+                      type="radio"
+                      name="adminLevelEdit"
+                      value="Normal"
+                      onChange={(e) => setNewAdminLevelUpdate(e.target.value)}
+                      className="hidden"
+                    />
+                    Normal Admin
+                  </label>
+                </div>
+              </div>
+              <div className="flex gap-3 pt-4">
                 <button
-                  type="button" // Sangat penting agar form tidak tersubmit saat tombol ini diklik
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#1e3a8a] transition-colors focus:outline-none flex items-center justify-center"
+                  onClick={() => seteditModalAdm(null)}
+                  disabled={isSubmitting}
+                  className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl hover:bg-slate-200 transition-colors"
                 >
-                  {showPassword ? (
-                    // Icon Eye Slash (Sembunyikan) - Bisa diganti SVG/react-icons
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-6 h-6"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
-                      />
-                    </svg>
-                  ) : (
-                    // Icon Eye (Tampilkan) - Bisa diganti SVG/react-icons
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-6 h-6"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
-                  )}
+                  Batal
                 </button>
-              </div>
-              {/* Tombol Pilihan Level (Super / Admin) */}
-              <div className="flex gap-4 w-1/2 pt-2 pb-4">
-                <label
-                  className={`flex-1 flex items-center justify-center py-2.5 rounded-full border text-sm font-bold cursor-pointer transition-all duration-200 ${
-                    newAdminLevelUpdate === "Super"
-                      ? "border-[#1e3a8a] bg-blue-50 text-[#1e3a8a]"
-                      : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="adminLevel"
-                    value="Super"
-                    onChange={(e) => setNewAdminLevelUpdate(e.target.value)}
-                    className="hidden"
-                  />
-                  Super
-                </label>
-
-                <label
-                  className={`flex-1 flex items-center justify-center py-2.5 rounded-full border text-sm font-bold cursor-pointer transition-all duration-200 ${
-                    newAdminLevelUpdate === "Normal"
-                      ? "border-[#1e3a8a] bg-blue-50 text-[#1e3a8a]"
-                      : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="adminLevel"
-                    value="Normal"
-                    onChange={(e) => setNewAdminLevelUpdate(e.target.value)}
-                    className="hidden"
-                  />
-                  Admin
-                </label>
-              </div>
-
-              {/* Tombol Submit */}
-              <div className="flex gap-3 mt-8 pt-2">
                 <button
                   onClick={handleupdateAdmin}
-                  type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 bg-[#283593] text-white font-bold py-3.5 rounded-xl hover:bg-blue-800 transition-colors"
+                  className="flex-1 bg-emerald-600 text-white font-bold py-3.5 rounded-2xl hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg disabled:bg-slate-400"
                 >
-                  {isSubmitting ? "Adding..." : "Add Admin"}
-                </button>
-                <button
-                  className="flex-1 bg-white text-slate-700 font-bold py-3.5 rounded-xl hover:bg-slate-100 transition-colors"
-                  onClick={() => {
-                    seteditModalAdm(null);
-                  }}
-                >
-                  Cancel
+                  {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-      {/* SIDEBAR */}
+
+      {/* ======================= SIDEBAR ======================= */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#1e3a8a] text-white flex flex-col shadow-2xl transition-transform duration-300 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-gradient-to-b from-[#1e3a8a] to-[#152865] text-white flex flex-col shadow-2xl transition-all duration-300 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <div className="p-8 border-b border-blue-800 text-center">
-          <div className="w-24 h-24 mx-auto mb-4 rounded-full border-4 border-blue-400 bg-blue-600 flex items-center justify-center text-4xl">
+        <div className="p-8 text-center pt-10 border-b border-white/10">
+          <div className="w-24 h-24 mx-auto mb-5 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-4xl shadow-inner">
             👨‍💼
           </div>
-          <h1 className="text-xl font-bold tracking-wider uppercase">
+          <h1 className="text-xl font-bold tracking-tight truncate">
             {username}
           </h1>
-          <span className="inline-block mt-2 px-3 py-1 text-xs font-bold rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/50">
-            {role === "Super" ? "SUPER ADMIN" : "ADMIN"}
-          </span>
+          <p className="text-[10px] font-black mt-2 py-1.5 px-4 bg-amber-400 text-blue-900 rounded-full inline-block uppercase tracking-widest shadow-sm">
+            {role} ADMIN
+          </p>
         </div>
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-6 space-y-2 overflow-y-auto">
           {visibleMenu.map((item) => (
             <button
               key={item.id}
               onClick={() => {
-                // --- BAGIAN YANG DIUBAH MULAI DI SINI ---
-                if (item.id === "logout_admin") {
-                  handleLogout(); // Panggil fungsi logout jika menu keluar diklik
-                } else {
-                  setActiveTab(item.id); // Buka tab seperti biasa
+                if (item.id === "logout_admin") handleLogout();
+                else {
+                  setActiveTab(item.id);
                   if (window.innerWidth < 768) setIsSidebarOpen(false);
                 }
-                // --- BAGIAN YANG DIUBAH SELESAI ---
               }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left font-medium ${activeTab === item.id ? "bg-white text-[#1e3a8a] shadow-lg" : "text-blue-100 hover:bg-blue-800"}`}
+              className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all font-semibold ${
+                activeTab === item.id
+                  ? "bg-white text-[#1e3a8a] shadow-lg shadow-blue-900/30 translate-x-2"
+                  : "text-blue-100 hover:bg-white/10 hover:text-white"
+              }`}
             >
               <span className="text-xl">{item.icon}</span> {item.label}
             </button>
@@ -836,278 +891,318 @@ export default function Admin() {
         </nav>
       </aside>
 
-      {/* MAIN CONTENT */}
+      {/* ======================= MAIN CONTENT ======================= */}
       <main
-        className={`flex-1 flex flex-col h-screen transition-all ${isSidebarOpen ? "md:ml-72" : "ml-0"}`}
+        className={`flex-1 flex flex-col min-w-0 h-screen transition-all duration-300 ${isSidebarOpen ? "md:ml-72" : "ml-0"}`}
       >
-        {/* TOP NAVBAR (DATE PICKER) */}
-        <header className="bg-white shadow-sm px-6 py-4 flex flex-col sm:flex-row justify-between items-center z-10 border-b border-slate-200 gap-4">
-          <div className="flex items-center gap-4 w-full sm:w-auto">
+        {/* HEADER */}
+        <header className="bg-white/80 backdrop-blur-md px-8 py-5 flex justify-between items-center z-10 border-b border-slate-200 sticky top-0">
+          <div className="flex items-center gap-5">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 bg-slate-100 hover:bg-blue-100 rounded-lg text-slate-600"
+              className="p-2.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 rounded-xl text-slate-500 transition-colors shadow-sm"
             >
-              ☰
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+                className="w-6 h-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"
+                />
+              </svg>
             </button>
-            <h2 className="text-xl font-black text-[#1a237e] uppercase tracking-tight">
-              {activeTab.replace("_", " ")}
+            <h2 className="text-2xl font-bold text-slate-800 tracking-tight">
+              {activeTab}
             </h2>
           </div>
-          <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-lg border border-slate-200 w-full sm:w-auto">
-            <label className="text-sm font-semibold text-slate-600 uppercase">
-              Dashboard Date:
-            </label>
+          <div className="hidden md:flex items-center gap-4 bg-slate-50 p-1.5 pl-5 rounded-2xl border border-slate-200 shadow-sm">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              Dashboard View
+            </span>
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-white border border-slate-300 rounded-md px-3 py-1 outline-none focus:ring-2 focus:ring-[#1e3a8a]"
+              className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm outline-none focus:ring-2 focus:ring-[#1e3a8a] transition-all"
             />
           </div>
         </header>
 
-        <div className="p-4 sm:p-8 flex-1 overflow-y-auto bg-slate-50">
-          <div className="w-full max-w-6xl mx-auto space-y-8">
-            {/* --- TOP DASHBOARD: TAMPIL SELALU (HARI INI) --- */}
-            {/* Kolom Kiri: Events Hari Ini */}
-
-            {/* Kolom Kanan: Birthdays Hari Ini */}
-
-            {/* --- KONTEN BERDASARKAN TAB YANG DIPILIH --- */}
-
+        {/* CONTENT AREA */}
+        <div className="p-4 md:p-8 flex-1 overflow-y-auto">
+          <div className="max-w-6xl mx-auto space-y-8">
+            {/* ========================================================= */}
             {/* TAB: ANNOUNCEMENTS */}
+            {/* ========================================================= */}
             {activeTab === "Announcements" && (
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                {/* Form Tambah Pengumuman */}
-                <div className="mb-10 max-w-xl">
-                  <h3 className="text-xl font-bold text-slate-800 mb-4">
-                    📝 Create Announcement
+              <div className="space-y-8">
+                {/* CREATE CARD */}
+                <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-200 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-2 h-full bg-[#1e3a8a]"></div>
+                  <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-3">
+                    <span className="bg-blue-50 text-blue-600 p-2 rounded-xl text-sm">
+                      📝
+                    </span>{" "}
+                    New Announcement
                   </h3>
-                  <div className="space-y-4">
-                    <input
-                      type="date"
-                      value={newAnnDate}
-                      onChange={(e) => setNewAnnDate(e.target.value)}
-                      className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <textarea
-                      placeholder="Event details..."
-                      value={newAnnouncement}
-                      onChange={(e) => setNewAnnouncement(e.target.value)}
-                      className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
-                    ></textarea>
-                    <button
-                      onClick={handlePostAnnouncement}
-                      disabled={isSubmitting}
-                      className="w-full bg-[#1e3a8a] text-white py-3 rounded-lg font-bold hover:bg-blue-800 disabled:bg-slate-400"
-                    >
-                      Post Announcement
-                    </button>
-                  </div>
-                </div>
 
-                {/* Tabel Riwayat Pengumuman dengan Fitur SEARCH */}
-                {/* Tabel Riwayat Pengumuman dengan Fitur SEARCH */}
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-bold text-slate-800">
-                    📋 Announcement History
-                  </h3>
-                  <input
-                    type="text"
-                    placeholder="Search dates or names..."
-                    value={searchAnnouncements}
-                    onChange={(e) => setSearchAnnouncements(e.target.value)}
-                    className="border p-2 rounded-lg w-64 outline-none focus:ring-2 focus:ring-[#1e3a8a]"
-                  />
-                </div>
-                <div className="overflow-x-auto border rounded-lg mb-4 shadow-sm bg-white">
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-slate-50 text-slate-700 font-bold border-b">
-                      <tr>
-                        <th className="p-4 w-1/4">Date</th>
-                        <th className="p-4 w-1/4">Announcement</th>
-                        <th className="p-4 w-1/2">Made By</th>
-                        <th className="p-4 w-1/4 text-center">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {currentAnnData.length > 0 ? (
-                        currentAnnData.map((item) => (
-                          <tr
-                            key={item.id_announcement}
-                            className="border-b hover:bg-slate-50 transition-colors"
-                          >
-                            <td className="p-4 whitespace-nowrap font-medium text-slate-800">
-                              {item.date}
-                            </td>
-                            <td className="p-4 whitespace-nowrap font-medium text-slate-800">
-                              {item.announcement}
-                            </td>
-                            <td className="p-4 font-bold text-[#1e3a8a]">
-                              {/* Menampilkan Nama Relasi Jika Ada, Jika Tidak Tampilkan Default Berdasarkan ID */}
-                              {item.admin_pembuat.name_admin}
-                            </td>
-                            <td className="p-4">
-                              <div className="flex justify-center gap-2">
-                                {/* TOMBOL EDIT/UPDATE */}
-                                {/* TOMBOL EDIT/UPDATE (YANG BENAR) */}
-                                <button
-                                  onClick={() => handleEditClick(item)}
-                                  className="px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-md hover:bg-indigo-100 transition-all cursor-pointer"
-                                >
-                                  Edit
-                                </button>
-                                {/* TOMBOL DELETE */}
-                                <button
-                                  onClick={() =>
-                                    handleDelete(item.id_announcement)
-                                  }
-                                  className="px-3 py-1.5 text-xs font-bold text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-all cursor-pointer"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td
-                            colSpan="3"
-                            className="p-8 text-center text-slate-500 italic"
-                          >
-                            No matching announcements found.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                {/* --- UI PAGINATION ADMIN --- */}
-                {totalAnnPages > 1 && (
-                  <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-slate-200 rounded-b-lg sm:px-6">
-                    <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-sm text-slate-700">
-                          Showing{" "}
-                          <span className="font-bold">
-                            {(currentAnnPage - 1) * itemsPerPage + 1}
-                          </span>{" "}
-                          to{" "}
-                          <span className="font-bold">
-                            {Math.min(
-                              currentAnnPage * itemsPerPage,
-                              filteredAnnouncements.length,
-                            )}
-                          </span>{" "}
-                          of{" "}
-                          <span className="font-bold">
-                            {filteredAnnouncements.length}
-                          </span>{" "}
-                          results
-                        </p>
-                      </div>
-                      <div>
-                        <nav
-                          className="inline-flex -space-x-px rounded-md shadow-sm"
-                          aria-label="Pagination"
-                        >
-                          {/* Tombol Previous */}
-                          <button
-                            onClick={() =>
-                              setCurrentAnnPage(currentAnnPage - 1)
-                            }
-                            disabled={currentAnnPage === 1}
-                            className="relative inline-flex items-center px-2 py-2 text-slate-400 rounded-l-md ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <span className="sr-only">Previous</span>
-                            <svg
-                              className="w-5 h-5"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                              aria-hidden="true"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </button>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* BARIS 1: Tanggal & URL */}
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        Publish Date
+                      </label>
+                      <input
+                        type="date"
+                        value={newAnnDate}
+                        onChange={(e) => setNewAnnDate(e.target.value)}
+                        className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#1e3a8a] transition-all font-medium text-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        Attach URL (Optional)
+                      </label>
+                      <input
+                        type="url"
+                        placeholder="https://..."
+                        value={newAnnUrl}
+                        onChange={(e) => setNewAnnUrl(e.target.value)}
+                        className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#1e3a8a] transition-all font-medium text-slate-700"
+                      />
+                    </div>
 
-                          {/* Angka Halaman */}
-                          {[...Array(totalAnnPages)].map((_, index) => (
-                            <button
-                              key={index + 1}
-                              onClick={() => setCurrentAnnPage(index + 1)}
-                              className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold focus:z-20 focus:outline-offset-0 ${
-                                currentAnnPage === index + 1
-                                  ? "z-10 bg-[#1e3a8a] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1e3a8a]"
-                                  : "text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50"
-                              }`}
-                            >
-                              {index + 1}
-                            </button>
-                          ))}
+                    {/* BARIS 2: Kotak Konten Pengumuman (Lebih Besar) */}
+                    <div className="md:col-span-2">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        Announcement Content
+                      </label>
+                      <textarea
+                        rows="4"
+                        placeholder="Write the announcement details here..."
+                        value={newAnnouncement}
+                        onChange={(e) => setNewAnnouncement(e.target.value)}
+                        className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#1e3a8a] transition-all font-medium text-slate-700 resize-y"
+                      ></textarea>
+                    </div>
 
-                          {/* Tombol Next */}
-                          <button
-                            onClick={() =>
-                              setCurrentAnnPage(currentAnnPage + 1)
-                            }
-                            disabled={currentAnnPage === totalAnnPages}
-                            className="relative inline-flex items-center px-2 py-2 text-slate-400 rounded-r-md ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <span className="sr-only">Next</span>
-                            <svg
-                              className="w-5 h-5"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                              aria-hidden="true"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </button>
-                        </nav>
-                      </div>
+                    {/* BARIS 3: Upload Foto & Tombol Submit */}
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        Upload Image (Optional)
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setNewAnnImage(e.target.files[0])}
+                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#1e3a8a] transition-all text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 text-slate-600 cursor-pointer"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <button
+                        onClick={handlePostAnnouncement}
+                        disabled={isSubmitting}
+                        className="w-full bg-[#1e3a8a] text-white py-3.5 rounded-2xl font-bold hover:shadow-lg shadow-blue-900/20 transition-all active:scale-[0.98] disabled:bg-slate-300 disabled:shadow-none"
+                      >
+                        Publish Event
+                      </button>
                     </div>
                   </div>
-                )}
+                </div>
+
+                {/* TABLE CARD */}
+                <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                  <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
+                    <h3 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                      <span className="text-xl">📋</span> History Log
+                    </h3>
+                    <div className="relative w-full md:w-80">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                        🔍
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Search dates or names..."
+                        value={searchAnnouncements}
+                        onChange={(e) => setSearchAnnouncements(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-[#1e3a8a] outline-none shadow-sm transition-all"
+                      />
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-white text-slate-400 font-bold text-[10px] uppercase tracking-widest border-b border-slate-100">
+                        <tr>
+                          <th className="px-8 py-5">Date</th>
+                          <th className="px-8 py-5">Image</th>
+                          <th className="px-8 py-5">Announcement</th>
+                          {/* Tambahan Header untuk URL/Link */}
+                          <th className="px-8 py-5">Link</th>
+                          <th className="px-8 py-5">Author</th>
+                          <th className="px-8 py-5 text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 text-sm">
+                        {currentAnnData.length > 0 ? (
+                          currentAnnData.map((item) => (
+                            <tr
+                              key={item.id_announcement}
+                              className="hover:bg-slate-50/80 transition-colors group"
+                            >
+                              <td className="px-8 py-5 font-bold text-slate-700">
+                                {item.date}
+                              </td>
+
+                              <td className="px-8 py-5">
+                                {item.url_image ? (
+                                  <img
+                                    src={item.url_image}
+                                    alt="Announcement Thumbnail"
+                                    className="w-20 h-20 object-cover rounded-lg border border-slate-200 shadow-sm"
+                                  />
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 italic bg-slate-100 px-3 py-1 rounded-md">
+                                    No Image
+                                  </span>
+                                )}
+                              </td>
+
+                              <td className="px-8 py-5 text-slate-600 font-medium">
+                                {item.announcement}
+                              </td>
+
+                              {/* Tambahan Kolom Data untuk Menampilkan URL/Link */}
+                              <td className="px-8 py-5">
+                                {item.url_announcemet ? (
+                                  <a
+                                    href={item.url_announcemet}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-100 rounded-full font-bold text-[10px] uppercase tracking-wide transition-colors"
+                                  >
+                                    Open Link
+                                  </a>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 italic bg-slate-100 px-3 py-1 rounded-md">
+                                    No Link
+                                  </span>
+                                )}
+                              </td>
+
+                              <td className="px-8 py-5">
+                                <span className="px-3 py-1.5 bg-blue-50 text-[#1e3a8a] border border-blue-100 rounded-full font-bold text-[10px] uppercase tracking-wide">
+                                  {item.admin_pembuat
+                                    ? item.admin_pembuat.name_admin
+                                    : "Unknown"}
+                                </span>
+                              </td>
+                              <td className="px-8 py-5">
+                                <div className="flex justify-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    onClick={() => handleEditClick(item)}
+                                    className="px-4 py-2 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handleDelete(item.id_announcement)
+                                    }
+                                    className="px-4 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan="6" // Ubah colSpan menjadi 6 karena sekarang total ada 6 kolom
+                              className="p-12 text-center text-slate-400 font-medium italic"
+                            >
+                              No matching announcements found.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  {/* Pagination */}
+                  {totalAnnPages > 1 && (
+                    <div className="p-6 bg-white border-t border-slate-100 flex justify-center gap-2">
+                      {[...Array(totalAnnPages)].map((_, index) => (
+                        <button
+                          key={index + 1}
+                          onClick={() => setCurrentAnnPage(index + 1)}
+                          className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${currentAnnPage === index + 1 ? "bg-[#1e3a8a] text-white shadow-md shadow-blue-900/20" : "bg-white border border-slate-200 text-slate-500 hover:border-[#1e3a8a] hover:text-[#1e3a8a]"}`}
+                        >
+                          {index + 1}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
-            {/* TAB: BIRTHDAYS */}
+            {/* ========================================================= */}
+            {/* TAB: BIRTHDAY LIST */}
+            {/* ========================================================= */}
             {activeTab === "Birthday List" && (
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                {/* Form Tambah Ulang Tahun */}
-                <div className="mb-10 max-w-2xl">
-                  <h3 className="text-xl font-bold text-slate-800 mb-4">
-                    🎁 Add New Birthday
+              <div className="space-y-8">
+                {/* CREATE CARD */}
+                <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-200 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-2 h-full bg-pink-500"></div>
+                  <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-3">
+                    <span className="bg-pink-50 text-pink-600 p-2 rounded-xl text-sm">
+                      🎁
+                    </span>{" "}
+                    Add New Birthday
                   </h3>
-                  <form onSubmit={handlePostBirthday} className="space-y-4">
-                    <input
-                      type="text"
-                      placeholder="Student or Teacher Name..."
-                      required
-                      value={newBdayName}
-                      onChange={(e) => setNewBdayName(e.target.value)}
-                      className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-[#1e3a8a]"
-                    />
-                    <div className="grid grid-cols-2 gap-4">
+                  <form
+                    onSubmit={handlePostBirthday}
+                    className="grid md:grid-cols-4 gap-6 items-end"
+                  >
+                    <div className="md:col-span-1">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        Student/Teacher Name
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={newBdayName}
+                        onChange={(e) => setNewBdayName(e.target.value)}
+                        placeholder="Full name..."
+                        className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-pink-500 transition-all font-medium text-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        Birth Date
+                      </label>
                       <input
                         type="date"
                         required
                         value={newBdayDate}
                         onChange={(e) => setNewBdayDate(e.target.value)}
-                        className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-[#1e3a8a]"
+                        className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-pink-500 transition-all font-medium text-slate-700"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        Gender
+                      </label>
                       <div className="flex gap-2">
                         <label
-                          className={`flex-1 flex items-center justify-center border rounded-lg cursor-pointer ${newBdayGender === "Male" ? "bg-blue-50 border-blue-500 text-blue-700 font-bold" : "hover:bg-slate-50"}`}
+                          className={`flex-1 flex items-center justify-center border rounded-2xl cursor-pointer py-3.5 transition-all text-sm font-bold ${newBdayGender === "Male" ? "bg-blue-50 border-blue-500 text-blue-700" : "border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-500"}`}
                         >
                           <input
                             type="radio"
@@ -1116,10 +1211,10 @@ export default function Admin() {
                             onChange={(e) => setNewBdayGender(e.target.value)}
                             className="hidden"
                           />
-                          👨 Male
+                          Male
                         </label>
                         <label
-                          className={`flex-1 flex items-center justify-center border rounded-lg cursor-pointer ${newBdayGender === "Female" ? "bg-pink-50 border-pink-500 text-pink-700 font-bold" : "hover:bg-slate-50"}`}
+                          className={`flex-1 flex items-center justify-center border rounded-2xl cursor-pointer py-3.5 transition-all text-sm font-bold ${newBdayGender === "Female" ? "bg-pink-50 border-pink-500 text-pink-700" : "border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-500"}`}
                         >
                           <input
                             type="radio"
@@ -1128,519 +1223,311 @@ export default function Admin() {
                             onChange={(e) => setNewBdayGender(e.target.value)}
                             className="hidden"
                           />
-                          👩 Female
+                          Female
                         </label>
                       </div>
                     </div>
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full bg-[#1e3a8a] text-white py-3 rounded-lg font-bold hover:bg-blue-800 disabled:bg-slate-400"
+                      className="w-full bg-slate-800 hover:bg-slate-900 text-white py-3.5 rounded-2xl font-bold hover:shadow-lg transition-all active:scale-[0.98] disabled:bg-slate-300"
                     >
-                      Add Birthday
+                      Add Record
                     </button>
                   </form>
                 </div>
 
-                {/* Tabel Riwayat Ulang Tahun dengan Fitur SEARCH */}
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-bold text-slate-800">
-                    📋 Birthday Directory
-                  </h3>
-                  <input
-                    type="text"
-                    placeholder="Search name, date, or gender..."
-                    value={searchBirthdays}
-                    onChange={(e) => setSearchBirthdays(e.target.value)}
-                    className="border p-2 rounded-lg w-64 outline-none focus:ring-2 focus:ring-[#1e3a8a]"
-                  />
-                </div>
-                <div className="overflow-x-auto border rounded-lg mb-4 shadow-sm bg-white">
-                  {/* PERUBAHAN UTAMA: Tambah border-collapse dan border utama */}
-                  <table className="w-full text-sm text-left border-collapse border border-slate-200">
-                    <thead className="bg-slate-50 text-slate-700 font-bold border-b-2 border-slate-300">
-                      <tr>
-                        {/* PERUBAHAN: Tambah border-r pada setiap th untuk garis vertikal */}
-                        <th className="p-4 md:px-6 w-1/4 border-r border-slate-200">
-                          Date
-                        </th>
-                        <th className="p-4 md:px-6 w-1/3 border-r border-slate-200">
-                          Name
-                        </th>
-                        <th className="p-4 md:px-6 w-1/4 border-r border-slate-200 text-center">
-                          Gender
-                        </th>
-                        <th className="p-4 md:px-6 w-[15%] text-center">
-                          Action
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {currentBdayData.length > 0 ? (
-                        currentBdayData.map((item) => (
-                          <tr
-                            key={item.id_birthday}
-                            className="border-b border-slate-200 hover:bg-slate-50/80 transition-colors duration-150"
-                          >
-                            {/* PERUBAHAN: Tambah border-r pada setiap td */}
-                            <td className="p-4 md:px-6 whitespace-nowrap font-medium text-slate-800 border-r border-slate-200">
-                              {item.date}
-                            </td>
-                            <td className="p-4 md:px-6 font-bold text-[#1e3a8a] border-r border-slate-200">
-                              {item.name}
-                            </td>
-                            <td className="p-4 md:px-6 border-r border-slate-200 text-center">
-                              <span
-                                className={`inline-flex px-3 py-1.5 rounded-md text-xs font-bold items-center justify-center gap-1.5 ${
-                                  item.gender === "Male"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : "bg-pink-100 text-pink-800"
-                                }`}
-                              >
-                                {item.gender}
-                              </span>
-                            </td>
-                            <td className="p-4 md:px-6">
-                              {/* Posisi tombol dirapikan agar sejajar di tengah */}
-                              <div className="flex items-center justify-center gap-2.5">
-                                <button
-                                  onClick={() => handleEditClickBirth(item)}
-                                  className="px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-all cursor-pointer"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    handleDeleteBirh(item.id_birthday)
-                                  }
-                                  className="px-3.5 py-2 text-xs font-bold text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-all cursor-pointer"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td
-                            colSpan="4"
-                            className="p-8 text-center text-slate-500 italic"
-                          >
-                            No birthdays found matching "{searchBirthdays}".
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                {/* --- UI PAGINATION ADMIN --- */}
-                {totalBdayPages > 1 && (
-                  <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-slate-200 rounded-b-lg sm:px-6">
-                    <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-sm text-slate-700">
-                          Showing{" "}
-                          <span className="font-bold">
-                            {(currentBdayPage - 1) * itemsPerPage + 1}
-                          </span>{" "}
-                          to{" "}
-                          <span className="font-bold">
-                            {Math.min(
-                              currentBdayPage * itemsPerPage,
-                              filteredBirthdays.length,
-                            )}
-                          </span>{" "}
-                          of{" "}
-                          <span className="font-bold">
-                            {filteredBirthdays.length}
-                          </span>{" "}
-                          results
-                        </p>
-                      </div>
-                      <div>
-                        <nav
-                          className="inline-flex -space-x-px rounded-md shadow-sm"
-                          aria-label="Pagination"
-                        >
-                          {/* Tombol Previous */}
-                          <button
-                            onClick={() =>
-                              setCurrentBdayPage(currentBdayPage - 1)
-                            }
-                            disabled={currentBdayPage === 1}
-                            className="relative inline-flex items-center px-2 py-2 text-slate-400 rounded-l-md ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <span className="sr-only">Previous</span>
-                            <svg
-                              className="w-5 h-5"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                              aria-hidden="true"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </button>
-
-                          {/* Angka Halaman */}
-                          {[...Array(totalBdayPages)].map((_, index) => (
-                            <button
-                              key={index + 1}
-                              onClick={() => setCurrentBdayPage(index + 1)}
-                              className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold focus:z-20 focus:outline-offset-0 ${
-                                currentBdayPage === index + 1
-                                  ? "z-10 bg-[#1e3a8a] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1e3a8a]"
-                                  : "text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50"
-                              }`}
-                            >
-                              {index + 1}
-                            </button>
-                          ))}
-
-                          {/* Tombol Next */}
-                          <button
-                            onClick={() =>
-                              setcurrentAdmPage(currentBdayPage + 1)
-                            }
-                            disabled={currentBdayPage === totalBdayPages}
-                            className="relative inline-flex items-center px-2 py-2 text-slate-400 rounded-r-md ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <span className="sr-only">Next</span>
-                            <svg
-                              className="w-5 h-5"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                              aria-hidden="true"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </button>
-                        </nav>
-                      </div>
+                {/* TABLE CARD */}
+                <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                  <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
+                    <h3 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                      <span className="text-xl">📇</span> Birthday Directory
+                    </h3>
+                    <div className="relative w-full md:w-80">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                        🔍
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Search name or date..."
+                        value={searchBirthdays}
+                        onChange={(e) => setSearchBirthdays(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-pink-500 outline-none shadow-sm transition-all"
+                      />
                     </div>
                   </div>
-                )}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-white text-slate-400 font-bold text-[10px] uppercase tracking-widest border-b border-slate-100">
+                        <tr>
+                          <th className="px-8 py-5">Date</th>
+                          <th className="px-8 py-5">Name</th>
+                          <th className="px-8 py-5 text-center">Gender</th>
+                          <th className="px-8 py-5 text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 text-sm">
+                        {currentBdayData.length > 0 ? (
+                          currentBdayData.map((item) => (
+                            <tr
+                              key={item.id_birthday}
+                              className="hover:bg-slate-50/80 transition-colors group"
+                            >
+                              <td className="px-8 py-5 font-bold text-slate-700">
+                                {item.date}
+                              </td>
+                              <td className="px-8 py-5 text-slate-800 font-bold">
+                                {item.name}
+                              </td>
+                              <td className="px-8 py-5 text-center">
+                                <span
+                                  className={`inline-flex px-3 py-1.5 rounded-full font-bold text-[10px] uppercase tracking-wider ${item.gender === "Male" ? "bg-blue-50 text-blue-700 border border-blue-100" : "bg-pink-50 text-pink-700 border border-pink-100"}`}
+                                >
+                                  {item.gender}
+                                </span>
+                              </td>
+                              <td className="px-8 py-5">
+                                <div className="flex justify-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    onClick={() => handleEditClickBirth(item)}
+                                    className="px-4 py-2 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handleDeleteBirh(item.id_birthday)
+                                    }
+                                    className="px-4 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan="4"
+                              className="p-12 text-center text-slate-400 font-medium italic"
+                            >
+                              No birthdays found.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  {/* Pagination */}
+                  {totalBdayPages > 1 && (
+                    <div className="p-6 bg-white border-t border-slate-100 flex justify-center gap-2">
+                      {[...Array(totalBdayPages)].map((_, index) => (
+                        <button
+                          key={index + 1}
+                          onClick={() => setCurrentBdayPage(index + 1)}
+                          className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${currentBdayPage === index + 1 ? "bg-slate-800 text-white shadow-md" : "bg-white border border-slate-200 text-slate-500 hover:border-slate-800 hover:text-slate-800"}`}
+                        >
+                          {index + 1}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
-            {/* TAB: ADNUB LEVEL */}
+            {/* ========================================================= */}
+            {/* TAB: MANAGE ADMIN */}
+            {/* ========================================================= */}
             {activeTab === "Manage Admin" && (
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                {/* Form Tambah Ulang Tahun */}
-                <div className="mb-10 max-w-2xl bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                  <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-                    👥 Add New Admin
+              <div className="space-y-8">
+                {/* CREATE CARD */}
+                <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-200 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500"></div>
+                  <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-3">
+                    <span className="bg-emerald-50 text-emerald-600 p-2 rounded-xl text-sm">
+                      👥
+                    </span>{" "}
+                    Add New Admin
                   </h3>
-
-                  <form className="space-y-5" onSubmit={handlePostAdmin}>
-                    {/* Input Nama Admin */}
-                    <input
-                      type="text"
-                      placeholder="Teacher Name..."
-                      required
-                      value={newAdminName}
-                      onChange={(e) => setNewAdminName(e.target.value)}
-                      className="w-full border border-slate-300 p-4 rounded-xl text-slate-700 placeholder-slate-400 outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent transition-all"
-                    />
-
-                    {/* Input Password Admin (sebelumnya placeholder-nya sama, saya asumsikan ini untuk password) */}
-                    {/* Input Password Admin */}
-                    <div className="relative">
+                  <form
+                    onSubmit={handlePostAdmin}
+                    className="grid md:grid-cols-4 gap-6 items-end"
+                  >
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        Teacher Name
+                      </label>
                       <input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Password..."
+                        type="text"
                         required
-                        value={newAdminPassword}
-                        onChange={(e) => setNewAdminPassword(e.target.value)}
-                        // Tambahkan pr-12 (padding-right) agar teks tidak tertimpa icon
-                        className="w-full border border-slate-300 p-4 pr-12 rounded-xl text-slate-700 placeholder-slate-400 outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent transition-all"
+                        value={newAdminName}
+                        onChange={(e) => setNewAdminName(e.target.value)}
+                        placeholder="Name..."
+                        className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all font-medium text-slate-700"
                       />
-
-                      {/* Tombol Show/Hide */}
-                      <button
-                        type="button" // Sangat penting agar form tidak tersubmit saat tombol ini diklik
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#1e3a8a] transition-colors focus:outline-none flex items-center justify-center"
-                      >
-                        {showPassword ? (
-                          // Icon Eye Slash (Sembunyikan) - Bisa diganti SVG/react-icons
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
-                            className="w-6 h-6"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
-                            />
-                          </svg>
-                        ) : (
-                          // Icon Eye (Tampilkan) - Bisa diganti SVG/react-icons
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
-                            className="w-6 h-6"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                          </svg>
-                        )}
-                      </button>
                     </div>
-                    {/* Tombol Pilihan Level (Super / Admin) */}
-                    <div className="flex gap-4 w-1/2 pt-2 pb-4">
-                      <label
-                        className={`flex-1 flex items-center justify-center py-2.5 rounded-full border text-sm font-bold cursor-pointer transition-all duration-200 ${
-                          newAdminLevel === "Super"
-                            ? "border-[#1e3a8a] bg-blue-50 text-[#1e3a8a]"
-                            : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="adminLevel"
-                          value="Super"
-                          onChange={(e) => setNewAdminLevel(e.target.value)}
-                          className="hidden"
-                        />
-                        Super
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        Password
                       </label>
-
-                      <label
-                        className={`flex-1 flex items-center justify-center py-2.5 rounded-full border text-sm font-bold cursor-pointer transition-all duration-200 ${
-                          newAdminLevel === "Normal"
-                            ? "border-[#1e3a8a] bg-blue-50 text-[#1e3a8a]"
-                            : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
-                        }`}
-                      >
+                      <div className="relative">
                         <input
-                          type="radio"
-                          name="adminLevel"
-                          value="Normal"
-                          onChange={(e) => setNewAdminLevel(e.target.value)}
-                          className="hidden"
+                          type={showPassword ? "text" : "password"}
+                          required
+                          value={newAdminPassword}
+                          onChange={(e) => setNewAdminPassword(e.target.value)}
+                          placeholder="Password..."
+                          className="w-full p-3.5 pr-10 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all font-medium text-slate-700"
                         />
-                        Admin
-                      </label>
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600"
+                        >
+                          {showPassword ? "🙈" : "👁️"}
+                        </button>
+                      </div>
                     </div>
-
-                    {/* Tombol Submit */}
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        Access Level
+                      </label>
+                      <div className="flex gap-2">
+                        <label
+                          className={`flex-1 flex items-center justify-center border rounded-2xl cursor-pointer py-3.5 transition-all text-xs font-bold ${newAdminLevel === "Super" ? "bg-emerald-50 border-emerald-500 text-emerald-700" : "border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-500"}`}
+                        >
+                          <input
+                            type="radio"
+                            name="adminLevel"
+                            value="Super"
+                            onChange={(e) => setNewAdminLevel(e.target.value)}
+                            className="hidden"
+                          />
+                          Super
+                        </label>
+                        <label
+                          className={`flex-1 flex items-center justify-center border rounded-2xl cursor-pointer py-3.5 transition-all text-xs font-bold ${newAdminLevel === "Normal" ? "bg-emerald-50 border-emerald-500 text-emerald-700" : "border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-500"}`}
+                        >
+                          <input
+                            type="radio"
+                            name="adminLevel"
+                            value="Normal"
+                            onChange={(e) => setNewAdminLevel(e.target.value)}
+                            className="hidden"
+                          />
+                          Admin
+                        </label>
+                      </div>
+                    </div>
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full bg-[#283593] hover:bg-[#1a237e] text-white font-bold py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 disabled:bg-slate-400 disabled:shadow-none"
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-2xl font-bold hover:shadow-lg transition-all active:scale-[0.98] disabled:bg-slate-300 shadow-emerald-900/20"
                     >
-                      {isSubmitting ? "Adding..." : "Add Admin"}
+                      Create Admin
                     </button>
                   </form>
                 </div>
 
-                {/* Tabel Riwayat Ulang Tahun dengan Fitur SEARCH */}
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-bold text-slate-800">
-                    📋 ADMIN LIST
-                  </h3>
-                  <input
-                    type="text"
-                    placeholder="Search name, date, or gender..."
-                    value={searchAdm}
-                    onChange={(e) => setsearchAdm(e.target.value)}
-                    className="border p-2 rounded-lg w-64 outline-none focus:ring-2 focus:ring-[#1e3a8a]"
-                  />
-                </div>
-                <div className="overflow-x-auto border rounded-lg mb-4">
-                  <table className="w-full text-sm text-left border-collapse border border-slate-200">
-                    <thead>
-                      <tr>
-                        <th className="p-4 md:px-6 whitespace-nowrap font-medium text-slate-800 border-r border-slate-200 w-[30%]">
-                          Name
-                        </th>
-                        <th className="p-4 md:px-6 font-bold text-[#1e3a8a] border-r border-slate-200 w-[30%]">
-                          Password
-                        </th>
-                        <th className="p-4 md:px-6 border-r border-slate-200 text-center w-[20%]">
-                          Level
-                        </th>
-                        <th className="p-4 md:px-6 text-center w-[20%]">
-                          Action
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {currentAdmData.length > 0 ? (
-                        currentAdmData.map((item) => (
-                          <tr
-                            key={item.id_admin}
-                            className="border-b border-slate-200 hover:bg-slate-50/80 transition-colors duration-150"
-                          >
-                            {/* PERUBAHAN: Tambahkan border-r di setiap td untuk garis pembatas vertikal */}
-                            <td className="p-4 md:px-6 font-bold text-slate-800 border-r border-slate-200">
-                              {item.name_admin}
-                            </td>
-                            <td className="p-4 md:px-6 font-bold text-[#1e3a8a] border-r border-slate-200">
-                              {item.password_admin}
-                            </td>
-                            <td className="p-4 md:px-6 border-r border-slate-200 text-center">
-                              {/* PERUBAHAN: Ganti item.gender menjadi item.level_admin */}
-                              <span
-                                className={`inline-flex px-3 py-1.5 rounded-md text-xs font-bold items-center justify-center gap-1.5 ${
-                                  item.level_admin === "Super"
-                                    ? "bg-purple-100 text-purple-800"
-                                    : "bg-blue-100 text-blue-800"
-                                }`}
-                              >
-                                {item.level_admin}
-                              </span>
-                            </td>
-                            <td className="p-4 md:px-6">
-                              <div className="flex items-center justify-center gap-2.5">
-                                <button
-                                  onClick={() => handleEditAdmin(item)}
-                                  className="px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-all cursor-pointer"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    handleDeleteAdmin(item.id_admin)
-                                  }
-                                  className="px-3.5 py-2 text-xs font-bold text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-all cursor-pointer"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td
-                            colSpan="3"
-                            className="p-8 text-center text-slate-500 italic"
-                          >
-                            No birthdays found matching "{searchBirthdays}".
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                {totalAdmPages > 1 && (
-                  <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-slate-200 rounded-b-lg sm:px-6">
-                    <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-sm text-slate-700">
-                          Showing{" "}
-                          <span className="font-bold">
-                            {(currentAdmPage - 1) * itemsPerPage + 1}
-                          </span>{" "}
-                          to{" "}
-                          <span className="font-bold">
-                            {Math.min(
-                              currentAdmPage * itemsPerPage,
-                              filteredAdmin.length,
-                            )}
-                          </span>{" "}
-                          of{" "}
-                          <span className="font-bold">
-                            {filteredAdmin.length}
-                          </span>{" "}
-                          results
-                        </p>
-                      </div>
-                      <div>
-                        <nav
-                          className="inline-flex -space-x-px rounded-md shadow-sm"
-                          aria-label="Pagination"
-                        >
-                          {/* Tombol Previous */}
-                          <button
-                            onClick={() =>
-                              setcurrentAdmPage(currentAdmPage - 1)
-                            }
-                            disabled={currentAdmPage === 1}
-                            className="relative inline-flex items-center px-2 py-2 text-slate-400 rounded-l-md ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <span className="sr-only">Previous</span>
-                            <svg
-                              className="w-5 h-5"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                              aria-hidden="true"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </button>
-
-                          {/* Angka Halaman */}
-                          {[...Array(totalAdmPages)].map((_, index) => (
-                            <button
-                              key={index + 1}
-                              onClick={() => setcurrentAdmPage(index + 1)}
-                              className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold focus:z-20 focus:outline-offset-0 ${
-                                currentAdmPage === index + 1
-                                  ? "z-10 bg-[#1e3a8a] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1e3a8a]"
-                                  : "text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50"
-                              }`}
-                            >
-                              {index + 1}
-                            </button>
-                          ))}
-
-                          {/* Tombol Next */}
-                          <button
-                            onClick={() =>
-                              setcurrentAdmPage(currentAdmPage + 1)
-                            }
-                            disabled={currentAdmPage === totalAdmPages}
-                            className="relative inline-flex items-center px-2 py-2 text-slate-400 rounded-r-md ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <span className="sr-only">Next</span>
-                            <svg
-                              className="w-5 h-5"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                              aria-hidden="true"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </button>
-                        </nav>
-                      </div>
+                {/* TABLE CARD */}
+                <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                  <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
+                    <h3 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                      <span className="text-xl">🛡️</span> Admin List
+                    </h3>
+                    <div className="relative w-full md:w-80">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                        🔍
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Search admins..."
+                        value={searchAdm}
+                        onChange={(e) => setsearchAdm(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm transition-all"
+                      />
                     </div>
                   </div>
-                )}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-white text-slate-400 font-bold text-[10px] uppercase tracking-widest border-b border-slate-100">
+                        <tr>
+                          <th className="px-8 py-5">Name</th>
+                          <th className="px-8 py-5">Password Key</th>
+                          <th className="px-8 py-5 text-center">Role Level</th>
+                          <th className="px-8 py-5 text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 text-sm">
+                        {currentAdmData.length > 0 ? (
+                          currentAdmData.map((item) => (
+                            <tr
+                              key={item.id_admin}
+                              className="hover:bg-slate-50/80 transition-colors group"
+                            >
+                              <td className="px-8 py-5 font-bold text-slate-800">
+                                {item.name_admin}
+                              </td>
+                              <td className="px-8 py-5 font-mono text-slate-500 text-xs bg-slate-50/50">
+                                ••••••••
+                              </td>
+                              <td className="px-8 py-5 text-center">
+                                <span
+                                  className={`inline-flex px-3 py-1.5 rounded-full font-bold text-[10px] uppercase tracking-wider ${item.level_admin === "Super" ? "bg-amber-100 text-amber-800 border border-amber-200" : "bg-emerald-50 text-emerald-700 border border-emerald-100"}`}
+                                >
+                                  {item.level_admin}
+                                </span>
+                              </td>
+                              <td className="px-8 py-5">
+                                <div className="flex justify-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    onClick={() => handleEditAdmin(item)}
+                                    className="px-4 py-2 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handleDeleteAdmin(item.id_admin)
+                                    }
+                                    className="px-4 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan="4"
+                              className="p-12 text-center text-slate-400 font-medium italic"
+                            >
+                              No admins found.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  {/* Pagination */}
+                  {totalAdmPages > 1 && (
+                    <div className="p-6 bg-white border-t border-slate-100 flex justify-center gap-2">
+                      {[...Array(totalAdmPages)].map((_, index) => (
+                        <button
+                          key={index + 1}
+                          onClick={() => setcurrentAdmPage(index + 1)}
+                          className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${currentAdmPage === index + 1 ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/20" : "bg-white border border-slate-200 text-slate-500 hover:border-emerald-600 hover:text-emerald-600"}`}
+                        >
+                          {index + 1}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
