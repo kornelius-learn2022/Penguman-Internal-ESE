@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey, Enum, DateTime
 from sqlalchemy.orm import relationship
+import datetime
 import enum
 
 # INI KUNCI UTAMANYA AGAR TIDAK ERROR "Base":
@@ -74,5 +75,16 @@ class Birthdays(Base):
         nullable=False,
     )
 
+    # ---> PERBAIKAN: RELASI INI SEKARANG BERADA DI TEMPAT YANG BENAR <---
     # RELASI BALIK: Agar Python bisa langsung memanggil nama Admin pembuatnya
     admin_pembuat = relationship("Admin", back_populates="birthdays")
+
+
+class FeedbackLog(Base):
+    __tablename__ = "feedback_logs"
+
+    id_feedback = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    pertanyaan_user = Column(Text, nullable=False)
+    jawaban_ai = Column(Text, nullable=False)
+    catatan_user = Column(String, nullable=True)  # Alasan kenapa disalahkan
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)

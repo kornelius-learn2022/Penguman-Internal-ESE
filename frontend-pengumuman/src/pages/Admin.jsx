@@ -87,8 +87,8 @@ export default function Admin() {
   // ==========================================
   // 5. FETCH DATA DARI API (GET)
   // ==========================================
-  const API_URL = "http://202.155.14.105:8000/api";
-  // const API_URL = "http://localhost:8000/api";
+  // const API_URL = "http://202.155.14.105:8000/api";
+  const API_URL = "http://localhost:8000/api";
 
   const fetchSemuaData = async () => {
     try {

@@ -2,65 +2,80 @@ import os
 import datetime
 import jwt
 import re
+import uuid
 import uvicorn
+
 from typing import Optional, List
 from datetime import date
-import uuid  # Tambahkan import ini di bagian atas file
-from data_schedule import JADWAL_SEKOLAH
+from dotenv import load_dotenv
 
 from fastapi import (
     FastAPI,
     Depends,
     HTTPException,
-    status,
     WebSocket,
     WebSocketDisconnect,
     File,
     UploadFile,
     Form,
 )
-from typing import Optional
-from supabase import create_client, Client
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
+
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, cast, String
+
+from supabase import create_client, Client
 from redis import asyncio as aioredis
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.decorator import cache
-from groq import AsyncGroq
-from dotenv import load_dotenv
+from google import genai
+
 import models
 from database import engine, get_db
+from data_schedule import JADWAL_SEKOLAH
+from groq import AsyncGroq
+from google.genai import types
 
-# Load Environment Variables
+# ==========================================
+# INISIALISASI & KONFIGURASI AWAL
+# ==========================================
 load_dotenv()
-
-# Inisialisasi Database
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="API Backend Cita Hati")
 
-# ==========================================
-# KONFIGURASI & KONSTANTA
-# ==========================================
+# Variabel Environment
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
 SECRET_KEY = os.getenv("SECRET_KEY", "kunci_rahasia_sekolah_kita")
 ALGORITHM = "HS256"
 REDIS_URL = os.getenv("REDIS_URL", "redis://:PasswordKuatRedis123!@redis:6379")
-IMGBB_API_KEY = "68553cd25b1880df41a298544ceed554"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# Inisialisasi Client Groq
+
+client = genai.Client(api_key=GEMINI_API_KEY)
+
+# Cek Supabase
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise ValueError("File .env belum disetting dengan benar untuk Supabase!")
+else:
+    print("Supabase siap!")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+BUCKET_NAME = "pengumuman-image"
+
+# groq inisialisasi
+
+
+# Inisialisasi Client Groq secara Asynchronous (agar tidak membuat server lemot)
 groq_client = AsyncGroq(api_key=GROQ_API_KEY)
 
-# CORS
+# CORS Setup
 origins = ["http://localhost:5173", "http://10.0.20.75:5173", "*"]
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -71,7 +86,7 @@ app.add_middleware(
 
 
 # ==========================================
-# PYDANTIC SCHEMAS
+# PYDANTIC SCHEMAS (Format Data)
 # ==========================================
 class AdminResponse(BaseModel):
     id_admin: int
@@ -117,57 +132,48 @@ class AdminCreate(BaseModel):
     level_admin: str
 
 
+class FeedbackCreate(BaseModel):
+    pertanyaan_user: str
+    jawaban_ai: str
+    catatan_user: str = "Jawaban tidak sesuai/format rusak"
+
+
 # ==========================================
 # HELPER FUNCTIONS (Logika Pendukung)
 # ==========================================
 def interpretasi_pesan_ke_tanggal(teks: str):
-    hari_ini = datetime.date.today()
+    # Wajib gunakan UTC+7 agar sama persis dengan sistem chat
+    sekarang_utc = datetime.datetime.utcnow()
+    hari_ini = (sekarang_utc + datetime.timedelta(hours=7)).date()
     teks = teks.lower()
 
     if any(x in teks for x in ["hari ini", "today"]):
         return hari_ini.strftime("%Y-%m-%d")
     elif any(x in teks for x in ["besok", "tomorrow"]):
         return (hari_ini + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+    elif any(x in teks for x in ["kemarin lusa"]):
+        return (hari_ini - datetime.timedelta(days=2)).strftime("%Y-%m-%d")
     elif any(x in teks for x in ["kemarin", "yesterday"]):
         return (hari_ini - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
-
     return None
-
-
-# Tambahkan pengecekan kecil agar kamu tahu kalau .env lupa disetting
-if not SUPABASE_URL or not SUPABASE_KEY:
-    raise ValueError("File .env belum disetting dengan benar untuk Supabase!")
-else:
-    print("bisa lanjut, .env sudah disetting dengan benar.")
-
-# Inisialisasi client Supabase
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-BUCKET_NAME = "pengumuman-image"
 
 
 def upload_image_to_supabase(file: UploadFile) -> Optional[str]:
     try:
-        # 1. Baca isi file byte dari React
         file.file.seek(0)
         file_bytes = file.file.read()
 
-        # 2. Buat nama file unik acak (contoh: 123e4567-e89b.png)
-        # Tujuannya agar jika ada 2 gambar bernama "foto.png", tidak saling menimpa
         ekstensi = file.filename.split(".")[-1] if "." in file.filename else "png"
         nama_file_unik = f"{uuid.uuid4()}.{ekstensi}"
 
-        # 3. Upload ke Supabase Storage
         supabase.storage.from_(BUCKET_NAME).upload(
             path=nama_file_unik,
             file=file_bytes,
             file_options={"content-type": file.content_type},
         )
 
-        # 4. Ambil URL Publik dari file yang baru saja di-upload
         public_url = supabase.storage.from_(BUCKET_NAME).get_public_url(nama_file_unik)
-
         return public_url
-
     except Exception as e:
         print(f"Gagal upload ke Supabase: {e}")
         return None
@@ -198,56 +204,43 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
 
 
 # ==========================================
-# WEBSOCKET & CHATBOT
-# ==========================================
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-
-if not GROQ_API_KEY:
-
-    print("WARNING: GROQ_API_KEY tidak ditemukan di file .env!")
-
-# Inisialisasi Client Groq secara Asynchronous (agar tidak membuat server lemot)
-
-groq_client = AsyncGroq(api_key=GROQ_API_KEY)
-
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-if not GROQ_API_KEY:
-    print("WARNING: GROQ_API_KEY tidak ditemukan di file .env!")
-
-# Inisialisasi Client Groq secara Asynchronous (agar tidak membuat server lemot)
-groq_client = AsyncGroq(api_key=GROQ_API_KEY)
-
-# ==========================================
-# API CHATBOT (WEBSOCKETS DENGAN GROQ & DATABASE)
+# ENDPOINTS UTAMA (CHATBOT & CRUD)
 # ==========================================
 
 
-def interpretasi_pesan_ke_tanggal(teks):
-    # Wajib gunakan UTC+7 agar sama persis dengan sistem chat
-    sekarang_utc = datetime.datetime.utcnow()
-    hari_ini = (sekarang_utc + datetime.timedelta(hours=7)).date()
-
-    teks = teks.lower()
-
-    if any(x in teks for x in ["hari ini", "today"]):
-        return hari_ini.strftime("%Y-%m-%d")
-    elif any(x in teks for x in ["besok", "tomorrow"]):
-        return (hari_ini + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
-    elif any(x in teks for x in ["kemarin lusa"]):
-        return (hari_ini - datetime.timedelta(days=2)).strftime("%Y-%m-%d")
-    elif any(x in teks for x in ["kemarin", "yesterday"]):
-        return (hari_ini - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
-    return None
+@app.on_event("startup")
+async def startup():
+    redis = aioredis.from_url(REDIS_URL, encoding="utf8", decode_responses=True)
+    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
 
 
+# --- FEEDBACK BOT ---
+@app.post("/api/feedback")
+async def submit_feedback(data: FeedbackCreate, db: Session = Depends(get_db)):
+    try:
+        new_feedback = models.FeedbackLog(
+            pertanyaan_user=data.pertanyaan_user,
+            jawaban_ai=data.jawaban_ai,
+            catatan_user=data.catatan_user,
+        )
+        db.add(new_feedback)
+        db.commit()
+        return {
+            "pesan": "Terima kasih! Feedback berhasil disimpan untuk dievaluasi oleh Admin."
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- WEBSOCKET CHATBOT ---
 @app.websocket("/ws/chat")
 async def websocket_chat_endpoint(websocket: WebSocket, db: Session = Depends(get_db)):
     await websocket.accept()
     await websocket.send_text(
-        "Halo! Saya Asisten AI Cita Hati. Saya siap membantu menjawab pertanyaanmu seputar pengumuman sekolah, kurikulum, dan jadwal."
+        "Halo! Saya Asisten AI Cita Hati. Saya siap membantu menjawab pertanyaanmu seputar pengumuman sekolah, ulang tahun, dan jadwal."
     )
 
-    # 1. BUAT INSTRUKSI SISTEM (DIUPDATE: TRILINGUAL - INDO, INGGRIS, MANDARIN)
     instruksi_ai = (
         "Kamu adalah Asisten Informasi Internal Trilingual (Indonesia, Inggris, Mandarin) yang profesional, cepat, dan ramah untuk sekolah Cita Hati. "
         "Tugas utamamu adalah membantu pengguna menemukan data terkait Pengumuman, Ulang Tahun, dan Jadwal berdasarkan parameter waktu yang mereka berikan.\n\n"
@@ -271,10 +264,30 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: Session = Depends(ge
         "[ATURAN TAMBAHAN (CRITICAL)]\n"
         "- ALWAYS match the user's language (Trilingual). Jika pengguna bertanya dalam bahasa Mandarin (Hanzi atau Pinyin), WAJIB balas menggunakan bahasa Mandarin (Simplified Chinese). Jika pengguna bahasa Inggris, balas bahasa Inggris. Jika Indonesia, balas bahasa Indonesia.\n"
         "- DILARANG menjelaskan proses pencarian data.\n"
+        "- NEVER say you cannot speak English or Mandarin. You are fully capable.\n"
+        "Tugas utamamu adalah membantu pengguna menemukan data terkait Pengumuman, Ulang Tahun, dan Jadwal berdasarkan parameter waktu yang mereka berikan.\n\n"
+        "[TUGAS UTAMA & INTEGRASI DATA]\n"
+        "Setiap kali pengguna bertanya, kamu harus mengidentifikasi 2 hal utama:\n"
+        "1. Kategori Data: Apakah pengguna mencari (a) Pengumuman, (b) Ulang Tahun, atau (c) Jadwal?\n"
+        "2. Parameter Waktu: Kapan waktu spesifik yang dicari? Ekstrak informasi Hari (Senin-Minggu, atau 'hari ini', 'besok'), Tanggal spesifik, Bulan, atau Tahun.\n\n"
+        "[KEMAMPUAN PENARIKAN DATA]\n"
+        "Kamu menangani permintaan Pengumuman, Ulang Tahun, dan Jadwal berdasarkan data (teks referensi) yang diberikan kepadamu.\n\n"
+        "[CONTOH VARIASI PERTANYAAN PENGGUNA YANG HARUS KAMU PAHAMI]\n"
+        "- 'Info dong buat tgl 12 ntar ada acara apa aja?' -> Niat: Jadwal, Waktu: Tanggal 12.\n"
+        "- 'Bulan depan siapa aja yang ultah ya?' -> Niat: Ulang Tahun, Waktu: Bulan depan.\n"
+        "- 'What is the schedule for tomorrow?' -> Niat: Jadwal, Waktu: Besok (Match language: English).\n"
+        "- '明天有什么安排？' (Míngtiān yǒu shénme ānpái?) -> Niat: Jadwal, Waktu: Besok (Match language: Mandarin).\n"
+        "- '15 Mei 2026 ultah siapa?' -> Niat: Ulang Tahun, Waktu: 15 Mei 2026.\n\n"
+        "[ATURAN RESPON]\n"
+        "- Jika Data Ditemukan: Berikan jawaban yang terstruktur, jelas, dan mudah dibaca (gunakan bullet points jika datanya lebih dari satu).\n"
+        "- Jika Data Tidak Ditemukan: Sampaikan dengan sopan bahwa tidak ada data untuk waktu tersebut. (Contoh: 'Maaf, saya tidak menemukan jadwal apapun untuk tanggal 15 Mei 2026.')\n"
+        "- Jika Waktu Tidak Jelas: Jangan berasumsi. Tanyakan kembali kepada pengguna waktu spesifik yang mereka maksud. (Contoh: 'Anda mencari pengumuman untuk bulan apa?')\n"
+        "- Format Tanggal Baku: Selalu konfirmasi kembali tanggal yang dicari pengguna dalam responmu agar tidak terjadi miskomunikasi. (Contoh: 'Berikut adalah daftar ulang tahun untuk hari ini, 15 Mei 2026: ...')\n\n"
+        "[ATURAN TAMBAHAN (CRITICAL)]\n"
+        "- ALWAYS match the user's language (Trilingual). Jika pengguna bertanya dalam bahasa Mandarin (Hanzi atau Pinyin), WAJIB balas menggunakan bahasa Mandarin (Simplified Chinese). Jika pengguna bahasa Inggris, balas bahasa Inggris. Jika Indonesia, balas bahasa Indonesia.\n"
+        "- DILARANG menjelaskan proses pencarian data.\n"
         "- NEVER say you cannot speak English or Mandarin. You are fully capable."
     )
-
-    # 2. SIAPKAN RIWAYAT OBROLAN (History)
     chat_history = [{"role": "system", "content": instruksi_ai}]
 
     try:
@@ -282,13 +295,13 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: Session = Depends(ge
             pesan_user = await websocket.receive_text()
             pesan_lower = pesan_user.lower()
 
-            # --- SINKRONISASI WAKTU KE WIB (UTC+7) KONSISTEN ---
+            # Sinkronisasi Waktu
             sekarang_utc = datetime.datetime.utcnow()
             sekarang = sekarang_utc + datetime.timedelta(hours=7)
 
             tgl_hari_ini = sekarang.strftime("%d %B %Y")
             jam_sekarang = sekarang.strftime("%H.%M")
-            hari_pencarian_inggris = sekarang.strftime("%A")  # Default hari ini WIB
+            hari_pencarian_inggris = sekarang.strftime("%A")
 
             bulan_indo = {
                 1: "Januari",
@@ -305,7 +318,7 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: Session = Depends(ge
                 12: "Desember",
             }
 
-            # --- LOGIKA PENGUMUMAN & ULANG TAHUN ---
+            # Filter DB berdasarkan teks pencarian
             keyword_tanggal = interpretasi_pesan_ke_tanggal(pesan_user)
             filter_db = []
             filter_ultah = []
@@ -369,7 +382,7 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: Session = Depends(ge
                             )
                         )
 
-            # Eksekusi DB Pengumuman
+            # Eksekusi DB
             if filter_db:
                 hasil_pencarian = (
                     db.query(models.Announcements)
@@ -386,7 +399,6 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: Session = Depends(ge
                     .all()
                 )
 
-            # Eksekusi DB Ulang Tahun
             if filter_ultah:
                 hasil_ultah = (
                     db.query(models.Birthdays).filter(or_(*filter_ultah)).limit(5).all()
@@ -401,7 +413,7 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: Session = Depends(ge
                     .all()
                 )
 
-            # Susun Teks Referensi Pengumuman & Ultah
+            # Susun Teks Referensi AI
             teks_referensi = "=== DATA PENGUMUMAN ===\n"
             if not hasil_pencarian:
                 teks_referensi += "Tidak ada pengumuman.\n"
@@ -412,15 +424,12 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: Session = Depends(ge
                     if hasattr(p, "url_image") and p.url_image
                     else "TIDAK ADA"
                 )
-
-                # Menggunakan url_announcemet (sesuai typo di database)
                 link = (
                     p.url_announcemet
                     if hasattr(p, "url_announcemet") and p.url_announcemet
                     else "TIDAK ADA"
                 )
 
-                # FORMAT BARU: Disusun ke bawah agar AI tidak buta/bingung
                 teks_referensi += (
                     f"Tanggal: {tgl_rapi}\n"
                     f"Isi Pengumuman: {p.announcement}\n"
@@ -428,9 +437,6 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: Session = Depends(ge
                     f"URL_GAMBAR: {img}\n"
                     "-----\n"
                 )
-
-            teks_referensi += "\n=== DATA ULANG TAHUN ===\n"
-            # (Lanjutkan dengan kode ulang tahunmu yang lama...)
 
             teks_referensi += "\n=== DATA ULANG TAHUN ===\n"
             if not hasil_ultah:
@@ -452,36 +458,32 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: Session = Depends(ge
                     else "she/her"
                 )
                 teks_referensi += (
-                    f"- Nama: {b.name} | Tgl: {tgl_ultah} | Hint_EN: {pronoun_hint}\n"
+                    f"- Nama: {b.name} | Tgl: {tgl_ultah} | He/She: {pronoun_hint}\n"
                 )
 
-            # --- LOGIKA JADWAL SMART ---
+            # Logika Jadwal
             mapping_hari = {
                 "senin": "Monday",
                 "monday": "Monday",
-                "星期一": "Monday",  # Senin dalam Mandarin
+                "星期一": "Monday",
                 "selasa": "Tuesday",
                 "tuesday": "Tuesday",
-                "星期二": "Tuesday",  # Selasa dalam Mandarin
+                "星期二": "Tuesday",
                 "rabu": "Wednesday",
                 "wednesday": "Wednesday",
-                "星期三": "Wednesday",  # Rabu dalam Mandarin
+                "星期三": "Wednesday",
                 "kamis": "Thursday",
                 "thursday": "Thursday",
-                "星期四": "Thursday",  # Kamis dalam Mandarin
+                "星期四": "Thursday",
                 "jumat": "Friday",
                 "friday": "Friday",
-                "星期五": "Friday",  # Jumat dalam Mandarin
+                "星期五": "Friday",
                 "kemarin": (sekarang - datetime.timedelta(days=1)).strftime("%A"),
                 "yesterday": (sekarang - datetime.timedelta(days=1)).strftime("%A"),
-                "昨天": (sekarang - datetime.timedelta(days=1)).strftime(
-                    "%A"
-                ),  # Kemarin dlm Mandarin
+                "昨天": (sekarang - datetime.timedelta(days=1)).strftime("%A"),
                 "besok": (sekarang + datetime.timedelta(days=1)).strftime("%A"),
                 "tomorrow": (sekarang + datetime.timedelta(days=1)).strftime("%A"),
-                "明天": (sekarang + datetime.timedelta(days=1)).strftime(
-                    "%A"
-                ),  # Besok dlm Mandarin
+                "明天": (sekarang + datetime.timedelta(days=1)).strftime("%A"),
                 "lusa": (sekarang + datetime.timedelta(days=2)).strftime("%A"),
             }
 
@@ -518,7 +520,7 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: Session = Depends(ge
                 "老师",
                 "现在",
                 "今天",
-                "时间",  # Kata kunci Mandarin
+                "时间",
             ] + list(mapping_hari.keys())
 
             is_asking_schedule = any(
@@ -553,7 +555,6 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: Session = Depends(ge
                     except:
                         return False
 
-                # A. DATA KELAS & WALI KELAS
                 for kls in JADWAL_SEKOLAH.get("classes", []):
                     nama_kls = kls.get("class", "").lower()
                     wali_list = kls.get("homeroom_teachers", [])
@@ -579,7 +580,6 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: Session = Depends(ge
                             wali = ", ".join(wali_list)
                             teks_referensi += f"\n[JADWAL KELAS {kls['class'].upper()}]\n- Wali Kelas: {wali}\n{jadwal_terpilih}"
 
-                # B. DATA GURU SPESIALIS
                 for dept in JADWAL_SEKOLAH.get("departments", []):
                     nama_dept = dept.get("department", "")
                     for guru in dept.get("teachers", []):
@@ -590,7 +590,6 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: Session = Depends(ge
                             .replace("mr. ", "")
                             .split()[0]
                         )
-
                         jadwal_guru_hari_ini = guru.get("schedule", {}).get(
                             hari_pencarian_inggris, []
                         )
@@ -616,14 +615,36 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: Session = Depends(ge
                                 ada_data_jadwal = True
                                 teks_referensi += f"\n[JADWAL GURU SPESIALIS: {nama_guru} ({nama_dept})]\n{jadwal_terpilih}"
 
-                # C. FALLBACK DATA KOSONG
                 if not ada_data_jadwal and "sekarang" in pesan_lower:
                     teks_referensi += "- (INFO UNTUK AI: User bertanya waktu 'sekarang' tapi tidak menyebut kelas atau guru. Minta user memperjelas).\n"
                 elif not ada_data_jadwal:
                     waktu_keterangan = f" pada jam {jam_dicari}" if jam_dicari else ""
                     teks_referensi += f"- Maaf, tidak ada jadwal yang tercatat untuk hari {hari_pencarian_inggris}{waktu_keterangan} dengan kriteria tersebut.\n"
 
-            # --- PROMPT AI FINAL ---
+            # Memory Kesalahan dari Database
+            catatan_feedback = (
+                db.query(models.FeedbackLog)
+                .order_by(models.FeedbackLog.created_at.desc())
+                .limit(5)
+                .all()
+            )
+            teks_pelajaran_ai = ""
+            if catatan_feedback:
+                teks_pelajaran_ai = (
+                    "\n[⚠️ PENTING: CATATAN EVALUASI DARI KESALAHANMU SEBELUMNYA]\n"
+                    "Berikut adalah daftar kesalahan format yang pernah kamu buat berdasarkan laporan pengguna. JANGAN ulangi kesalahan yang sama!\n"
+                )
+                for fb in catatan_feedback:
+                    teks_pelajaran_ai += (
+                        f"- Saat ditanya: '{fb.pertanyaan_user}'\n"
+                        f"  Jawabanmu yang salah: '{fb.jawaban_ai}'\n"
+                        f"  Koreksi/Catatan: {fb.catatan_user}\n\n"
+                    )
+                teks_pelajaran_ai += (
+                    "Pastikan jawabanmu sekarang lebih baik dan FORMATNYA BENAR!\n\n"
+                )
+
+            # Prompt AI Final
             prompt_untuk_ai = (
                 f"=== SYSTEM CONTEXT ===\n"
                 f"Today's Date: {tgl_hari_ini} ({hari_pencarian_inggris})\n"
@@ -631,103 +652,172 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: Session = Depends(ge
                 f"Target Date for this request: {keyword_tanggal if keyword_tanggal else 'Pencarian Kata Kunci'}\n"
                 "=======================\n\n"
                 f"{teks_referensi}\n"
-                "==========================\n\n"
-                "TASK: Reply to the user using the reference data above. Match their language EXACTLY.\n\n"
-                "MEDIA & FORMATTING RULES (CRITICAL):\n"
-                "1. GAMBAR: Jika referensi memiliki 'URL_GAMBAR', render di baris baru dengan syntax tepat: ![Lampiran](URL_GAMBAR). JANGAN tulis kata pengantar seperti '- Gambar:'.\n"
-                "2. TAUTAN: Jika referensi memiliki 'URL_LINK', render di baris baru dengan syntax tepat: [Buka Tautan Pengumuman](URL_LINK). JANGAN tulis kata pengantar seperti '- Link:'.\n"
-                "3. ULANG TAHUN (HARI INI): Jika ada yang ultah di Today's Date, ucapkan SELAMAT ULANG TAHUN dengan emoji meriah (🎂🎉). Jika tidak ada, jawab 'Tidak ada yang berulang tahun hari ini 😔'.\n"
-                "4. ULANG TAHUN (DAFTAR): Jika user mencari daftar ulang tahun (misal bulan Juli), JANGAN menyebut soal hari ini. Langsung berikan daftarnya dengan format *bullet point*.\n"
-                "5. PENGUMUMAN KOSONG: Jika referensi mengatakan 'Tidak ada pengumuman', sebutkan Target Date-nya.\n"
-                "6. UMUR & PENJELASAN: DILARANG KERAS menyebutkan umur atau menjelaskan proses pencarianmu. Jawab langsung intinya!\n"
-                "7. TANYA KELAS SEKARANG: Jika ditanya 'sekarang kelas X pelajaran apa', cocokkan 'Current Time' dengan jam di referensi. Sebutkan pelajaran dan WALI KELAS-nya.\n"
-                "8. TANYA GURU SEKARANG: Jika ditanya 'guru Y sekarang ngajar apa', cocokkan 'Current Time'. JIKA jam sekarang KOSONG, katakan guru tersebut sedang istirahat/kosong.\n"
-                "9. TANYA JADWAL FULL: Jika ditanya jadwal utuh satu hari, berikan DAFTAR SELURUH jadwal dalam bentuk bullet points.\n"
-                "10. KEGIATAN UMUM/ISTIRAHAT: Jika 'Current Time' bertepatan dengan sesi 'Break', 'PC Session', 'Assembly', dll, beritahu user bahwa saat ini sedang kegiatan tersebut.\n"
-                "11. PENGECEKAN GURU DI KELAS SAAT INI: Jika ditanya 'kelas X sedang diajar siapa sekarang', sebutkan pelajaran, LALU cek data Guru Spesialis. Jika tidak ada spesialis, asumsikan diajar Wali Kelas.\n"
-                "12. WALI KELAS KOSONG: Jika ditanya jadwal guru spesifik 'sekarang' dan tidak ada jadwal, katakan dengan tegas bahwa beliau sedang kosong.\n"
-                "13. HARI KEMARIN / BESOK DLL: Jika mencari hari spesifik, ABAIKAN 'Current Time'. Tampilkan jadwal utuh hari tersebut.\n"
-                "14. TANYA JAM SPESIFIK (CRITICAL): Jika mencari jam spesifik, ABAIKAN 'Current Time'. Hitung rentang waktu di jadwal dan berikan jawaban yang tepat.\n"
-                "15. CEK TANGGAL SPESIFIK & ALTERNATIF: JIKA tanggal yang dicari tidak ada di referensi, JANGAN hanya membalas 'Tidak ada pengumuman'. Kamu WAJIB menjawab: 'Maaf, tidak ada pengumuman untuk tanggal tersebut, namun berikut adalah pengumuman terbaru yang tersedia:' LALU tampilkan pengumuman yang ada.\n"
-                # --- RULE 16: FORMAT PENGUMUMAN ANTI-HALUSINASI ---
-                "16. FORMAT PENGUMUMAN KHUSUS (CRITICAL): Kamu WAJIB menyusun balasan pengumuman dengan urutan baris di bawah ini. Jangan sampai 'Isi Pengumuman' dan 'Saran' terlewat!\n\n"
-                "📣 **(Buat judul pengumuman yang relevan)**\n\n"
-                "(Salin TEPAT teks dari 'Isi Pengumuman' pada referensi)\n\n"
-                "[Buka Tautan Pengumuman](URL_LINK) <-- Tulis jika referensi memiliki URL_LINK (bukan 'TIDAK ADA')\n\n"
-                "![Lampiran Pengumuman](URL_GAMBAR) <-- Tulis jika referensi memiliki URL_GAMBAR (bukan 'TIDAK ADA')\n\n"
-                "---\n"
-                "💡 **Saran:** (Buat satu kalimat saran praktis terkait pengumuman ini)\n\n"
                 # --------------------------------------------------
-                f"User Message: {pesan_user}\n"
-                "YOUR RESPONSE:"
             )
+            history_text = (
+                "".join(
+                    [
+                        f"{msg['role'].upper()}: {msg['content']}\n"
+                        for msg in chat_history[-4:]
+                    ]
+                )
+                if chat_history
+                else "Belum ada riwayat."
+            )
+            # =========================================================
+            # OPTIMASI MEMORI HISTORY: AMBIL 4 PESAN TERAKHIR SAJA
+            # =========================================================
 
-            # --- KIRIM KE GROQ API ---
+            # Kita gabungkan semua data dan aturan ke dalam 1 pesan agar AI merespons 1x jalan
+            # --- PROMPT AI KONSOLIDASI (SINGLE-REQUEST) ---
+            # --- PROMPT AI KONSOLIDASI (SUPER SHORT & STRICT) ---
+            prompt_konsolidasi = f"""
+            Anda adalah Asisten AI Sekolah Cita Hati. Jawab HANYA berdasarkan <DATA_REFERENSI>. Sesuaikan bahasa balasan dengan bahasa pengguna.
+
+            <DATA_REFERENSI>
+            {prompt_untuk_ai}
+            
+            <RIWAYAT_OBROLAN>
+            {history_text}
+            </RIWAYAT_OBROLAN>
+            
+              <CATATAN_EVALUASI>
+            ⚠️ JANGAN tiru format atau isi dari kesalahan masa lalu ini:
+            {teks_pelajaran_ai}
+            </CATATAN_EVALUASI>
+            
+            </DATA_REFERENSI>
+            
+          === ATURAN MUTLAK & NAVIGASI DATA ===
+            1. PEMBAGIAN ZONA REFERENSI (SANGAT PENTING):
+               - Jika ditanya JADWAL/KELAS/GURU: HANYA baca di bawah zona "=== DATA JADWAL ===".
+               - Jika ditanya ULANG TAHUN: HANYA baca di bawah zona "=== DATA ULANG TAHUN ===".
+               - Jika ditanya PENGUMUMAN/INFO: HANYA baca di bawah zona "=== DATA PENGUMUMAN ===".
+               ⚠️ DILARANG menyilang data! Jika kamu mencari jadwal jam 17.51 dan tidak menemukannya di zona "DATA JADWAL", MAKA ANGGAP KOSONG. Jangan mengambil angka 17.51 dari zona pengumuman!
+
+            2. FORMAT UMUM: 
+               - Jawab to-the-point. DILARANG menjelaskan proses pencarian data berdasar <DATA_REFERENSI>. 
+               - Gunakan ENTER sebagai pemisah baris. DILARANG pakai karakter '|' atau membuat label buatan (seperti "Isi:", "Link:", "Gambar:").
+
+            3. ATURAN JADWAL: 
+               - Waktu Sekarang: Jika ada kata "sekarang", cocokkan jam {jam_sekarang} HANYA dengan rentang waktu di "DATA JADWAL".
+                 * Jika KELAS ditemukan di rentang waktu itu: "Kelas [X] sedang belajar [Pelajaran] bersama [Guru]."
+                 * Jika GURU ditemukan di rentang waktu itu: "[Guru] sedang mengajar kelas [X] dengan pelajaran [Mapel]."
+                 * JIKA jam {jam_sekarang} TIDAK TERCATAT pada kelas/guru tersebut di "DATA JADWAL", wajib jawab tegas: "Guru/Kelas tersebut sedang kosong/istirahat saat ini."
+               - Waktu Spesifik (misal 17.51): Cari jam spesifik tersebut HANYA di "DATA JADWAL". Jika tidak ada di jadwal kelas/guru itu, jawab: "Tidak ada jadwal untuk waktu tersebut."
+               - Full/Kegiatan Umum: Berikan *bullet points*. Jika tertulis 'Break'/'Assembly', sebutkan sedang kegiatan tersebut.
+               - Ambigu: Jika user hanya bilang "jadwal sekarang", minta perjelas guru atau kelas apa.
+
+            4. ATURAN ULANG TAHUN:
+               - HANYA cek di "DATA ULANG TAHUN". Jika nama/tanggal tidak ada di zona ini, jawab tegas tidak ada.
+               - Jika tanggal ultah bertepatan dengan hari ini ({tgl_hari_ini}), gunakan: "Selamat Ulang Tahun 🎂🎉 kepada [Nama]". 
+               - Jika tanggal dicari BUKAN hari ini, gunakan: "Yang berulang tahun pada tanggal tersebut adalah [Nama]".
+               - Jika zona ultah menyatakan tidak ada data hari ini, jawab: "Tidak ada yang berulang tahun hari ini 😔".
+               - DILARANG KERAS menyebutkan/menghitung umur!
+
+            5. ATURAN PENGUMUMAN (ANTI-HALUSINASI):
+               - HANYA cek di "DATA PENGUMUMAN". Jika tidak ada info di tanggal yang dicari, WAJIB tulis: "Maaf, tidak ada pengumuman untuk tanggal tersebut. Berikut pengumuman terbaru:" (lalu tampilkan yang ada di zona pengumuman).
+               - WAJIB gunakan template murni ini (Abaikan baris Link/Gambar jika di data tertulis 'TIDAK ADA'):
+               
+               📣 **(Buat 1 Judul Relevan)**
+               
+               (Tulis teks pengumuman murni di sini)
+               
+               [Buka Tautan Pengumuman](URL_LINK)
+               ![Lampiran Pengumuman](URL_GAMBAR)
+               
+               ---
+               💡 **Saran:** (Buat 1 kalimat saran praktis terkait pengumuman)
+
+            =========================================
+            PESAN PENGGUNA: "{pesan_user}"
+            JAWABAN:
+            """
             messages_to_send = chat_history.copy()
-            messages_to_send.append({"role": "user", "content": prompt_untuk_ai})
-
-            # --- KIRIM KE GROQ API ---
-
-            # --- KIRIM KE GROQ API ---
-            messages_to_send = chat_history.copy()
-            messages_to_send.append({"role": "user", "content": prompt_untuk_ai})
+            messages_to_send.append({"role": "user", "content": prompt_konsolidasi})
 
             try:
-                response = await groq_client.chat.completions.create(
-                    messages=messages_to_send,
-                    model="llama-3.1-8b-instant",
-                    temperature=0.2,
-                )
 
-                balasan_ai = response.choices[0].message.content
+                try:
+                    print("Mengirim request ke Groq (llama-3.3-70b-versatile)...")
+                    response = await groq_client.chat.completions.create(
+                        messages=messages_to_send,
+                        model="llama-3.3-70b-versatile",
+                        temperature=0.1,
+                    )
+                    balasan_ai_final = response.choices[0].message.content
+                except Exception as e:
 
-                chat_history.append({"role": "user", "content": pesan_user})
-                chat_history.append({"role": "assistant", "content": balasan_ai})
+                    print(
+                        f"terjadi {str(e)} dengan Groq, mencoba fallback ke Google Gemini 2.5 Flash..."
+                    )
+                    # Inisialisasi Model dengan System Prompt
+                    response = client.models.generate_content(
+                        model="gemini-2.5-flash",
+                        contents=prompt_konsolidasi,
+                        config=types.GenerateContentConfig(
+                            system_instruction=instruksi_ai,
+                            temperature=0.1,
+                        ),
+                    )
+                    # Ekstrak teks balasannya
+                    balasan_ai_final = response.text.strip()
+
+                    # Simpan balasan ke history obrolan
+                    # Simpan ke buku catatan
+                    chat_history.append({"role": "user", "content": pesan_user})
+                    chat_history.append(
+                        {"role": "assistant", "content": balasan_ai_final}
+                    )  # <--- KEMBALIKAN KE ASSISTANT
+
+                # Kirim ke frontend React (await ini wajib karena ini fungsi WebSocket FastAPI)
+                await websocket.send_text(balasan_ai_final)
 
             except Exception as e:
-                pesan_error = str(e)
-                print(f"Error dari Groq: {pesan_error}")
-
-                if "429" in pesan_error or "rate limit" in pesan_error.lower():
-                    balasan_ai = "🤖 *Maaf, bot sedang memproses terlalu banyak pesan. Mohon tunggu sekitar 10 detik, lalu coba tanyakan lagi ya!*"
-                else:
-                    balasan_ai = "Maaf, sistem AI sedang mengalami gangguan jaringan."
-
-            # --- KIRIM BALASAN KE FRONTEND ---
-            await websocket.send_text(balasan_ai)
+                print(f"Kondisi Kritis Terjadi: {str(e)}")
+                # Tampilkan data langsung dari database sekolah jika sistem benar-benar mati
+                fallback_response = (
+                    "🤖 **[Sistem AI Sibuk - Menampilkan Data Langsung]**\n\n"
+                    "Mohon maaf, server AI kami sedang penuh. "
+                    "Namun, berikut adalah data resmi yang berhasil saya temukan dari database:\n\n"
+                    f"{teks_referensi.replace('===', '').strip()}\n\n"
+                    "---\n"
+                    "💡 **Saran:** Silakan coba kirim pesan kembali dalam beberapa detik."
+                )
+                await websocket.send_text(fallback_response)
 
     except WebSocketDisconnect:
         print("Pengguna telah keluar dari sesi chat.")
 
 
-# ==========================================
-# ENDPOINTS (CRUD)
-# ==========================================
-@app.on_event("startup")
-async def startup():
-    redis = aioredis.from_url(REDIS_URL, encoding="utf8", decode_responses=True)
-    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
+# --- ENDPOINTS CRUD (LOGIN, PENGUMUMAN, ULANG TAHUN, ADMIN) ---
 
 
 @app.post("/api/login")
 async def login_admin(data: LoginRequest, db: Session = Depends(get_db)):
-    user = (
+    login_admin = (
         db.query(models.Admin).filter(models.Admin.name_admin == data.username).first()
     )
 
-    if not user or user.password_admin != data.password:
-        raise HTTPException(status_code=401, detail="Username atauPassword salah")
+    if not login_admin or login_admin.password_admin != data.password:
+        raise HTTPException(status_code=401, detail="Username and Password Wrong!")
 
-    token = create_access_token({"id_admin": user.id_admin, "role": user.level_admin})
-    try:
-        await FastAPICache.clear()
-    except Exception as e:
-        print(f"Error saat membersihkan cache: {e}")
+    token_data = {
+        "username": login_admin.name_admin,
+        "id_admin": login_admin.id_admin,
+        "role": login_admin.level_admin,
+    }
+
+    jwt_token = create_access_token(data=token_data)
+    await FastAPICache.clear()
 
     return {
-        "access_token": token,
-        "role": user.level_admin,
-        "username": user.name_admin,
+        "pesan": "Login berhasil!",
+        "access_token": jwt_token,
+        "token_type": "bearer",
+        "role": login_admin.level_admin,
+        "username": login_admin.name_admin,
+        "id_admin": login_admin.id_admin,
     }
 
 
@@ -758,16 +848,17 @@ async def create_announcement(
     announcement: str = Form(...),
     tanggal_masuk: date = Form(...),
     admin_update: int = Form(...),
-    url_announcemet: Optional[str] = Form(None),  # <--- Pastikan baris ini ada
+    url_announcemet: Optional[str] = Form(None),
     image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
 ):
     cek_admin = (
         db.query(models.Admin).filter(models.Admin.id_admin == admin_update).first()
     )
-
     if not cek_admin:
         raise HTTPException(status_code=404, detail="Admin tidak ditemukan!")
+
     img_url = upload_image_to_supabase(image) if image else None
 
     new_entry = models.Announcements(
@@ -781,7 +872,6 @@ async def create_announcement(
     db.add(new_entry)
     db.commit()
     await FastAPICache.clear()
-
     return {"message": "Pengumuman berhasil dibuat!", "data": new_entry}
 
 
@@ -793,8 +883,7 @@ def get_announcements_with_admin_details(
     db: Session = Depends(get_db), user_aktif: dict = Depends(get_current_user)
 ):
     try:
-        pengumuman_join = db.query(models.Announcements).all()
-        return pengumuman_join
+        return db.query(models.Announcements).all()
     except Exception as e:
         print(f"Error saat mengambil data gabungan: {e}")
         raise HTTPException(
@@ -805,16 +894,14 @@ def get_announcements_with_admin_details(
 @app.get("/api/birthdays")
 @cache(expire=10000)
 def get_all_birthdays(db: Session = Depends(get_db)):
-    ultah = db.query(models.Birthdays).all()
-    return ultah
+    return db.query(models.Birthdays).all()
 
 
-# TAMBAHAN: Memasang satpam (get_current_user) di fungsi POST Ulang Tahun
 @app.post("/api/birthdays")
 async def create_birthday(
     data: BirthdayCreate,
     db: Session = Depends(get_db),
-    user_aktif: dict = Depends(get_current_user),  # <-- SATPAM BERJAGA DI SINI
+    user_aktif: dict = Depends(get_current_user),
 ):
     cek_admin = (
         db.query(models.Admin)
@@ -837,17 +924,16 @@ async def create_birthday(
     return {"pesan": "Data ulang tahun berhasil ditambahkan!", "data": ultah_baru}
 
 
-# TAMBAHAN: Memasang satpam (get_current_user) di fungsi PUT/UPDATE Pengumuman
 @app.put("/api/announcements/{id_announcement}")
 async def update_announcement(
     id_announcement: int,
     announcement: str = Form(...),
     tanggal_masuk: date = Form(...),
     admin_update: int = Form(...),
-    url_announcemet: Optional[str] = Form(None),  # <--- Pastikan baris ini ada
+    url_announcemet: Optional[str] = Form(None),
     image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
-    user_aktif: dict = Depends(get_current_user),  # <-- SATPAM BERJAGA DI SINI
+    user_aktif: dict = Depends(get_current_user),
 ):
     pengumuman_lama = (
         db.query(models.Announcements)
@@ -864,7 +950,9 @@ async def update_announcement(
     pengumuman_lama.date = tanggal_masuk
     pengumuman_lama.admin_update = admin_update
     pengumuman_lama.url_announcemet = url_announcemet
-    pengumuman_lama.url_image = upload_image_to_supabase(image) if image else None
+
+    if image:
+        pengumuman_lama.url_image = upload_image_to_supabase(image)
 
     db.commit()
     db.refresh(pengumuman_lama)
@@ -877,7 +965,7 @@ async def update_birthday(
     id_birthday: int,
     data_baru: BirthdayCreate,
     db: Session = Depends(get_db),
-    user_aktif: dict = Depends(get_current_user),  # <-- SATPAM BERJAGA DI SINI
+    user_aktif: dict = Depends(get_current_user),
 ):
     birthday_lama = (
         db.query(models.Birthdays)
@@ -887,7 +975,7 @@ async def update_birthday(
 
     if not birthday_lama:
         raise HTTPException(
-            status_code=404, detail="Pengumuman tidak ditemukan di database."
+            status_code=404, detail="Ulang tahun tidak ditemukan di database."
         )
 
     birthday_lama.name = data_baru.name
@@ -898,18 +986,14 @@ async def update_birthday(
     db.commit()
     db.refresh(birthday_lama)
     await FastAPICache.clear()
-    return {"message": "Pengumuman berhasil diupdate!", "data": birthday_lama}
+    return {"message": "Data ulang tahun berhasil diupdate!", "data": birthday_lama}
 
 
-# ==========================================
-# FUNGSI HAPUS PENGUMUMAN (DELETE)
-# ==========================================
-# TAMBAHAN: Memasang satpam (get_current_user) di fungsi DELETE
 @app.delete("/api/announcements/{id_announcement}")
 async def delete_announcement(
     id_announcement: int,
     db: Session = Depends(get_db),
-    user_aktif: dict = Depends(get_current_user),  # <-- SATPAM BERJAGA DI SINI
+    user_aktif: dict = Depends(get_current_user),
 ):
     pengumuman_target = (
         db.query(models.Announcements)
@@ -932,7 +1016,7 @@ async def delete_announcement(
 async def delete_birthday(
     id_birthday: int,
     db: Session = Depends(get_db),
-    user_aktif: dict = Depends(get_current_user),  # <-- SATPAM BERJAGA DI SINI
+    user_aktif: dict = Depends(get_current_user),
 ):
     list_target_birthday = (
         db.query(models.Birthdays)
@@ -943,59 +1027,21 @@ async def delete_birthday(
     if not list_target_birthday:
         raise HTTPException(
             status_code=404,
-            detail="List ulang tahun tidak ditemukan atau sudah dihapus.",
+            detail="Data ulang tahun tidak ditemukan atau sudah dihapus.",
         )
 
     db.delete(list_target_birthday)
     db.commit()
     await FastAPICache.clear()
-    return {"message": "List ulang Tahun berhasil dihapus secara permanen!"}
-
-
-def create_access_token(data: dict):
-    # Token akan kedaluwarsa dalam 24 jam
-    expire = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
-    data.update({"exp": expire})
-    encoded_jwt = jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-
-# Api untuk login
-@app.post("/api/login")
-async def login_admin(data: LoginRequest, db: Session = Depends(get_db)):
-    login_admin = (
-        db.query(models.Admin).filter(models.Admin.name_admin == data.username).first()
-    )
-
-    if not login_admin or login_admin.password_admin != data.password:
-        raise HTTPException(status_code=401, detail="Username and Password Wrong!")
-
-    token_data = {
-        "username": login_admin.name_admin,
-        "id_admin": login_admin.id_admin,
-        "role": login_admin.level_admin,
-    }
-
-    jwt_token = create_access_token(data=token_data)
-    await FastAPICache.clear()
-    return {
-        "pesan": "Login berhasil!",
-        "access_token": jwt_token,
-        "token_type": "bearer",
-        "role": login_admin.level_admin,
-        "username": login_admin.name_admin,
-        "id_admin": login_admin.id_admin,
-    }
+    return {"message": "Data ulang Tahun berhasil dihapus secara permanen!"}
 
 
 @app.get("/api/admin")
 @cache(expire=3600)
-def get_all_birthdays(db: Session = Depends(get_db)):
-    admin_ambil = db.query(models.Admin).all()
-    return admin_ambil
+def get_all_admins(db: Session = Depends(get_db)):
+    return db.query(models.Admin).all()
 
 
-# api create andmin
 @app.post("/api/admin")
 async def create_admin(
     data: AdminCreate,
@@ -1011,7 +1057,7 @@ async def create_admin(
     db.commit()
     db.refresh(new_admin)
     await FastAPICache.clear()
-    return {"pesan": "data admin sudah disimpan!", "data": new_admin}
+    return {"pesan": "Data admin berhasil disimpan!", "data": new_admin}
 
 
 @app.put("/api/admin/{id_admin}")
@@ -1019,7 +1065,7 @@ async def update_admin(
     id_admin: int,
     data_baru: AdminCreate,
     db: Session = Depends(get_db),
-    user_aktif: dict = Depends(get_current_user),  # <-- SATPAM BERJAGA DI SINI
+    user_aktif: dict = Depends(get_current_user),
 ):
     id_admin_lama = (
         db.query(models.Admin).filter(models.Admin.id_admin == id_admin).first()
@@ -1041,7 +1087,7 @@ async def update_admin(
 async def delete_admin(
     id_admin: int,
     db: Session = Depends(get_db),
-    # user_aktif: dict = Depends(get_current_user) # <-- SATPAM BERJAGA DI SINI
+    user_aktif: dict = Depends(get_current_user),
 ):
     list_target_admin = (
         db.query(models.Admin).filter(models.Admin.id_admin == id_admin).first()
@@ -1049,14 +1095,13 @@ async def delete_admin(
 
     if not list_target_admin:
         raise HTTPException(
-            status_code=404,
-            detail="List ulang tahun tidak ditemukan atau sudah dihapus.",
+            status_code=404, detail="Admin tidak ditemukan atau sudah dihapus."
         )
 
     db.delete(list_target_admin)
     db.commit()
     await FastAPICache.clear()
-    return {"message": "List admin  berhasil dihapus secara permanen!"}
+    return {"message": "Admin berhasil dihapus secara permanen!"}
 
 
 if __name__ == "__main__":

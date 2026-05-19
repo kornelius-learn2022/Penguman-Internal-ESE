@@ -3,9 +3,7 @@ import BannerLoading from "./BannerLoading";
 
 // --- Sub-Components untuk Kerapihan ---
 const SectionHeader = ({ title, icon, color }) => (
-  <h3
-    className={`text-lg font-bold mb-5 text-slate-800 flex items-center gap-2`}
-  >
+  <h3 className="text-lg font-bold mb-5 text-slate-800 flex items-center gap-2">
     <span className={`p-2 rounded-lg bg-${color}-50 text-${color}-600`}>
       {icon}
     </span>
@@ -15,20 +13,16 @@ const SectionHeader = ({ title, icon, color }) => (
 
 function Announcements() {
   const today = new Date().toISOString().split("T")[0];
-
-  const API_URL = "http://202.155.14.105:8000/api";
-  // const API_URL = "http://localhost:8000/api";
+  const API_URL = "http://localhost:8000/api";
 
   // State Management
   const [selectedDate, setSelectedDate] = useState(today);
-  const [isInitialLoad, setIsInitialLoad] = useState(true); // Loading banner saat pertama buka
-  const [isFetching, setIsFetching] = useState(false); // Loading saat ganti tanggal
+  const [isLoading, setIsLoading] = useState(true);
   const [announcements, setAnnouncements] = useState([]);
   const [birthdays, setBirthdays] = useState([]);
 
   // Chat State
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [isChatConnecting, setIsChatConnecting] = useState(true); // Loading koneksi chat
   const [messages, setMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -37,47 +31,35 @@ function Announcements() {
   const scrollRef = useRef(null);
 
   // --- API Functions ---
-  const fetchData = useCallback(
-    async (isBackground = false) => {
-      if (!isBackground && !isInitialLoad) {
-        setIsFetching(true);
+  const fetchData = useCallback(async () => {
+    try {
+      // Fetch Announcements
+      const annRes = await fetch(
+        `${API_URL}/announcements?tanggal=${selectedDate}`,
+        { cache: "no-store" },
+      );
+      const annData = await annRes.json();
+      setAnnouncements(annData);
+
+      // Fetch Birthdays
+      const bdayRes = await fetch(`${API_URL}/birthdays`);
+      const bdayData = await bdayRes.json();
+      const monthDay = selectedDate.substring(5);
+
+      if (Array.isArray(bdayData)) {
+        setBirthdays(bdayData.filter((b) => b.date?.endsWith(monthDay)));
       }
 
-      try {
-        // Fetch Announcements
-        const annRes = await fetch(
-          `${API_URL}/announcements?tanggal=${selectedDate}`,
-          { cache: "no-store" },
-        );
-        const annData = await annRes.json();
-        setAnnouncements(annData);
-
-        // Fetch Birthdays
-        const bdayRes = await fetch(`${API_URL}/birthdays`);
-        const bdayData = await bdayRes.json();
-        const monthDay = selectedDate.substring(5);
-
-        if (Array.isArray(bdayData)) {
-          setBirthdays(bdayData.filter((b) => b.date?.endsWith(monthDay)));
-        }
-      } catch (err) {
-        console.error("Fetch Error:", err);
-      } finally {
-        setIsFetching(false);
-        setIsInitialLoad(false);
-      }
-    },
-    [selectedDate, isInitialLoad],
-  );
+      setIsLoading(false);
+    } catch (err) {
+      console.error("Fetch Error:", err);
+      setIsLoading(false);
+    }
+  }, [selectedDate]);
 
   // --- WebSocket Logic ---
   useEffect(() => {
-    setIsChatConnecting(true);
     ws.current = new WebSocket("ws://localhost:8000/ws/chat");
-
-    ws.current.onopen = () => {
-      setIsChatConnecting(false);
-    };
 
     ws.current.onmessage = (event) => {
       setMessages((prev) => [
@@ -85,15 +67,6 @@ function Announcements() {
         { id: Date.now(), sender: "bot", text: event.data },
       ]);
       setIsTyping(false);
-    };
-
-    ws.current.onerror = () => {
-      setIsChatConnecting(false);
-      // Optional: Tambahkan logic penanganan error jika koneksi gagal
-    };
-
-    ws.current.onclose = () => {
-      setIsChatConnecting(false);
     };
 
     return () => ws.current?.close();
@@ -106,16 +79,14 @@ function Announcements() {
     }
   }, [messages, isTyping]);
 
-  // Fetch data effect
   useEffect(() => {
-    fetchData(false);
-    // Background auto-refresh tiap 10 detik tanpa memunculkan loading spinner
-    const interval = setInterval(() => fetchData(true), 10000);
+    fetchData();
+    const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
   const handleSendMessage = () => {
-    if (!chatInput.trim() || isChatConnecting) return;
+    if (!chatInput.trim()) return;
 
     const userMsg = { id: Date.now(), sender: "user", text: chatInput };
     setMessages((prev) => [...prev, userMsg]);
@@ -127,8 +98,30 @@ function Announcements() {
     setChatInput("");
   };
 
-  // 1. Tampilkan Banner Loading saat website pertama kali dibuka
-  if (isInitialLoad) return <BannerLoading />;
+  // --- FUNGSI FEEDBACK BARU ---
+  const handleFeedback = async (pesanUserSebelumnya, jawabanAI) => {
+    try {
+      const response = await fetch(`${API_URL}/feedback`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          pertanyaan_user: pesanUserSebelumnya || "Tidak diketahui",
+          jawaban_ai: jawabanAI,
+          catatan_user: "Dilaporkan oleh user via tombol chat",
+        }),
+      });
+
+      if (response.ok) {
+        alert("Terima kasih! Laporan kesalahan AI sudah dikirim ke Admin.");
+      }
+    } catch (error) {
+      console.error("Gagal mengirim feedback:", error);
+    }
+  };
+
+  if (isLoading) return <BannerLoading />;
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 selection:bg-blue-100 transition-colors duration-500">
@@ -155,32 +148,7 @@ function Announcements() {
             </div>
           </div>
 
-          <div className="relative group flex items-center gap-3">
-            {/* 2. Indikator Loading Data Web saat berganti tanggal */}
-            {isFetching && (
-              <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 animate-pulse">
-                <svg
-                  className="w-4 h-4 animate-spin"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Syncing...
-              </div>
-            )}
+          <div className="relative group">
             <input
               type="date"
               value={selectedDate}
@@ -211,7 +179,7 @@ function Announcements() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* --- Events Section --- */}
-          <section className="bg-white rounded-[2rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100 hover:scale-[1.01] transition-transform duration-300 relative overflow-hidden">
+          <section className="bg-white rounded-[2rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100 hover:scale-[1.01] transition-transform duration-300">
             <SectionHeader
               title="Scheduled Events"
               color="blue"
@@ -232,9 +200,7 @@ function Announcements() {
               }
             />
 
-            <div
-              className={`space-y-4 transition-opacity duration-300 ${isFetching ? "opacity-50" : "opacity-100"}`}
-            >
+            <div className="space-y-4">
               {announcements.length > 0 ? (
                 announcements.map((item) => (
                   <div
@@ -256,7 +222,7 @@ function Announcements() {
           </section>
 
           {/* --- Birthdays Section --- */}
-          <section className="bg-white rounded-[2rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100 hover:scale-[1.01] transition-transform duration-300 relative overflow-hidden">
+          <section className="bg-white rounded-[2rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100 hover:scale-[1.01] transition-transform duration-300">
             <SectionHeader
               title="Celebrations"
               color="rose"
@@ -277,9 +243,7 @@ function Announcements() {
               }
             />
 
-            <div
-              className={`space-y-4 transition-opacity duration-300 ${isFetching ? "opacity-50" : "opacity-100"}`}
-            >
+            <div className="space-y-4">
               {birthdays.length > 0 ? (
                 birthdays.map((item) => (
                   <div
@@ -324,13 +288,8 @@ function Announcements() {
         >
           <div className="p-6 bg-slate-900 text-white flex items-center justify-between">
             <div className="flex items-center gap-3">
-              {/* 3. Indikator Loading Chat Connection */}
-              <div
-                className={`w-2 h-2 rounded-full animate-pulse ${isChatConnecting ? "bg-amber-400" : "bg-green-400"}`}
-              />
-              <h2 className="font-bold tracking-tight">
-                {isChatConnecting ? "Connecting..." : "AI Assistant"}
-              </h2>
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+              <h2 className="font-bold tracking-tight">AI Assistant</h2>
             </div>
             <button
               onClick={() => setIsChatOpen(false)}
@@ -356,68 +315,133 @@ function Announcements() {
             ref={scrollRef}
             className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50"
           >
-            {messages.map((msg) => (
+            {messages.map((msg, index) => (
               <div
                 key={msg.id}
-                className={`max-w-[85%] px-4 py-3 rounded-2xl shadow-sm ${
-                  msg.sender === "user"
-                    ? "bg-blue-600 text-white rounded-tr-none ml-auto"
-                    : "bg-white text-slate-800 border border-slate-200 rounded-tl-none"
-                }`}
+                className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"} animate-fadeIn`}
               >
-                <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                  {msg.text
-                    .split(/(!\[.*?\]\(.*?\)|\[.*?\]\(.*?\)|\*\*.*?\*\*)/)
-                    .map((part, i) => {
-                      if (!part) return null;
+                {/* Pembungkus untuk Balon Chat dan Tombol Feedback */}
+                <div className="flex flex-col gap-1 max-w-[85%]">
+                  <div
+                    className={`px-4 py-3 rounded-2xl shadow-sm ${
+                      msg.sender === "user"
+                        ? "bg-blue-600 text-white rounded-tr-none"
+                        : "bg-white text-slate-800 border border-slate-200 rounded-tl-none"
+                    }`}
+                  >
+                    <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                      {msg.text
+                        // Regex di-upgrade: Tambah penangkap Raw URL (https://...)
+                        .split(
+                          /(!\[.*?\]\(.*?\)|\[.*?\]\(.*?\)|\*\*.*?\*\*|https?:\/\/[^\s]+)/,
+                        )
+                        .map((part, i) => {
+                          if (!part) return null;
 
-                      // 1. RENDER GAMBAR: ![alt](url)
-                      const imgMatch = part.match(/^!\[(.*?)\]\((.*?)\)$/);
-                      if (imgMatch) {
-                        return (
-                          <div key={i} className="my-3 group">
-                            <img
-                              src={imgMatch[2]}
-                              alt={imgMatch[1]}
-                              className="max-w-full rounded-xl shadow-md border border-slate-100 transition-transform hover:scale-[1.01]"
-                              onError={(e) => {
-                                e.target.style.display = "none";
-                              }}
-                            />
-                          </div>
-                        );
-                      }
+                          // 1. RENDER GAMBAR: ![alt](url)
+                          const imgMatch = part.match(/^!\[(.*?)\]\((.*?)\)$/);
+                          if (imgMatch) {
+                            return (
+                              <div key={i} className="my-3 group">
+                                <img
+                                  src={imgMatch[2]}
+                                  alt={imgMatch[1]}
+                                  className="max-w-full rounded-xl shadow-md border border-slate-100 transition-transform hover:scale-[1.01]"
+                                  onError={(e) => {
+                                    e.target.style.display = "none";
+                                  }}
+                                />
+                              </div>
+                            );
+                          }
 
-                      // 2. RENDER LINK (DIJADIKAN DESAIN TOMBOL): [teks](url)
-                      const linkMatch = part.match(/^\[(.*?)\]\((.*?)\)$/);
-                      if (linkMatch) {
-                        return (
-                          <div key={i} className="my-3">
-                            <a
-                              href={linkMatch[2]}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 hover:bg-blue-100 px-4 py-2 rounded-lg font-semibold transition-colors border border-blue-200"
-                            >
-                              🔗 {linkMatch[1]}
-                            </a>
-                          </div>
-                        );
-                      }
+                          // 2. RENDER LINK MARKDOWN: [teks](url)
+                          const linkMatch = part.match(/^\[(.*?)\]\((.*?)\)$/);
+                          if (linkMatch) {
+                            return (
+                              <div key={i} className="my-3">
+                                <a
+                                  href={linkMatch[2]}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 hover:bg-blue-100 px-4 py-2 rounded-lg font-semibold transition-colors border border-blue-200 break-all"
+                                >
+                                  🔗 {linkMatch[1]}
+                                </a>
+                              </div>
+                            );
+                          }
 
-                      // 3. RENDER BOLD TEKS: **teks**
-                      const boldMatch = part.match(/^\*\*(.*?)\*\*$/);
-                      if (boldMatch) {
-                        return (
-                          <strong key={i} className="font-bold text-slate-900">
-                            {boldMatch[1]}
-                          </strong>
-                        );
-                      }
+                          // 3. RENDER BOLD TEKS: **teks**
+                          const boldMatch = part.match(/^\*\*(.*?)\*\*$/);
+                          if (boldMatch) {
+                            return (
+                              <strong
+                                key={i}
+                                className="font-bold text-inherit"
+                              >
+                                {boldMatch[1]}
+                              </strong>
+                            );
+                          }
 
-                      // 4. RENDER TEKS BIASA
-                      return <span key={i}>{part}</span>;
-                    })}
+                          // 4. RENDER RAW URL (Jika AI mengirim link tanpa kurung siku)
+                          const rawUrlMatch = part.match(
+                            /^(https?:\/\/[^\s]+)$/,
+                          );
+                          if (rawUrlMatch) {
+                            return (
+                              <div key={i} className="my-3">
+                                <a
+                                  href={rawUrlMatch[1]}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  // Memakai class Tailwind yang persis sama dengan tombol Markdown
+                                  className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 hover:bg-blue-100 px-4 py-2 rounded-lg font-semibold transition-colors border border-blue-200"
+                                >
+                                  🔗 Buka Tautan
+                                </a>
+                              </div>
+                            );
+                          }
+
+                          // 5. RENDER TEKS BIASA (Support Enter / Baris Baru)
+                          return (
+                            <span key={i}>
+                              {part.split("\n").map((line, j, arr) => (
+                                <span key={j}>
+                                  {line}
+                                  {j < arr.length - 1 && <br />}
+                                </span>
+                              ))}
+                            </span>
+                          );
+                        })}
+                    </div>
+                  </div>
+
+                  {/* TOMBOL FEEDBACK: Hanya Tampil untuk Pesan Bot */}
+                  {msg.sender === "bot" && (
+                    <div className="flex justify-start pl-2">
+                      <button
+                        onClick={() => {
+                          // Mencari pesan user terakhir sebelum pesan bot ini
+                          let lastUserMsg = "Tidak diketahui";
+                          for (let j = index - 1; j >= 0; j--) {
+                            if (messages[j].sender === "user") {
+                              lastUserMsg = messages[j].text;
+                              break;
+                            }
+                          }
+                          handleFeedback(lastUserMsg, msg.text);
+                        }}
+                        className="text-[11px] text-slate-400 hover:text-red-500 transition-colors flex items-center gap-1 bg-transparent border-none cursor-pointer"
+                        title="Laporkan jawaban ini jika salah/rusak"
+                      >
+                        👎 Laporkan salah
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -425,25 +449,17 @@ function Announcements() {
           </div>
 
           <div className="p-4 bg-white border-t border-slate-100">
-            <div
-              className={`flex gap-2 p-1.5 rounded-2xl border transition-all ${isChatConnecting ? "bg-slate-50 border-slate-100 opacity-60" : "bg-slate-100 border-slate-200 focus-within:ring-2 focus-within:ring-blue-500"}`}
-            >
+            <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200 focus-within:ring-2 focus-within:ring-blue-500 transition-all">
               <input
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                placeholder={
-                  isChatConnecting
-                    ? "Connecting to chat server..."
-                    : "Ask me something..."
-                }
-                disabled={isChatConnecting}
-                className="flex-1 bg-transparent border-none px-3 py-2 text-sm outline-none disabled:cursor-not-allowed"
+                placeholder="Ask me something..."
+                className="flex-1 bg-transparent border-none px-3 py-2 text-sm outline-none"
               />
               <button
                 onClick={handleSendMessage}
-                disabled={isChatConnecting}
-                className={`text-white p-2.5 rounded-xl transition-colors shadow-md ${isChatConnecting ? "bg-slate-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}`}
+                className="bg-blue-600 text-white p-2.5 rounded-xl hover:bg-blue-700 transition-colors shadow-md"
               >
                 <svg
                   className="w-5 h-5"
