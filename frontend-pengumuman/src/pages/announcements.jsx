@@ -13,8 +13,8 @@ const SectionHeader = ({ title, icon, color }) => (
 
 function Announcements() {
   const today = new Date().toISOString().split("T")[0];
-  const API_URL = "http://localhost:8000/api";
-
+  // const API_URL = "http://localhost:8000/api";
+  const API_URL = "http://202.155.14.105:8000/api";
   // State Management
   const [selectedDate, setSelectedDate] = useState(today);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,7 +59,7 @@ function Announcements() {
 
   // --- WebSocket Logic ---
   useEffect(() => {
-    ws.current = new WebSocket("ws://localhost:8000/ws/chat");
+    ws.current = new WebSocket("ws://202.155.14.105:8000/ws/chat");
 
     ws.current.onmessage = (event) => {
       setMessages((prev) => [

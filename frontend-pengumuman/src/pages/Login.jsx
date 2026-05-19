@@ -8,8 +8,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  // const API_URL = "http://202.155.14.105:8000/api";
-  const API_URL = "http://localhost:8000/api";
+  const API_URL = "http://202.155.14.105:8000/api";
+  // const API_URL = "http://localhost:8000/api";
   useEffect(() => {
     document.title = "Login - Cita Hati";
   }, []);
