@@ -9,6 +9,10 @@ from sqlalchemy.orm import sessionmaker
 # Host: db (nama service di docker-compose)
 # Database: db_pengumuman
 
+# Database vps
+# SQLALCHEMY_DATABASE_URL = "mysql+pymysql://admin_web:PasswordKuat123!@127.0.0.1:3306/db_pengumuman"
+
+
 SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:password_anda@db:3306/db_pengumuman"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
@@ -16,9 +20,10 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
+
 # Fungsi bantuan untuk membuka dan menutup koneksi database
 def get_db():
-    db = SessionLocal() 
+    db = SessionLocal()
     try:
         yield db
     finally:
