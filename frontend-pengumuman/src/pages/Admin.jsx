@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 
 export default function Admin() {
@@ -6,11 +6,28 @@ export default function Admin() {
   // 1. AUTENTIKASI & LAYOUT STATE
   // ==========================================
   const tokenJWT = localStorage.getItem("jwt_token");
-  const userRole = localStorage.getItem("role");
-  const username = localStorage.getItem("username");
+  const userRole = localStorage.getItem("role") || "Super";
+  const username = localStorage.getItem("username") || "Admin Cita Hati";
   const [role, setRole] = useState(userRole);
-  const id_admin = localStorage.getItem("id_admin");
+  const id_admin = localStorage.getItem("id_admin") || "1";
   const [showPassword, setShowPassword] = useState(false);
+
+  // Jika tidak ada token JWT, tendang kembali ke halaman login
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!tokenJWT) {
+      navigate("/login");
+    }
+  }, [tokenJWT, navigate]);
+
+  // Base URL dari file .env
+  const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
+  // Header Standar untuk keamanan API
+  const authHeaders = {
+    Authorization: `Bearer ${tokenJWT}`,
+    "Content-Type": "application/json",
+  };
 
   // ==========================================
   // STATE UNTUK UPDATE & DELETE
@@ -25,9 +42,6 @@ export default function Admin() {
   const [editBirtGender, setBirtGender] = useState("");
   const [editBirtDate, settBirtDat] = useState("");
 
-  const [editNewBirthName, seteditNewBirthName] = useState("");
-  const [editNewBirtGender, setNewBirtGender] = useState("");
-  const [editNewBirtDate, settNewBirtDat] = useState("");
   const [editAnnUrl, setEditAnnUrl] = useState("");
   const [editAnnImage, setEditAnnImage] = useState(null);
 
@@ -39,33 +53,43 @@ export default function Admin() {
   const [newAdminPasswordUpdate, setNewAdminPasswordUpdate] = useState("");
   const [newAdminLevelUpdate, setNewAdminLevelUpdate] = useState("");
 
-  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
-
   const [activeTab, setActiveTab] = useState("Announcements");
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
-  const [profilePhoto, setProfilePhoto] = useState(null);
 
   const today = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(today);
 
   // ==========================================
-  // 2. DATA STATE
+  // 2. DATA STATE (DIKOSONGKAN UNTUK API)
   // ==========================================
   const [announcements, setAnnouncements] = useState([]);
   const [birthdays, setBirthdays] = useState([]);
   const [admin, setAdmin] = useState([]);
+  const [schedules, setSchedules] = useState([]);
+  const [duties, setDuties] = useState([]);
 
   // ==========================================
-  // 3. SEARCH & PAGINATION STATE
+  // 3. SEARCH, FILTER TANGGAL, & PAGINATION STATE
   // ==========================================
   const [searchAnnouncements, setSearchAnnouncements] = useState("");
+  const [filterAnnDate, setFilterAnnDate] = useState(""); // Filter Tanggal Tabel Announcement
   const [currentAnnPage, setCurrentAnnPage] = useState(1);
 
   const [searchAdm, setsearchAdm] = useState("");
   const [currentAdmPage, setcurrentAdmPage] = useState(1);
 
   const [searchBirthdays, setSearchBirthdays] = useState("");
+  const [filterBdayDate, setFilterBdayDate] = useState(""); // Filter Tanggal Tabel Birthday
   const [currentBdayPage, setCurrentBdayPage] = useState(1);
+
+  const [searchSchedule, setSearchSchedule] = useState("");
+  const [filterScheduleDay, setFilterScheduleDay] = useState("");
+  const [currentSchedulePage, setCurrentSchedulePage] = useState(1);
+
+  const [searchDuty, setSearchDuty] = useState("");
+  const [filterDutyDay, setFilterDutyDay] = useState("");
+  const [filterDutyLocation, setFilterDutyLocation] = useState("");
+  const [currentDutyPage, setCurrentDutyPage] = useState(1);
 
   const itemsPerPage = 10;
 
@@ -75,58 +99,98 @@ export default function Admin() {
   const [newAnnDate, setNewAnnDate] = useState("");
   const [newAnnouncement, setNewAnnouncement] = useState("");
   const [newAnnUrl, setNewAnnUrl] = useState("");
-  const [newAnnImage, setNewAnnImage] = useState(null); // Gunakan null untuk file
+  const [newAnnImage, setNewAnnImage] = useState(null);
 
   const [newBdayName, setNewBdayName] = useState("");
   const [newBdayDate, setNewBdayDate] = useState("");
   const [newBdayGender, setNewBdayGender] = useState("");
 
+  // Teacher Schedule Create Form
+  const [isCreateScheduleOpen, setIsCreateScheduleOpen] = useState(false);
+  const [newSchedTeacher, setNewSchedTeacher] = useState("");
+  const [newSchedSubject, setNewSchedSubject] = useState("");
+  const [newSchedDay, setNewSchedDay] = useState("Monday");
+  const [newSchedTime, setNewSchedTime] = useState("");
+  const [newSchedClass, setNewSchedClass] = useState("");
+  const [newSchedNote, setNewSchedNote] = useState("");
+
+  // Teacher Schedule Edit Form
+  const [editSchedModal, setEditSchedModal] = useState(null);
+  const [editSchedTeacher, setEditSchedTeacher] = useState("");
+  const [editSchedSubject, setEditSchedSubject] = useState("");
+  const [editSchedDay, setEditSchedDay] = useState("Monday");
+  const [editSchedTime, setEditSchedTime] = useState("");
+  const [editSchedClass, setEditSchedClass] = useState("");
+  const [editSchedNote, setEditSchedNote] = useState("");
+
+  // Teacher Duty Create Form
+  const [isCreateDutyOpen, setIsCreateDutyOpen] = useState(false);
+  const [newDutyCategory, setNewDutyCategory] = useState("Morning Duty");
+  const [newDutyGradeScope, setNewDutyGradeScope] = useState("All Grades (Schoolwide)");
+  const [newDutyLocation, setNewDutyLocation] = useState("ESE Backyard");
+  const [newDutyDay, setNewDutyDay] = useState("Monday");
+  const [newDutyTime, setNewDutyTime] = useState("07.15-07.45");
+  const [newDutyTeacher, setNewDutyTeacher] = useState("");
+  const [newDutyTask, setNewDutyTask] = useState("");
+
+  // Teacher Duty Edit Form
+  const [editDutyModal, setEditDutyModal] = useState(null);
+  const [editDutyCategory, setEditDutyCategory] = useState("");
+  const [editDutyGradeScope, setEditDutyGradeScope] = useState("");
+  const [editDutyLocation, setEditDutyLocation] = useState("");
+  const [editDutyDay, setEditDutyDay] = useState("Monday");
+  const [editDutyTime, setEditDutyTime] = useState("");
+  const [editDutyTeacher, setEditDutyTeacher] = useState("");
+  const [editDutyTask, setEditDutyTask] = useState("");
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [popupData, setPopupData] = useState(null);
 
   // ==========================================
-  // 5. FETCH DATA DARI API (GET)
+  // 5. FETCH DATA DARI API
   // ==========================================
-  const API_URL = "http://202.155.14.105:8000/api";
-  // const API_URL = "http://localhost:8000/api";
-
-  const fetchSemuaData = async () => {
+  const fetchSemuaData = useCallback(async () => {
     try {
-      const headers = { Authorization: `Bearer ${tokenJWT}` };
+      // Fetch data dengan menyertakan token JWT untuk keamanan
+      const [resAnn, resBday, resAdm, resSched, resDuties] = await Promise.all([
+        fetch(`${baseUrl}/announcements`, {
+          headers: { Authorization: `Bearer ${tokenJWT}` },
+        }),
+        fetch(`${baseUrl}/birthdays`, {
+          headers: { Authorization: `Bearer ${tokenJWT}` },
+        }),
+        // Pastikan endpoint admin kamu sesuai, contoh: /admins atau /admin
+        fetch(`${baseUrl}/admin`, {
+          headers: { Authorization: `Bearer ${tokenJWT}` },
+        }),
+        fetch(`${baseUrl}/schedules`, {
+          headers: { Authorization: `Bearer ${tokenJWT}` },
+        }),
+        fetch(`${baseUrl}/duties`, {
+          headers: { Authorization: `Bearer ${tokenJWT}` },
+        }),
+      ]);
 
-      const resAnn = await fetch(`${API_URL}/announcements-with-admin`, {
-        headers,
-        cache: "no-store",
-      });
-      const dataAnn = await resAnn.json();
-      setAnnouncements(dataAnn);
-
-      const resBday = await fetch(`${API_URL}/birthdays`, {
-        headers,
-        cache: "no-store",
-      });
-      const dataBday = await resBday.json();
-
-      const resAdmin = await fetch(`${API_URL}/admin`, {
-        headers,
-        cache: "no-store",
-      });
-      const dataAdmin = await resAdmin.json();
-
-      setAdmin(dataAdmin);
-      setBirthdays(dataBday);
-    } catch (err) {
-      console.error("Gagal mengambil data ulang tahun:", err);
+      if (resAnn.ok) setAnnouncements(await resAnn.json());
+      if (resBday.ok) setBirthdays(await resBday.json());
+      if (resAdm.ok) setAdmin(await resAdm.json());
+      if (resSched.ok) setSchedules(await resSched.json());
+      if (resDuties.ok) setDuties(await resDuties.json());
+    } catch (error) {
+      console.error("Gagal mengambil data dari server", error);
     }
-  };
+  }, [baseUrl, tokenJWT]);
 
   useEffect(() => {
-    fetchSemuaData();
     document.title = "Admin Panel - Cita Hati";
     const handleResize = () => setIsSidebarOpen(window.innerWidth >= 768);
     window.addEventListener("resize", handleResize);
+
+    // Panggil data saat komponen dimuat
+    if (tokenJWT) fetchSemuaData();
+
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [fetchSemuaData, tokenJWT]);
 
   // ==========================================
   // 6. LOGIKA FILTER DASHBOARD HARI INI
@@ -140,29 +204,53 @@ export default function Admin() {
     : [];
 
   // ==========================================
-  // 7. LOGIKA SEARCH & PAGINATION TABEL
+  // 7. LOGIKA SEARCH, FILTER TABEL & PAGINATION
   // ==========================================
-  const filteredAnnouncements = announcements.filter(
-    (item) =>
+
+  // FILTER TABEL ANNOUNCEMENT (Search Teks & Filter Bulan-Tanggal)
+  const filteredAnnouncements = announcements.filter((item) => {
+    const safeDate = item.date || "";
+    const matchSearch =
       item.announcement
-        .toLowerCase()
+        ?.toLowerCase()
         .includes(searchAnnouncements.toLowerCase()) ||
-      item.date.includes(searchAnnouncements),
-  );
+      safeDate.includes(searchAnnouncements);
+
+    // Bandingkan substring mulai index ke-5 (YYYY-MM-DD -> MM-DD)
+    const matchDate = filterAnnDate
+      ? safeDate.substring(5) === filterAnnDate.substring(5)
+      : true;
+
+    return matchSearch && matchDate;
+  });
+
   const totalAnnPages = Math.ceil(filteredAnnouncements.length / itemsPerPage);
   const currentAnnData = filteredAnnouncements.slice(
     (currentAnnPage - 1) * itemsPerPage,
     currentAnnPage * itemsPerPage,
   );
 
+  // FILTER TABEL BIRTHDAY (Search Teks & Filter Bulan-Tanggal)
   const filteredBirthdays = Array.isArray(birthdays)
-    ? birthdays.filter(
-        (item) =>
-          item.name.toLowerCase().includes(searchBirthdays.toLowerCase()) ||
-          item.date.includes(searchBirthdays) ||
-          item.gender.toLowerCase().includes(searchBirthdays.toLowerCase()),
-      )
+    ? birthdays.filter((item) => {
+        const safeName = item.name || "";
+        const safeDate = item.date || "";
+        const safeGender = item.gender || "";
+
+        const matchSearch =
+          safeName.toLowerCase().includes(searchBirthdays.toLowerCase()) ||
+          safeDate.includes(searchBirthdays) ||
+          safeGender.toLowerCase().includes(searchBirthdays.toLowerCase());
+
+        // Bandingkan substring mulai index ke-5 (YYYY-MM-DD -> MM-DD)
+        const matchDate = filterBdayDate
+          ? safeDate.substring(5) === filterBdayDate.substring(5)
+          : true;
+
+        return matchSearch && matchDate;
+      })
     : [];
+
   const totalBdayPages = Math.ceil(filteredBirthdays.length / itemsPerPage);
   const currentBdayData = filteredBirthdays.slice(
     (currentBdayPage - 1) * itemsPerPage,
@@ -183,46 +271,113 @@ export default function Admin() {
     currentAdmPage * itemsPerPage,
   );
 
-  useEffect(() => setCurrentAnnPage(1), [searchAnnouncements]);
-  useEffect(() => setCurrentBdayPage(1), [searchBirthdays]);
+  // FILTER TABEL TEACHER SCHEDULES (Search Guru / Mapel / Kelas / Waktu & Filter Hari)
+  const filteredSchedules = Array.isArray(schedules)
+    ? schedules.filter((item) => {
+        const safeTeacher = item.teacher_name || "";
+        const safeSubject = item.subject_grade || "";
+        const safeClass = item.class_name || "";
+        const safeTime = item.time_slot || "";
+        const safeDay = item.day_of_week || "";
+
+        const query = searchSchedule.toLowerCase();
+        const matchSearch =
+          safeTeacher.toLowerCase().includes(query) ||
+          safeSubject.toLowerCase().includes(query) ||
+          safeClass.toLowerCase().includes(query) ||
+          safeTime.toLowerCase().includes(query);
+
+        const matchDay = filterScheduleDay
+          ? safeDay === filterScheduleDay
+          : true;
+        return matchSearch && matchDay;
+      })
+    : [];
+
+  const totalSchedulePages = Math.ceil(filteredSchedules.length / itemsPerPage);
+  const currentScheduleData = filteredSchedules.slice(
+    (currentSchedulePage - 1) * itemsPerPage,
+    currentSchedulePage * itemsPerPage,
+  );
+
+  // FILTER TABEL TEACHER DUTIES (Search Guru / Lokasi / Kategori / Tugas & Filter Hari & Lokasi)
+  const filteredDuties = Array.isArray(duties)
+    ? duties.filter((item) => {
+        const safeTeacher = item.teacher_name || "";
+        const safeLocation = item.location || "";
+        const safeCategory = item.category || "";
+        const safeTask = item.task || "";
+        const safeTime = item.time_slot || "";
+        const safeDay = item.day_of_week || "";
+
+        const query = searchDuty.toLowerCase();
+        const matchSearch =
+          safeTeacher.toLowerCase().includes(query) ||
+          safeLocation.toLowerCase().includes(query) ||
+          safeCategory.toLowerCase().includes(query) ||
+          safeTask.toLowerCase().includes(query) ||
+          safeTime.toLowerCase().includes(query);
+
+        const matchDay = filterDutyDay ? safeDay === filterDutyDay : true;
+        const matchLocation = filterDutyLocation
+          ? safeLocation.toLowerCase().includes(filterDutyLocation.toLowerCase())
+          : true;
+
+        return matchSearch && matchDay && matchLocation;
+      })
+    : [];
+
+  const totalDutyPages = Math.ceil(filteredDuties.length / itemsPerPage);
+  const currentDutyData = filteredDuties.slice(
+    (currentDutyPage - 1) * itemsPerPage,
+    currentDutyPage * itemsPerPage,
+  );
+
+  // Reset pagination saat pencarian atau filter diubah
+  useEffect(() => setCurrentAnnPage(1), [searchAnnouncements, filterAnnDate]);
+  useEffect(() => setCurrentBdayPage(1), [searchBirthdays, filterBdayDate]);
+  useEffect(
+    () => setCurrentSchedulePage(1),
+    [searchSchedule, filterScheduleDay],
+  );
+  useEffect(
+    () => setCurrentDutyPage(1),
+    [searchDuty, filterDutyDay, filterDutyLocation],
+  );
 
   // ==========================================
-  // 8. FUNGSI POST (SUBMIT DATA)
+  // 8. FUNGSI POST (SUBMIT DATA) KE API
   // ==========================================
   const handlePostAnnouncement = async () => {
     if (!newAnnDate || !newAnnouncement.trim())
       return alert("Isi form dengan lengkap!");
     setIsSubmitting(true);
-    console.log(newAnnImage);
+
     try {
+      // Karena ada upload gambar, gunakan FormData, BUKAN application/json
       const formData = new FormData();
-      formData.append("announcement", newAnnouncement);
       formData.append("tanggal_masuk", newAnnDate);
+      formData.append("announcement", newAnnouncement);
       formData.append("admin_update", id_admin);
+      if (newAnnUrl) formData.append("url_announcemet", newAnnUrl);
+      if (newAnnImage) formData.append("image", newAnnImage);
 
-      // Cek apakah user mengisi URL dan Gambar, jika ya, masukkan ke FormData
-      if (newAnnUrl) {
-        formData.append("url_announcemet", newAnnUrl);
-      }
-      if (newAnnImage) {
-        formData.append("image", newAnnImage);
-      }
-
-      const res = await fetch(`${API_URL}/announcements`, {
+      const res = await fetch(`${baseUrl}/announcements`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${tokenJWT}`,
-        },
+        headers: { Authorization: `Bearer ${tokenJWT}` }, // JANGAN tambahkan Content-Type untuk form-data
         body: formData,
       });
-      if (res.ok) {
-        setPopupData({ title: "Announcement Posted!" });
-        setNewAnnDate("");
-        setNewAnnouncement("");
-        fetchSemuaData();
-      }
-    } catch (err) {
-      console.error(err);
+
+      if (!res.ok) throw new Error("Gagal memposting pengumuman");
+
+      await fetchSemuaData(); // Refresh tabel setelah sukses
+      setPopupData({ title: "Announcement Posted!" });
+      setNewAnnDate("");
+      setNewAnnouncement("");
+      setNewAnnUrl("");
+      setNewAnnImage(null);
+    } catch (error) {
+      alert(error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -233,29 +388,29 @@ export default function Admin() {
     if (!newBdayName || !newBdayDate || !newBdayGender)
       return alert("Isi form dengan lengkap!");
     setIsSubmitting(true);
+
     try {
-      const res = await fetch(`${API_URL}/birthdays`, {
+      const payload = {
+        name: newBdayName,
+        date: newBdayDate,
+        gender: newBdayGender,
+      };
+
+      const res = await fetch(`${baseUrl}/birthdays`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${tokenJWT}`,
-        },
-        body: JSON.stringify({
-          name: newBdayName,
-          date: newBdayDate,
-          gender: newBdayGender,
-          admin_update: id_admin,
-        }),
+        headers: authHeaders,
+        body: JSON.stringify(payload),
       });
-      if (res.ok) {
-        setPopupData({ title: "Birthday Record Added!" });
-        setNewBdayName("");
-        setNewBdayDate("");
-        setNewBdayGender("");
-        fetchSemuaData();
-      }
-    } catch (err) {
-      console.error(err);
+
+      if (!res.ok) throw new Error("Gagal menambahkan daftar ulang tahun");
+
+      await fetchSemuaData();
+      setPopupData({ title: "Birthday Record Added!" });
+      setNewBdayName("");
+      setNewBdayDate("");
+      setNewBdayGender("");
+    } catch (error) {
+      alert(error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -266,28 +421,29 @@ export default function Admin() {
     if (!newAdminName || !newAdminPassword || !newAdminLevel)
       return alert("Isi form dengan lengkap!");
     setIsSubmitting(true);
+
     try {
-      const res = await fetch(`${API_URL}/admin`, {
+      const payload = {
+        name_admin: newAdminName,
+        password_admin: newAdminPassword,
+        level_admin: newAdminLevel,
+      };
+
+      const res = await fetch(`${baseUrl}/admin`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${tokenJWT}`,
-        },
-        body: JSON.stringify({
-          name_admin: newAdminName,
-          password_admin: newAdminPassword,
-          level_admin: newAdminLevel,
-        }),
+        headers: authHeaders,
+        body: JSON.stringify(payload),
       });
-      if (res.ok) {
-        setPopupData({ title: "Admin Record Added!" });
-        setNewAdminName("");
-        setNewAdminPassword("");
-        setNewAdminLevel("");
-        fetchSemuaData();
-      }
-    } catch (err) {
-      console.error(err);
+
+      if (!res.ok) throw new Error("Gagal membuat admin baru");
+
+      await fetchSemuaData();
+      setPopupData({ title: "Admin Record Added!" });
+      setNewAdminName("");
+      setNewAdminPassword("");
+      setNewAdminLevel("Super");
+    } catch (error) {
+      alert(error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -298,11 +454,330 @@ export default function Admin() {
       "Apakah Anda yakin ingin keluar dari halaman Admin?",
     );
     if (isConfirmed) {
-      localStorage.removeItem("jwt_token");
-      localStorage.removeItem("role");
-      localStorage.removeItem("username");
-      localStorage.removeItem("id_admin");
-      window.location.href = "/login";
+      localStorage.clear(); // Bersihkan semua token
+      window.location.href = "/AdminLogin";
+    }
+  };
+
+  const handlePostSchedule = async (e) => {
+    e.preventDefault();
+    if (
+      !newSchedTeacher.trim() ||
+      !newSchedSubject.trim() ||
+      !newSchedDay ||
+      !newSchedTime.trim() ||
+      !newSchedClass.trim()
+    ) {
+      return alert("Lengkapi semua field jadwal guru!");
+    }
+    setIsSubmitting(true);
+
+    try {
+      const payload = {
+        teacher_name: newSchedTeacher.trim(),
+        subject_grade: newSchedSubject.trim(),
+        day_of_week: newSchedDay,
+        time_slot: newSchedTime.trim(),
+        class_name: newSchedClass.trim(),
+        note: newSchedNote.trim() || null,
+      };
+
+      const res = await fetch(`${baseUrl}/schedules`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify(payload),
+      });
+
+      if (res.status === 403)
+        throw new Error(
+          "Akses ditolak: Hanya Super Admin yang dapat menambah jadwal guru!",
+        );
+      if (!res.ok) throw new Error("Gagal menambahkan jadwal guru.");
+
+      await fetchSemuaData();
+      setPopupData({ title: "Teacher Schedule Added!" });
+      setIsCreateScheduleOpen(false);
+      setNewSchedTeacher("");
+      setNewSchedSubject("");
+      setNewSchedDay("Monday");
+      setNewSchedTime("");
+      setNewSchedClass("");
+      setNewSchedNote("");
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditScheduleClick = (item) => {
+    setEditSchedModal(item.id_schedule);
+    setEditSchedTeacher(item.teacher_name || "");
+    setEditSchedSubject(item.subject_grade || "");
+    setEditSchedDay(item.day_of_week || "Monday");
+    setEditSchedTime(item.time_slot || "");
+    setEditSchedClass(item.class_name || "");
+    setEditSchedNote(item.note || "");
+  };
+
+  const handleUpdateSchedule = async (e) => {
+    e.preventDefault();
+    if (
+      !editSchedTeacher.trim() ||
+      !editSchedSubject.trim() ||
+      !editSchedDay ||
+      !editSchedTime.trim() ||
+      !editSchedClass.trim()
+    ) {
+      return alert("Lengkapi semua field jadwal guru!");
+    }
+    setIsSubmitting(true);
+
+    try {
+      const payload = {
+        teacher_name: editSchedTeacher.trim(),
+        subject_grade: editSchedSubject.trim(),
+        day_of_week: editSchedDay,
+        time_slot: editSchedTime.trim(),
+        class_name: editSchedClass.trim(),
+        note: editSchedNote.trim() || null,
+      };
+
+      const res = await fetch(`${baseUrl}/schedules/${editSchedModal}`, {
+        method: "PUT",
+        headers: authHeaders,
+        body: JSON.stringify(payload),
+      });
+
+      if (res.status === 403)
+        throw new Error(
+          "Akses ditolak: Hanya Super Admin yang dapat mengubah jadwal guru!",
+        );
+      if (!res.ok) throw new Error("Gagal mengupdate jadwal guru.");
+
+      await fetchSemuaData();
+      setPopupData({ title: "Teacher Schedule Updated!" });
+      setEditSchedModal(null);
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteSchedule = async (id_schedule) => {
+    const isConfirmed = window.confirm(
+      "Apakah Anda yakin ingin menghapus jadwal guru ini?",
+    );
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch(`${baseUrl}/schedules/${id_schedule}`, {
+        method: "DELETE",
+        headers: authHeaders,
+      });
+
+      if (res.status === 403)
+        throw new Error(
+          "Akses ditolak: Hanya Super Admin yang dapat menghapus jadwal guru!",
+        );
+      if (!res.ok) throw new Error("Gagal menghapus jadwal guru.");
+
+      await fetchSemuaData();
+      setPopupData({ title: "Schedule Deleted!" });
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
+  const handleSyncMasterSchedules = async () => {
+    const isConfirmed = window.confirm(
+      "Sinkronkan ulang seluruh jadwal guru dari file master CSV? Seluruh data jadwal saat ini akan di-reset sesuai file master.",
+    );
+    if (!isConfirmed) return;
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`${baseUrl}/schedules/sync-master`, {
+        method: "POST",
+        headers: authHeaders,
+      });
+
+      if (res.status === 403)
+        throw new Error(
+          "Akses ditolak: Hanya Super Admin yang diizinkan sinkronisasi jadwal!",
+        );
+      if (!res.ok) throw new Error("Gagal sinkronisasi master CSV.");
+
+      const data = await res.json();
+      await fetchSemuaData();
+      alert(data.message || "Sinkronisasi berhasil!");
+      setPopupData({ title: "Master CSV Synced!" });
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // ==========================================
+  // HANDLER TEACHER DUTIES (DUTY SCHEDULES)
+  // ==========================================
+  const handlePostDuty = async (e) => {
+    e.preventDefault();
+    if (
+      !newDutyCategory.trim() ||
+      !newDutyLocation.trim() ||
+      !newDutyDay ||
+      !newDutyTime.trim() ||
+      !newDutyTeacher.trim()
+    ) {
+      return alert("Lengkapi semua field wajib untuk jadwal duty!");
+    }
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        category: newDutyCategory.trim(),
+        grade_scope: newDutyGradeScope.trim() || "All Grades (Schoolwide)",
+        location: newDutyLocation.trim(),
+        day_of_week: newDutyDay,
+        time_slot: newDutyTime.trim(),
+        teacher_name: newDutyTeacher.trim(),
+        task: newDutyTask.trim() || null,
+      };
+
+      const res = await fetch(`${baseUrl}/duties`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify(payload),
+      });
+
+      if (res.status === 403)
+        throw new Error(
+          "Akses ditolak: Hanya Super Admin yang dapat menambah jadwal duty!",
+        );
+      if (!res.ok) throw new Error("Gagal menambah jadwal duty.");
+
+      await fetchSemuaData();
+      setPopupData({ title: "Teacher Duty Added!" });
+      setIsCreateDutyOpen(false);
+      setNewDutyTeacher("");
+      setNewDutyTask("");
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditDutyClick = (item) => {
+    setEditDutyModal(item.id_duty);
+    setEditDutyCategory(item.category || "Morning Duty");
+    setEditDutyGradeScope(item.grade_scope || "All Grades (Schoolwide)");
+    setEditDutyLocation(item.location || "ESE Backyard");
+    setEditDutyDay(item.day_of_week || "Monday");
+    setEditDutyTime(item.time_slot || "");
+    setEditDutyTeacher(item.teacher_name || "");
+    setEditDutyTask(item.task || "");
+  };
+
+  const handleUpdateDuty = async (e) => {
+    e.preventDefault();
+    if (
+      !editDutyCategory.trim() ||
+      !editDutyLocation.trim() ||
+      !editDutyDay ||
+      !editDutyTime.trim() ||
+      !editDutyTeacher.trim()
+    ) {
+      return alert("Lengkapi semua field wajib untuk jadwal duty!");
+    }
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        category: editDutyCategory.trim(),
+        grade_scope: editDutyGradeScope.trim() || "All Grades (Schoolwide)",
+        location: editDutyLocation.trim(),
+        day_of_week: editDutyDay,
+        time_slot: editDutyTime.trim(),
+        teacher_name: editDutyTeacher.trim(),
+        task: editDutyTask.trim() || null,
+      };
+
+      const res = await fetch(`${baseUrl}/duties/${editDutyModal}`, {
+        method: "PUT",
+        headers: authHeaders,
+        body: JSON.stringify(payload),
+      });
+
+      if (res.status === 403)
+        throw new Error(
+          "Akses ditolak: Hanya Super Admin yang dapat mengubah jadwal duty!",
+        );
+      if (!res.ok) throw new Error("Gagal mengupdate jadwal duty.");
+
+      await fetchSemuaData();
+      setPopupData({ title: "Teacher Duty Updated!" });
+      setEditDutyModal(null);
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteDuty = async (id_duty) => {
+    const isConfirmed = window.confirm(
+      "Apakah Anda yakin ingin menghapus jadwal duty ini?",
+    );
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch(`${baseUrl}/duties/${id_duty}`, {
+        method: "DELETE",
+        headers: authHeaders,
+      });
+
+      if (res.status === 403)
+        throw new Error(
+          "Akses ditolak: Hanya Super Admin yang dapat menghapus jadwal duty!",
+        );
+      if (!res.ok) throw new Error("Gagal menghapus jadwal duty.");
+
+      await fetchSemuaData();
+      setPopupData({ title: "Duty Deleted!" });
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
+  const handleSyncMasterDuties = async () => {
+    const isConfirmed = window.confirm(
+      "Sinkronkan ulang seluruh jadwal duty dari file master CSV? Seluruh data duty saat ini akan di-reset sesuai file master.",
+    );
+    if (!isConfirmed) return;
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`${baseUrl}/duties/sync-master`, {
+        method: "POST",
+        headers: authHeaders,
+      });
+
+      if (res.status === 403)
+        throw new Error(
+          "Akses ditolak: Hanya Super Admin yang diizinkan sinkronisasi jadwal duty!",
+        );
+      if (!res.ok) throw new Error("Gagal sinkronisasi master CSV duty.");
+
+      const data = await res.json();
+      await fetchSemuaData();
+      alert(data.message || "Sinkronisasi duty berhasil!");
+      setPopupData({ title: "Duty Master Synced!" });
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -318,6 +793,18 @@ export default function Admin() {
     },
     { id: "Birthday List", label: "Birthdays", icon: "🎂", allowed: ["Super"] },
     {
+      id: "Teacher Schedules",
+      label: "Teacher Schedules",
+      icon: "📅",
+      allowed: ["Super"],
+    },
+    {
+      id: "Duty Schedules",
+      label: "Duty Schedules",
+      icon: "🛡️",
+      allowed: ["Super"],
+    },
+    {
       id: "Manage Admin",
       label: "Manage Admin",
       icon: "👥",
@@ -332,12 +819,14 @@ export default function Admin() {
   ];
   const visibleMenu = menuItems.filter((item) => item.allowed.includes(role));
 
-  // --- FUNGSI UPDATE ---
+  // ==========================================
+  // 10. FUNGSI UPDATE DATA (PUT)
+  // ==========================================
   const handleEditClick = (item) => {
     setEditModalData(item.id_announcement);
     setEditAnnDate(item.date);
     setEditAnnouncementText(item.announcement);
-    setEditAnnImage(item.url_image);
+    setEditAnnImage(item.url_image); // URL string dari backend
     setEditAnnUrl(item.url_announcemet);
   };
 
@@ -345,36 +834,32 @@ export default function Admin() {
     if (!editAnnDate || !editAnnouncementText.trim())
       return alert("Isi form dengan lengkap!");
     setIsSubmitting(true);
+
     try {
       const formData = new FormData();
-      formData.append("announcement", editAnnouncementText);
       formData.append("tanggal_masuk", editAnnDate);
+      formData.append("announcement", editAnnouncementText);
       formData.append("admin_update", id_admin);
+      if (editAnnUrl) formData.append("url_announcemet", editAnnUrl);
 
-      // Kirim URL jika ada
-      if (editAnnUrl) {
-        formData.append("url_announcemet", editAnnUrl);
-      }
-
-      // 2. Kirim gambar HANYA JIKA user memilih gambar baru
-      // Jika user tidak memilih gambar, variabel ini tidak akan dikirim
-      if (editAnnImage) {
+      // Kirim image hanya jika user benar-benar memilih file baru (tipe Object/File)
+      if (editAnnImage && typeof editAnnImage !== "string") {
         formData.append("image", editAnnImage);
       }
-      const res = await fetch(`${API_URL}/announcements/${editModalData}`, {
+
+      const res = await fetch(`${baseUrl}/announcements/${editModalData}`, {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${tokenJWT}`,
-        },
+        headers: { Authorization: `Bearer ${tokenJWT}` }, // Tanpa Content-Type
         body: formData,
       });
-      if (res.ok) {
-        setPopupData({ title: "Announcement Updated!" });
-        setEditModalData(null);
-        fetchSemuaData();
-      }
-    } catch (err) {
-      console.error("Gagal mengupdate:", err);
+
+      if (!res.ok) throw new Error("Gagal memperbarui pengumuman");
+
+      await fetchSemuaData();
+      setPopupData({ title: "Announcement Updated!" });
+      setEditModalData(null);
+    } catch (error) {
+      alert(error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -391,27 +876,27 @@ export default function Admin() {
     if (!editBirthName || !editBirtGender)
       return alert("Isi form dengan lengkap!");
     setIsSubmitting(true);
+
     try {
-      const res = await fetch(`${API_URL}/birthdays/${editModalBirth}`, {
+      const payload = {
+        name: editBirthName,
+        date: editBirtDate,
+        gender: editBirtGender,
+      };
+
+      const res = await fetch(`${baseUrl}/birthdays/${editModalBirth}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${tokenJWT}`,
-        },
-        body: JSON.stringify({
-          name: editBirthName,
-          date: editBirtDate,
-          gender: editBirtGender,
-          admin_update: id_admin,
-        }),
+        headers: authHeaders,
+        body: JSON.stringify(payload),
       });
-      if (res.ok) {
-        setPopupData({ title: "Birthday List Updated!" });
-        setEditModalBirth(null);
-        fetchSemuaData();
-      }
-    } catch (err) {
-      console.error("Gagal mengupdate:", err);
+
+      if (!res.ok) throw new Error("Gagal mengupdate ulang tahun");
+
+      await fetchSemuaData();
+      setPopupData({ title: "Birthday List Updated!" });
+      setEditModalBirth(null);
+    } catch (error) {
+      alert(error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -420,56 +905,65 @@ export default function Admin() {
   const handleEditAdmin = (item) => {
     seteditModalAdm(item.id_admin);
     setNewAdminNameUpdate(item.name_admin);
-    setNewAdminPasswordUpdate(item.password_admin);
+    setNewAdminPasswordUpdate(""); // Kosongkan demi keamanan, ubah jika user mau
     setNewAdminLevelUpdate(item.level_admin);
   };
 
   const handleupdateAdmin = async () => {
-    if (!newAdminNameUpdate || !newAdminPasswordUpdate || !newAdminLevelUpdate)
+    if (!newAdminNameUpdate || !newAdminLevelUpdate)
       return alert("Isi form dengan lengkap!");
     setIsSubmitting(true);
+
     try {
-      const res = await fetch(`${API_URL}/admin/${editModalAdm}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${tokenJWT}`,
-        },
-        body: JSON.stringify({
-          name_admin: newAdminNameUpdate,
-          password_admin: newAdminPasswordUpdate,
-          level_admin: newAdminLevelUpdate,
-        }),
-      });
-      if (res.ok) {
-        setPopupData({ title: "List Admin sudah dirubah" });
-        seteditModalAdm(null);
-        fetchSemuaData();
+      const payload = {
+        name_admin: newAdminNameUpdate,
+        level_admin: newAdminLevelUpdate,
+      };
+
+      // Hanya kirim password ke backend jika admin mengisi kolom password (ingin diganti)
+      if (newAdminPasswordUpdate) {
+        payload.password_admin = newAdminPasswordUpdate;
       }
-    } catch (err) {
-      console.error("Gagal mengupdate:", err);
+
+      const res = await fetch(`${baseUrl}/admin/${editModalAdm}`, {
+        method: "PUT",
+        headers: authHeaders,
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("Gagal mengupdate list admin");
+
+      await fetchSemuaData();
+      setPopupData({ title: "List Admin sudah dirubah" });
+      seteditModalAdm(null);
+    } catch (error) {
+      alert(error.message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // --- FUNGSI DELETE ---
+  // ==========================================
+  // 11. FUNGSI DELETE KE API
+  // ==========================================
   const handleDelete = async (id_announcement) => {
     const isConfirmed = window.confirm(
       "Apakah kamu yakin ingin menghapus pengumuman ini?",
     );
     if (!isConfirmed) return;
+
     try {
-      const res = await fetch(`${API_URL}/announcements/${id_announcement}`, {
+      const res = await fetch(`${baseUrl}/announcements/${id_announcement}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${tokenJWT}` },
+        headers: authHeaders,
       });
-      if (res.ok) {
-        setPopupData({ title: "Announcement Deleted!" });
-        fetchSemuaData();
-      }
-    } catch (err) {
-      console.error("Gagal menghapus:", err);
+
+      if (!res.ok) throw new Error("Gagal menghapus data");
+
+      await fetchSemuaData();
+      setPopupData({ title: "Announcement Deleted!" });
+    } catch (error) {
+      alert(error.message);
     }
   };
 
@@ -478,36 +972,40 @@ export default function Admin() {
       "Apakah kamu yakin ingin menghapus List ini?",
     );
     if (!isConfirmed) return;
+
     try {
-      const res = await fetch(`${API_URL}/birthdays/${id_birthday}`, {
+      const res = await fetch(`${baseUrl}/birthdays/${id_birthday}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${tokenJWT}` },
+        headers: authHeaders,
       });
-      if (res.ok) {
-        setPopupData({ title: "List Deleted!" });
-        fetchSemuaData();
-      }
-    } catch (err) {
-      console.error("Gagal menghapus:", err);
+
+      if (!res.ok) throw new Error("Gagal menghapus data");
+
+      await fetchSemuaData();
+      setPopupData({ title: "List Deleted!" });
+    } catch (error) {
+      alert(error.message);
     }
   };
 
   const handleDeleteAdmin = async (id_admin) => {
     const isConfirmed = window.confirm(
-      "Apakah kamu yakin ingin menghapus List ini?",
+      "Apakah kamu yakin ingin menghapus admin ini?",
     );
     if (!isConfirmed) return;
+
     try {
-      const res = await fetch(`${API_URL}/admin/${id_admin}`, {
+      const res = await fetch(`${baseUrl}/admin/${id_admin}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${tokenJWT}` },
+        headers: authHeaders,
       });
-      if (res.ok) {
-        setPopupData({ title: "List Deleted!" });
-        fetchSemuaData();
-      }
-    } catch (err) {
-      console.error("Gagal menghapus:", err);
+
+      if (!res.ok) throw new Error("Gagal menghapus data admin");
+
+      await fetchSemuaData();
+      setPopupData({ title: "Admin Deleted!" });
+    } catch (error) {
+      alert(error.message);
     }
   };
 
@@ -573,7 +1071,7 @@ export default function Admin() {
                 <input
                   type="url"
                   placeholder="https://..."
-                  value={editAnnUrl || ""} // pastikan state editAnnUrl sudah kamu buat ya
+                  value={editAnnUrl || ""}
                   onChange={(e) => setEditAnnUrl(e.target.value)}
                   className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-[#1e3a8a] bg-slate-50 transition-all font-medium text-slate-700 text-sm"
                 />
@@ -597,14 +1095,17 @@ export default function Admin() {
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
                   Change Image (Optional)
                 </label>
-                {/* Tampilkan preview gambar lama jika ada, tapi belum pilih gambar baru */}
                 {editAnnImage != null ? (
                   <div className="mb-2">
                     <span className="text-[10px] text-slate-400">
                       Current Image:
                     </span>
                     <img
-                      src={editAnnImage}
+                      src={
+                        typeof editAnnImage === "string"
+                          ? `${new URL(import.meta.env.VITE_API_BASE_URL).origin}${editAnnImage}`
+                          : URL.createObjectURL(editAnnImage)
+                      }
                       alt="current"
                       className="h-16 w-16 object-cover rounded-lg border mt-1"
                     />
@@ -618,7 +1119,7 @@ export default function Admin() {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => setEditAnnImage(e.target.files[0])} // pastikan state editAnnImage dibuat
+                  onChange={(e) => setEditAnnImage(e.target.files[0])}
                   className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#1e3a8a] transition-all text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 text-slate-600 cursor-pointer"
                 />
                 <p className="text-[10px] text-slate-400 mt-1 italic">
@@ -782,13 +1283,12 @@ export default function Admin() {
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
-                  Password
+                  Password (Kosongkan jika tidak diganti)
                 </label>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
-                    placeholder="Enter password..."
-                    required
+                    placeholder="Enter new password..."
                     value={newAdminPasswordUpdate}
                     onChange={(e) => setNewAdminPasswordUpdate(e.target.value)}
                     className="w-full border border-slate-200 p-3.5 pr-12 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 transition-all font-medium text-slate-700"
@@ -843,6 +1343,576 @@ export default function Admin() {
                 </button>
                 <button
                   onClick={handleupdateAdmin}
+                  disabled={isSubmitting}
+                  className="flex-1 bg-emerald-600 text-white font-bold py-3.5 rounded-2xl hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg disabled:bg-slate-400"
+                >
+                  {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Create Teacher Schedule */}
+      {isCreateScheduleOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-lg w-full relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-2 h-full bg-blue-600"></div>
+            <div className="flex justify-between items-center mb-6 pl-2">
+              <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                📅 Tambah Jadwal Guru
+              </h3>
+              <button
+                onClick={() => setIsCreateScheduleOpen(false)}
+                className="text-slate-400 hover:text-red-500 text-xl font-bold transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <form className="space-y-4 pl-2" onSubmit={handlePostSchedule}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Nama Guru
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: Mr. Kornelius"
+                    required
+                    value={newSchedTeacher}
+                    onChange={(e) => setNewSchedTeacher(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Mata Pelajaran / Grade
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: IT Grade 3-4"
+                    required
+                    value={newSchedSubject}
+                    onChange={(e) => setNewSchedSubject(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Hari
+                  </label>
+                  <select
+                    value={newSchedDay}
+                    onChange={(e) => setNewSchedDay(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 text-sm font-semibold text-slate-700"
+                  >
+                    <option value="Monday">Monday (Senin)</option>
+                    <option value="Tuesday">Tuesday (Selasa)</option>
+                    <option value="Wednesday">Wednesday (Rabu)</option>
+                    <option value="Thursday">Thursday (Kamis)</option>
+                    <option value="Friday">Friday (Jumat)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Waktu / Jam Pelajaran
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: 08.00 - 09.10"
+                    required
+                    value={newSchedTime}
+                    onChange={(e) => setNewSchedTime(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Kelas / Sesi
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: 3A, Break, PC Session"
+                    required
+                    value={newSchedClass}
+                    onChange={(e) => setNewSchedClass(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Catatan / Time Block (Opsional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: Time 1 / Time 2"
+                    value={newSchedNote}
+                    onChange={(e) => setNewSchedNote(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateScheduleOpen(false)}
+                  disabled={isSubmitting}
+                  className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl hover:bg-slate-200 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-blue-600 text-white font-bold py-3.5 rounded-2xl hover:bg-blue-700 transition-all shadow-md hover:shadow-lg disabled:bg-slate-400"
+                >
+                  {isSubmitting ? "Menyimpan..." : "Simpan Jadwal"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edit Teacher Schedule */}
+      {editSchedModal !== null && (
+        <div className="fixed inset-0 bg-slate-900/40 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-lg w-full relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-2 h-full bg-indigo-600"></div>
+            <div className="flex justify-between items-center mb-6 pl-2">
+              <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                ✏️ Edit Jadwal Guru
+              </h3>
+              <button
+                onClick={() => setEditSchedModal(null)}
+                className="text-slate-400 hover:text-red-500 text-xl font-bold transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <form className="space-y-4 pl-2" onSubmit={handleUpdateSchedule}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Nama Guru
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editSchedTeacher}
+                    onChange={(e) => setEditSchedTeacher(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Mata Pelajaran / Grade
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editSchedSubject}
+                    onChange={(e) => setEditSchedSubject(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Hari
+                  </label>
+                  <select
+                    value={editSchedDay}
+                    onChange={(e) => setEditSchedDay(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 text-sm font-semibold text-slate-700"
+                  >
+                    <option value="Monday">Monday (Senin)</option>
+                    <option value="Tuesday">Tuesday (Selasa)</option>
+                    <option value="Wednesday">Wednesday (Rabu)</option>
+                    <option value="Thursday">Thursday (Kamis)</option>
+                    <option value="Friday">Friday (Jumat)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Waktu / Jam Pelajaran
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editSchedTime}
+                    onChange={(e) => setEditSchedTime(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Kelas / Sesi
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editSchedClass}
+                    onChange={(e) => setEditSchedClass(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Catatan / Time Block (Opsional)
+                  </label>
+                  <input
+                    type="text"
+                    value={editSchedNote}
+                    onChange={(e) => setEditSchedNote(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setEditSchedModal(null)}
+                  disabled={isSubmitting}
+                  className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl hover:bg-slate-200 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-indigo-600 text-white font-bold py-3.5 rounded-2xl hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg disabled:bg-slate-400"
+                >
+                  {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Create Teacher Duty */}
+      {isCreateDutyOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-lg w-full relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-2 h-full bg-emerald-600"></div>
+            <div className="flex justify-between items-center mb-6 pl-2">
+              <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                🛡️ Tambah Jadwal Duty / Piket
+              </h3>
+              <button
+                onClick={() => setIsCreateDutyOpen(false)}
+                className="text-slate-400 hover:text-red-500 text-xl font-bold transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <form className="space-y-4 pl-2" onSubmit={handlePostDuty}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Nama Guru
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Ms. Jenny P"
+                    value={newDutyTeacher}
+                    onChange={(e) => setNewDutyTeacher(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Lokasi Duty
+                  </label>
+                  <select
+                    value={newDutyLocation}
+                    onChange={(e) => setNewDutyLocation(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 text-sm font-semibold text-slate-700"
+                  >
+                    <option value="ESE Backyard">ESE Backyard</option>
+                    <option value="Canteen">Canteen</option>
+                    <option value="2nd floor lobby and corridors">2nd floor lobby and corridors</option>
+                    <option value="3rd floor lobby and corridors">3rd floor lobby and corridors</option>
+                    <option value="4th floor lobby and corridors">4th floor lobby and corridors</option>
+                    <option value="Announcer (front gate)">Announcer (front gate)</option>
+                    <option value="Announcer (back gate)">Announcer (back gate)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Kategori Sesi
+                  </label>
+                  <select
+                    value={newDutyCategory}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setNewDutyCategory(val);
+                      if (val.includes("Grade 1-2")) setNewDutyGradeScope("Grade 1-2");
+                      else if (val.includes("Grade 3-4")) setNewDutyGradeScope("Grade 3-4");
+                      else if (val.includes("Grade 5-6")) setNewDutyGradeScope("Grade 5-6");
+                      else setNewDutyGradeScope("All Grades (Schoolwide)");
+                    }}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 text-sm font-semibold text-slate-700"
+                  >
+                    <option value="Morning Duty">Morning Duty</option>
+                    <option value="Break 1 (Grade 1-2)">Break 1 (Grade 1-2)</option>
+                    <option value="Break 1 (Grade 3-4)">Break 1 (Grade 3-4)</option>
+                    <option value="Break 1 (Grade 5-6)">Break 1 (Grade 5-6)</option>
+                    <option value="Break 2 (Grade 1-2)">Break 2 (Grade 1-2)</option>
+                    <option value="Break 2 (Grade 3-4)">Break 2 (Grade 3-4)</option>
+                    <option value="Break 2 (Grade 5-6)">Break 2 (Grade 5-6)</option>
+                    <option value="Go Home (Grade 1-2)">Go Home (Grade 1-2)</option>
+                    <option value="Go Home (Grade 3-4)">Go Home (Grade 3-4)</option>
+                    <option value="Go Home (Grade 5-6)">Go Home (Grade 5-6)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Grade Scope
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newDutyGradeScope}
+                    onChange={(e) => setNewDutyGradeScope(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Hari
+                  </label>
+                  <select
+                    value={newDutyDay}
+                    onChange={(e) => setNewDutyDay(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 text-sm font-semibold text-slate-700"
+                  >
+                    <option value="Monday">Monday (Senin)</option>
+                    <option value="Tuesday">Tuesday (Selasa)</option>
+                    <option value="Wednesday">Wednesday (Rabu)</option>
+                    <option value="Thursday">Thursday (Kamis)</option>
+                    <option value="Friday">Friday (Jumat)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Waktu / Jam Sesi
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: 09.10-09.35"
+                    value={newDutyTime}
+                    onChange={(e) => setNewDutyTime(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                  Tugas / Instruksi Jaga (Opsional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Contoh: supervise students, remind them to play safely"
+                  value={newDutyTask}
+                  onChange={(e) => setNewDutyTask(e.target.value)}
+                  className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 text-sm font-medium text-slate-700"
+                />
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateDutyOpen(false)}
+                  disabled={isSubmitting}
+                  className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl hover:bg-slate-200 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-emerald-600 text-white font-bold py-3.5 rounded-2xl hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg disabled:bg-slate-400"
+                >
+                  {isSubmitting ? "Menyimpan..." : "Simpan Duty Baru"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edit Teacher Duty */}
+      {editDutyModal !== null && (
+        <div className="fixed inset-0 bg-slate-900/40 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-lg w-full relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-2 h-full bg-emerald-600"></div>
+            <div className="flex justify-between items-center mb-6 pl-2">
+              <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                ✏️ Edit Jadwal Duty / Piket
+              </h3>
+              <button
+                onClick={() => setEditDutyModal(null)}
+                className="text-slate-400 hover:text-red-500 text-xl font-bold transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <form className="space-y-4 pl-2" onSubmit={handleUpdateDuty}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Nama Guru
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editDutyTeacher}
+                    onChange={(e) => setEditDutyTeacher(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Lokasi Duty
+                  </label>
+                  <select
+                    value={editDutyLocation}
+                    onChange={(e) => setEditDutyLocation(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 text-sm font-semibold text-slate-700"
+                  >
+                    <option value="ESE Backyard">ESE Backyard</option>
+                    <option value="Canteen">Canteen</option>
+                    <option value="2nd floor lobby and corridors">2nd floor lobby and corridors</option>
+                    <option value="3rd floor lobby and corridors">3rd floor lobby and corridors</option>
+                    <option value="4th floor lobby and corridors">4th floor lobby and corridors</option>
+                    <option value="Announcer (front gate)">Announcer (front gate)</option>
+                    <option value="Announcer (back gate)">Announcer (back gate)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Kategori Sesi
+                  </label>
+                  <select
+                    value={editDutyCategory}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setEditDutyCategory(val);
+                      if (val.includes("Grade 1-2")) setEditDutyGradeScope("Grade 1-2");
+                      else if (val.includes("Grade 3-4")) setEditDutyGradeScope("Grade 3-4");
+                      else if (val.includes("Grade 5-6")) setEditDutyGradeScope("Grade 5-6");
+                      else setEditDutyGradeScope("All Grades (Schoolwide)");
+                    }}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 text-sm font-semibold text-slate-700"
+                  >
+                    <option value="Morning Duty">Morning Duty</option>
+                    <option value="Break 1 (Grade 1-2)">Break 1 (Grade 1-2)</option>
+                    <option value="Break 1 (Grade 3-4)">Break 1 (Grade 3-4)</option>
+                    <option value="Break 1 (Grade 5-6)">Break 1 (Grade 5-6)</option>
+                    <option value="Break 2 (Grade 1-2)">Break 2 (Grade 1-2)</option>
+                    <option value="Break 2 (Grade 3-4)">Break 2 (Grade 3-4)</option>
+                    <option value="Break 2 (Grade 5-6)">Break 2 (Grade 5-6)</option>
+                    <option value="Go Home (Grade 1-2)">Go Home (Grade 1-2)</option>
+                    <option value="Go Home (Grade 3-4)">Go Home (Grade 3-4)</option>
+                    <option value="Go Home (Grade 5-6)">Go Home (Grade 5-6)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Grade Scope
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editDutyGradeScope}
+                    onChange={(e) => setEditDutyGradeScope(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Hari
+                  </label>
+                  <select
+                    value={editDutyDay}
+                    onChange={(e) => setEditDutyDay(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 text-sm font-semibold text-slate-700"
+                  >
+                    <option value="Monday">Monday (Senin)</option>
+                    <option value="Tuesday">Tuesday (Selasa)</option>
+                    <option value="Wednesday">Wednesday (Rabu)</option>
+                    <option value="Thursday">Thursday (Kamis)</option>
+                    <option value="Friday">Friday (Jumat)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Waktu / Jam Sesi
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editDutyTime}
+                    onChange={(e) => setEditDutyTime(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                  Tugas / Instruksi Jaga (Opsional)
+                </label>
+                <input
+                  type="text"
+                  value={editDutyTask}
+                  onChange={(e) => setEditDutyTask(e.target.value)}
+                  className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 text-sm font-medium text-slate-700"
+                />
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setEditDutyModal(null)}
+                  disabled={isSubmitting}
+                  className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl hover:bg-slate-200 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
                   disabled={isSubmitting}
                   className="flex-1 bg-emerald-600 text-white font-bold py-3.5 rounded-2xl hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg disabled:bg-slate-400"
                 >
@@ -1023,17 +2093,28 @@ export default function Admin() {
                     <h3 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
                       <span className="text-xl">📋</span> History Log
                     </h3>
-                    <div className="relative w-full md:w-80">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                        🔍
-                      </span>
+                    {/* CONTAINER UNTUK FILTER TANGGAL & SEARCH */}
+                    <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
                       <input
-                        type="text"
-                        placeholder="Search dates or names..."
-                        value={searchAnnouncements}
-                        onChange={(e) => setSearchAnnouncements(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-[#1e3a8a] outline-none shadow-sm transition-all"
+                        type="date"
+                        value={filterAnnDate}
+                        onChange={(e) => setFilterAnnDate(e.target.value)}
+                        className="w-full md:w-auto px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-[#1e3a8a] outline-none shadow-sm transition-all text-slate-600"
                       />
+                      <div className="relative w-full md:w-80">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                          🔍
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Search dates or names..."
+                          value={searchAnnouncements}
+                          onChange={(e) =>
+                            setSearchAnnouncements(e.target.value)
+                          }
+                          className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-[#1e3a8a] outline-none shadow-sm transition-all"
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="overflow-x-auto">
@@ -1043,7 +2124,6 @@ export default function Admin() {
                           <th className="px-8 py-5">Date</th>
                           <th className="px-8 py-5">Image</th>
                           <th className="px-8 py-5">Announcement</th>
-                          {/* Tambahan Header untuk URL/Link */}
                           <th className="px-8 py-5">Link</th>
                           <th className="px-8 py-5">Author</th>
                           <th className="px-8 py-5 text-center">Action</th>
@@ -1063,7 +2143,7 @@ export default function Admin() {
                               <td className="px-8 py-5">
                                 {item.url_image ? (
                                   <img
-                                    src={item.url_image}
+                                    src={`${new URL(import.meta.env.VITE_API_BASE_URL).origin}${item.url_image}`}
                                     alt="Announcement Thumbnail"
                                     className="w-20 h-20 object-cover rounded-lg border border-slate-200 shadow-sm"
                                   />
@@ -1078,7 +2158,6 @@ export default function Admin() {
                                 {item.announcement}
                               </td>
 
-                              {/* Tambahan Kolom Data untuk Menampilkan URL/Link */}
                               <td className="px-8 py-5">
                                 {item.url_announcemet ? (
                                   <a
@@ -1126,7 +2205,7 @@ export default function Admin() {
                         ) : (
                           <tr>
                             <td
-                              colSpan="6" // Ubah colSpan menjadi 6 karena sekarang total ada 6 kolom
+                              colSpan="6"
                               className="p-12 text-center text-slate-400 font-medium italic"
                             >
                               No matching announcements found.
@@ -1244,17 +2323,26 @@ export default function Admin() {
                     <h3 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
                       <span className="text-xl">📇</span> Birthday Directory
                     </h3>
-                    <div className="relative w-full md:w-80">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                        🔍
-                      </span>
+                    {/* CONTAINER UNTUK FILTER TANGGAL & SEARCH */}
+                    <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
                       <input
-                        type="text"
-                        placeholder="Search name or date..."
-                        value={searchBirthdays}
-                        onChange={(e) => setSearchBirthdays(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-pink-500 outline-none shadow-sm transition-all"
+                        type="date"
+                        value={filterBdayDate}
+                        onChange={(e) => setFilterBdayDate(e.target.value)}
+                        className="w-full md:w-auto px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-pink-500 outline-none shadow-sm transition-all text-slate-600"
                       />
+                      <div className="relative w-full md:w-80">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                          🔍
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Search name or date..."
+                          value={searchBirthdays}
+                          onChange={(e) => setSearchBirthdays(e.target.value)}
+                          className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-pink-500 outline-none shadow-sm transition-all"
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="overflow-x-auto">
@@ -1526,6 +2614,608 @@ export default function Admin() {
                           {index + 1}
                         </button>
                       ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ================= TAB TEACHER SCHEDULES ================= */}
+            {activeTab === "Teacher Schedules" && (
+              <div className="space-y-8 animate-in fade-in duration-300">
+                {/* Header Card */}
+                <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+                      <span>📅</span> Teacher Schedules
+                      <span className="text-xs font-bold px-3 py-1 bg-amber-100 text-amber-800 rounded-full border border-amber-200 uppercase">
+                        Super Admin Only
+                      </span>
+                    </h2>
+                    <p className="text-sm font-medium text-slate-500 mt-1">
+                      Kelola jadwal pelajaran seluruh guru TK-SD-SMP-SMA. Total:{" "}
+                      <span className="font-bold text-blue-600">
+                        {schedules.length}
+                      </span>{" "}
+                      entri jadwal.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={handleSyncMasterSchedules}
+                      disabled={isSubmitting}
+                      className="px-4 py-3 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-xs transition-all"
+                      title="Sinkronkan ulang data master dari JADWAL_GURU_MASTER.csv"
+                    >
+                      <span>🔄</span> Sync dari Master CSV
+                    </button>
+                    <button
+                      onClick={() => setIsCreateScheduleOpen(true)}
+                      className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xs flex items-center gap-2 shadow-md shadow-blue-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      <span className="text-base leading-none">+</span> Tambah
+                      Jadwal Baru
+                    </button>
+                  </div>
+                </div>
+
+                {/* Filter and Table Card */}
+                <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+                  <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/50">
+                    {/* Search Input */}
+                    <div className="relative w-full sm:w-96">
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                        🔍
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Cari guru, kelas, mapel..."
+                        value={searchSchedule}
+                        onChange={(e) => setSearchSchedule(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none shadow-xs transition-all"
+                      />
+                    </div>
+
+                    {/* Day Filter */}
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                        Filter Hari:
+                      </span>
+                      <select
+                        value={filterScheduleDay}
+                        onChange={(e) => setFilterScheduleDay(e.target.value)}
+                        className="bg-white border border-slate-200 px-4 py-3 rounded-2xl text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-xs transition-all"
+                      >
+                        <option value="">Semua Hari (All Days)</option>
+                        <option value="Monday">Monday (Senin)</option>
+                        <option value="Tuesday">Tuesday (Selasa)</option>
+                        <option value="Wednesday">Wednesday (Rabu)</option>
+                        <option value="Thursday">Thursday (Kamis)</option>
+                        <option value="Friday">Friday (Jumat)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-white text-slate-400 font-bold text-[10px] uppercase tracking-widest border-b border-slate-100">
+                        <tr>
+                          <th className="px-6 py-4">Guru (Teacher)</th>
+                          <th className="px-6 py-4">Mapel / Grade</th>
+                          <th className="px-6 py-4">Hari (Day)</th>
+                          <th className="px-6 py-4">Waktu (Time Slot)</th>
+                          <th className="px-6 py-4 text-center">
+                            Kelas / Sesi
+                          </th>
+                          <th className="px-6 py-4 text-center">Catatan</th>
+                          <th className="px-6 py-4 text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 text-sm">
+                        {currentScheduleData.length > 0 ? (
+                          currentScheduleData.map((item) => (
+                            <tr
+                              key={item.id_schedule}
+                              className="hover:bg-slate-50/80 transition-colors group"
+                            >
+                              <td className="px-6 py-4 font-bold text-slate-800">
+                                {item.teacher_name}
+                              </td>
+                              <td className="px-6 py-4 font-medium text-slate-600">
+                                {item.subject_grade}
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+                                  {item.day_of_week}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 font-mono text-xs font-medium text-slate-700">
+                                {item.time_slot}
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span
+                                  className={`inline-flex px-3 py-1 rounded-full font-bold text-xs ${
+                                    item.class_name === "Break"
+                                      ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                      : item.class_name.includes("PC")
+                                        ? "bg-purple-50 text-purple-700 border border-purple-200"
+                                        : item.class_name.includes(
+                                              "Assembly",
+                                            ) ||
+                                            item.class_name.includes("Excur")
+                                          ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                                          : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  }`}
+                                >
+                                  {item.class_name}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-center text-xs text-slate-400">
+                                {item.note || "-"}
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="flex justify-center gap-2">
+                                  <button
+                                    onClick={() =>
+                                      handleEditScheduleClick(item)
+                                    }
+                                    className="px-3 py-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handleDeleteSchedule(item.id_schedule)
+                                    }
+                                    className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan="7"
+                              className="p-12 text-center text-slate-400 font-medium italic"
+                            >
+                              Tidak ada data jadwal ditemukan.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination */}
+                  {totalSchedulePages > 1 && (
+                    <div className="p-6 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <p className="text-xs text-slate-500 font-medium">
+                        Halaman{" "}
+                        <span className="font-bold text-slate-800">
+                          {currentSchedulePage}
+                        </span>{" "}
+                        dari{" "}
+                        <span className="font-bold text-slate-800">
+                          {totalSchedulePages}
+                        </span>{" "}
+                        ({filteredSchedules.length} hasil)
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          disabled={currentSchedulePage === 1}
+                          onClick={() =>
+                            setCurrentSchedulePage((p) => Math.max(1, p - 1))
+                          }
+                          className="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          ◀ Prev
+                        </button>
+                        <div className="flex gap-1">
+                          {[...Array(Math.min(5, totalSchedulePages))].map(
+                            (_, idx) => {
+                              let pageNum = idx + 1;
+                              if (
+                                totalSchedulePages > 5 &&
+                                currentSchedulePage > 3
+                              ) {
+                                pageNum = currentSchedulePage - 2 + idx;
+                                if (pageNum > totalSchedulePages)
+                                  pageNum = totalSchedulePages - 4 + idx;
+                              }
+                              return (
+                                <button
+                                  key={pageNum}
+                                  onClick={() =>
+                                    setCurrentSchedulePage(pageNum)
+                                  }
+                                  className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
+                                    currentSchedulePage === pageNum
+                                      ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                                      : "bg-white border border-slate-200 text-slate-600 hover:border-blue-600 hover:text-blue-600"
+                                  }`}
+                                >
+                                  {pageNum}
+                                </button>
+                              );
+                            },
+                          )}
+                        </div>
+                        <button
+                          disabled={currentSchedulePage === totalSchedulePages}
+                          onClick={() =>
+                            setCurrentSchedulePage((p) =>
+                              Math.min(totalSchedulePages, p + 1),
+                            )
+                          }
+                          className="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          Next ▶
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ================= TAB TEACHER DUTY SCHEDULES ================= */}
+            {activeTab === "Duty Schedules" && (
+              <div className="space-y-8 animate-in fade-in duration-300">
+                {/* Header Card */}
+                <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+                      <span>🛡️</span> Duty Schedules (Jadwal Piket & Jaga)
+                      <span className="text-xs font-bold px-3 py-1 bg-amber-100 text-amber-800 rounded-full border border-amber-200 uppercase">
+                        Super Admin Only
+                      </span>
+                    </h2>
+                    <p className="text-sm font-medium text-slate-500 mt-1">
+                      Kelola jadwal piket dan penugasan jaga area sekolah (ESE Backyard, Kantin, Lobby, Gerbang). Total:{" "}
+                      <span className="font-bold text-emerald-600">
+                        {duties.length}
+                      </span>{" "}
+                      entri duty.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={handleSyncMasterDuties}
+                      disabled={isSubmitting}
+                      className="px-4 py-3 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-xs transition-all"
+                      title="Sinkronkan ulang data master dari JADWAL_DUTY_MASTER.csv"
+                    >
+                      <span>🔄</span> Sync dari Master CSV
+                    </button>
+                    <button
+                      onClick={() => setIsCreateDutyOpen(true)}
+                      className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-xs flex items-center gap-2 shadow-md shadow-emerald-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      <span className="text-base leading-none">+</span> Tambah Duty Baru
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quick Stats Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl">
+                      🌳
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Backyard Duty</p>
+                      <p className="text-xl font-black text-slate-800">
+                        {duties.filter((d) => (d.location || "").toLowerCase().includes("backyard")).length}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-2xl">
+                      ☕
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Canteen Duty</p>
+                      <p className="text-xl font-black text-slate-800">
+                        {duties.filter((d) => (d.location || "").toLowerCase().includes("canteen")).length}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-2xl">
+                      🏢
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Lobby & Corridors</p>
+                      <p className="text-xl font-black text-slate-800">
+                        {duties.filter((d) => (d.location || "").toLowerCase().includes("lobby")).length}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl">
+                      🚪
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Gates / Announcer</p>
+                      <p className="text-xl font-black text-slate-800">
+                        {duties.filter((d) => (d.location || "").toLowerCase().includes("gate")).length}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Filter and Table Card */}
+                <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+                  <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-50/50">
+                    {/* Search Input */}
+                    <div className="relative w-full md:w-80">
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                        🔍
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Cari guru, lokasi, tugas..."
+                        value={searchDuty}
+                        onChange={(e) => setSearchDuty(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-emerald-500 outline-none shadow-xs transition-all"
+                      />
+                    </div>
+
+                    {/* Filter Hari & Lokasi */}
+                    <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                          Hari:
+                        </span>
+                        <select
+                          value={filterDutyDay}
+                          onChange={(e) => setFilterDutyDay(e.target.value)}
+                          className="bg-white border border-slate-200 px-3 py-2.5 rounded-2xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none shadow-xs transition-all"
+                        >
+                          <option value="">Semua Hari (All Days)</option>
+                          <option value="Monday">Monday (Senin)</option>
+                          <option value="Tuesday">Tuesday (Selasa)</option>
+                          <option value="Wednesday">Wednesday (Rabu)</option>
+                          <option value="Thursday">Thursday (Kamis)</option>
+                          <option value="Friday">Friday (Jumat)</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                          Lokasi:
+                        </span>
+                        <select
+                          value={filterDutyLocation}
+                          onChange={(e) => setFilterDutyLocation(e.target.value)}
+                          className="bg-white border border-slate-200 px-3 py-2.5 rounded-2xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none shadow-xs transition-all"
+                        >
+                          <option value="">Semua Lokasi</option>
+                          <option value="Backyard">ESE Backyard</option>
+                          <option value="Canteen">Canteen</option>
+                          <option value="2nd floor">2nd Floor Lobby</option>
+                          <option value="3rd floor">3rd Floor Lobby</option>
+                          <option value="4th floor">4th Floor Lobby</option>
+                          <option value="gate">Gates / Announcer</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+
+                  {/* ─── Mobile Card List (tampil di layar < md) ─── */}
+                  <div className="md:hidden divide-y divide-slate-100">
+                    {currentDutyData.length > 0 ? (
+                      currentDutyData.map((item) => {
+                        const loc = (item.location || "").toLowerCase();
+                        const locColor = loc.includes("backyard")
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : loc.includes("canteen")
+                          ? "bg-amber-50 text-amber-700 border-amber-200"
+                          : loc.includes("lobby")
+                          ? "bg-purple-50 text-purple-700 border-purple-200"
+                          : "bg-blue-50 text-blue-700 border-blue-200";
+                        const locIcon = loc.includes("backyard") ? "🌳" : loc.includes("canteen") ? "☕" : loc.includes("lobby") ? "🏢" : "🚪";
+                        return (
+                          <div key={item.id_duty} className="p-4 flex flex-col gap-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <p className="font-bold text-slate-800 text-sm">{item.teacher_name}</p>
+                                <p className="text-xs text-slate-500 mt-0.5">{item.category} · {item.grade_scope}</p>
+                              </div>
+                              <span className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-bold text-xs border ${locColor}`}>
+                                {locIcon} {item.location}
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 text-xs">
+                              <span className="px-2 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-100 font-semibold">{item.day_of_week}</span>
+                              <span className="font-mono font-medium text-slate-700">{item.time_slot}</span>
+                              {item.task && <span className="text-slate-500 truncate max-w-[160px]" title={item.task}>{item.task}</span>}
+                            </div>
+                            <div className="flex gap-2 pt-1">
+                              <button
+                                onClick={() => handleEditDutyClick(item)}
+                                className="flex-1 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors"
+                              >Edit</button>
+                              <button
+                                onClick={() => handleDeleteDuty(item.id_duty)}
+                                className="flex-1 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
+                              >Delete</button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="p-10 text-center text-slate-400 font-medium italic text-sm">
+                        Tidak ada data jadwal duty ditemukan.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ─── Desktop Table (tampil di layar ≥ md) ─── */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-white text-slate-400 font-bold text-[10px] uppercase tracking-widest border-b border-slate-100">
+                        <tr>
+                          <th className="px-6 py-4">Guru (Teacher)</th>
+                          <th className="px-6 py-4">Lokasi (Location)</th>
+                          <th className="px-6 py-4">Kategori & Grade</th>
+                          <th className="px-6 py-4">Hari (Day)</th>
+                          <th className="px-6 py-4">Waktu (Time Slot)</th>
+                          <th className="px-6 py-4">Tugas / Instruksi</th>
+                          <th className="px-6 py-4 text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 text-sm">
+                        {currentDutyData.length > 0 ? (
+                          currentDutyData.map((item) => (
+                            <tr
+                              key={item.id_duty}
+                              className="hover:bg-slate-50/80 transition-colors group"
+                            >
+                              <td className="px-6 py-4 font-bold text-slate-800 whitespace-nowrap">
+                                {item.teacher_name}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-bold text-xs ${
+                                    (item.location || "").toLowerCase().includes("backyard")
+                                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                      : (item.location || "").toLowerCase().includes("canteen")
+                                        ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                        : (item.location || "").toLowerCase().includes("lobby")
+                                          ? "bg-purple-50 text-purple-700 border border-purple-200"
+                                          : "bg-blue-50 text-blue-700 border border-blue-200"
+                                  }`}
+                                >
+                                  {(item.location || "").toLowerCase().includes("backyard") ? "🌳" : (item.location || "").toLowerCase().includes("canteen") ? "☕" : (item.location || "").toLowerCase().includes("lobby") ? "🏢" : "🚪"}{" "}
+                                  {item.location}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 font-medium text-slate-600 whitespace-nowrap">
+                                <div>{item.category}</div>
+                                <div className="text-[11px] text-slate-400 font-semibold">{item.grade_scope}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+                                  {item.day_of_week}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 font-mono text-xs font-medium text-slate-700 whitespace-nowrap">
+                                {item.time_slot}
+                              </td>
+                              <td className="px-6 py-4 text-xs text-slate-500 max-w-xs truncate" title={item.task || ""}>
+                                {item.task || "-"}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex justify-center gap-2">
+                                  <button
+                                    onClick={() => handleEditDutyClick(item)}
+                                    className="px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteDuty(item.id_duty)}
+                                    className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan="7"
+                              className="p-12 text-center text-slate-400 font-medium italic"
+                            >
+                              Tidak ada data jadwal duty ditemukan.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+
+                  {/* Pagination */}
+                  {totalDutyPages > 1 && (
+                    <div className="p-6 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <p className="text-xs text-slate-500 font-medium">
+                        Halaman{" "}
+                        <span className="font-bold text-slate-800">
+                          {currentDutyPage}
+                        </span>{" "}
+                        dari{" "}
+                        <span className="font-bold text-slate-800">
+                          {totalDutyPages}
+                        </span>{" "}
+                        ({filteredDuties.length} hasil)
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          disabled={currentDutyPage === 1}
+                          onClick={() =>
+                            setCurrentDutyPage((p) => Math.max(1, p - 1))
+                          }
+                          className="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          ◀ Prev
+                        </button>
+                        <div className="flex items-center gap-1">
+                          {Array.from(
+                            { length: Math.min(5, totalDutyPages) },
+                            (_, i) => {
+                              let pageNum = i + 1;
+                              if (totalDutyPages > 5) {
+                                if (currentDutyPage > 3) {
+                                  pageNum = currentDutyPage - 2 + i;
+                                  if (pageNum > totalDutyPages) {
+                                    pageNum = totalDutyPages - 4 + i;
+                                  }
+                                }
+                              }
+                              return (
+                                <button
+                                  key={pageNum}
+                                  onClick={() =>
+                                    setCurrentDutyPage(pageNum)
+                                  }
+                                  className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
+                                    currentDutyPage === pageNum
+                                      ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
+                                      : "bg-white border border-slate-200 text-slate-600 hover:border-emerald-600 hover:text-emerald-600"
+                                  }`}
+                                >
+                                  {pageNum}
+                                </button>
+                              );
+                            },
+                          )}
+                        </div>
+                        <button
+                          disabled={currentDutyPage === totalDutyPages}
+                          onClick={() =>
+                            setCurrentDutyPage((p) =>
+                              Math.min(totalDutyPages, p + 1),
+                            )
+                          }
+                          className="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          Next ▶
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

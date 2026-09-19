@@ -42,6 +42,7 @@ function App() {
         />
 
         <Route path="/login" element={<Login />} />
+        <Route path="/AdminLogin" element={<Login />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>

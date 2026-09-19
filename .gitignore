@@ -1,20 +1,54 @@
-# --- Lingkungan Python / Backend ---
-.venv/
-venv/
-__pycache__/
-*.pyc
-*.pyo
-
-# --- Lingkungan Node.js / Frontend React ---
-node_modules/
-build/
-dist/
-
-# --- File Rahasia (Sangat Penting) ---
+# ==========================================
+# 1. KREDENSIAL & RAHASIA (SANGAT PENTING!)
+# ==========================================
+# Jangan pernah mempush file .env ke GitHub karena berisi password/key
 .env
-*.env
-.env.local
+.env.*
+*.local
 
-# --- Sistem Operasi ---
+# ==========================================
+# 2. BACKEND (PYTHON / FASTAPI)
+# ==========================================
+# Virtual Environment (Ukurannya besar dan spesifik per komputer)
+venv/
+env/
+.venv/
+
+# File cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Folder Uploads (Berisi gambar testing/user, tidak perlu masuk git)
+uploads/
+backend-pengumuman/uploads/
+
+# File Database Lokal (Jika pakai SQLite)
+*.sqlite3
+*.db
+
+# ==========================================
+# 3. FRONTEND (NODE.JS / REACT)
+# ==========================================
+# Folder dependensi NPM (Ukurannya sangat besar, bisa diinstall ulang dengan npm install)
+node_modules/
+frontend-pengumuman/node_modules/
+
+# Hasil build production
+dist/
+build/
+
+# Log error NPM/Yarn
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ==========================================
+# 4. OS & CODE EDITOR (TIDAK PENTING)
+# ==========================================
+# Konfigurasi VS Code lokal
+.vscode/
+
+# File sistem operasi
 .DS_Store
 Thumbs.db

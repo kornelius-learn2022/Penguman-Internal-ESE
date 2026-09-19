@@ -1,6 +1,11 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+from sqlalchemy import text
 
 # --- KONFIGURASI DOCKER ---
 # Format: mysql+pymysql://username:password@nama_service_di_docker:port/nama_database
@@ -13,7 +18,7 @@ from sqlalchemy.orm import sessionmaker
 # SQLALCHEMY_DATABASE_URL = "mysql+pymysql://admin_web:PasswordKuat123!@127.0.0.1:3306/db_pengumuman"
 
 
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:password_anda@db:3306/db_pengumuman"
+SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL")
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

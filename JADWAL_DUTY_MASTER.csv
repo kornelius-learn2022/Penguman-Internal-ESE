@@ -1,0 +1,146 @@
+category,grade_scope,location,day_of_week,time_slot,teacher_name,task
+Morning Duty,All Grades (Schoolwide),Canteen,Monday,07.15-07.45,Ms. Sus,"supervise students, remind them to play safely"
+Morning Duty,All Grades (Schoolwide),Canteen,Tuesday,07.15-07.45,Ms. Sus,"supervise students, remind them to play safely"
+Morning Duty,All Grades (Schoolwide),Canteen,Wednesday,07.15-07.45,Ms. Sus,"supervise students, remind them to play safely"
+Morning Duty,All Grades (Schoolwide),Canteen,Thursday,07.15-07.45,Ms. Sus,"supervise students, remind them to play safely"
+Morning Duty,All Grades (Schoolwide),Canteen,Friday,07.15-07.45,Ms. Sus,"supervise students, remind them to play safely"
+Morning Duty,All Grades (Schoolwide),ESE Backyard,Monday,07.15-07.45,Ms. Jenny P,
+Morning Duty,All Grades (Schoolwide),ESE Backyard,Tuesday,07.15-07.45,Mr. Minh,
+Morning Duty,All Grades (Schoolwide),ESE Backyard,Wednesday,07.15-07.45,Ms. Jenny P,
+Morning Duty,All Grades (Schoolwide),ESE Backyard,Thursday,07.15-07.45,Mr. Minh,
+Morning Duty,All Grades (Schoolwide),ESE Backyard,Friday,07.15-07.45,Ms. Jenny P,
+Morning Duty,All Grades (Schoolwide),2nd floor lobby and corridors,Monday,07.15-07.45,Ms. Rahayu,"supervise students, remind them not running in the corridor, no parents or nanny in this area."
+Morning Duty,All Grades (Schoolwide),2nd floor lobby and corridors,Tuesday,07.15-07.45,Mr. Kornelius,"supervise students, remind them not running in the corridor, no parents or nanny in this area."
+Morning Duty,All Grades (Schoolwide),2nd floor lobby and corridors,Wednesday,07.15-07.45,Ms. Rahayu,"supervise students, remind them not running in the corridor, no parents or nanny in this area."
+Morning Duty,All Grades (Schoolwide),2nd floor lobby and corridors,Thursday,07.15-07.45,Mr. Kornelius,"supervise students, remind them not running in the corridor, no parents or nanny in this area."
+Morning Duty,All Grades (Schoolwide),2nd floor lobby and corridors,Friday,07.15-07.45,Ms. Rahayu,"supervise students, remind them not running in the corridor, no parents or nanny in this area."
+Morning Duty,All Grades (Schoolwide),3rd floor lobby and corridors,Monday,07.15-07.45,Ms. Meitha,
+Morning Duty,All Grades (Schoolwide),3rd floor lobby and corridors,Tuesday,07.15-07.45,Ms. Gloria,
+Morning Duty,All Grades (Schoolwide),3rd floor lobby and corridors,Wednesday,07.15-07.45,Mr. Gideon,
+Morning Duty,All Grades (Schoolwide),3rd floor lobby and corridors,Thursday,07.15-07.45,Mr. Gideon,
+Morning Duty,All Grades (Schoolwide),3rd floor lobby and corridors,Friday,07.15-07.45,Mr. Albert,
+Morning Duty,All Grades (Schoolwide),4th floor lobby and corridors,Monday,07.15-07.45,Ms. Shenny,
+Morning Duty,All Grades (Schoolwide),4th floor lobby and corridors,Tuesday,07.15-07.45,Ms. Shenny,
+Morning Duty,All Grades (Schoolwide),4th floor lobby and corridors,Wednesday,07.15-07.45,Ms. Angi,
+Morning Duty,All Grades (Schoolwide),4th floor lobby and corridors,Thursday,07.15-07.45,Mr. Ridham,
+Morning Duty,All Grades (Schoolwide),4th floor lobby and corridors,Friday,07.15-07.45,Ms. Angi,
+Break 1 (Grade 1-2),Grade 1-2,Canteen,Monday,09.10-09.35,Ms. Rahayu,remind students to behave in the canteen area
+Break 1 (Grade 1-2),Grade 1-2,Canteen,Tuesday,09.10-09.35,Ms. Jenny P,remind students to behave in the canteen area
+Break 1 (Grade 1-2),Grade 1-2,Canteen,Wednesday,09.10-09.35,Ms. Rahayu,remind students to behave in the canteen area
+Break 1 (Grade 1-2),Grade 1-2,Canteen,Thursday,09.30-09.45,Ms. Jenny P,remind students to behave in the canteen area
+Break 1 (Grade 1-2),Grade 1-2,Canteen,Friday,09.10-09.35,Ms. Rachelle,remind students to behave in the canteen area
+Break 1 (Grade 1-2),Grade 1-2,ESE Backyard,Monday,09.10-09.35,Ms. Destha,"supervise students, remind them to play safely, not disturb PE lesson"
+Break 1 (Grade 1-2),Grade 1-2,ESE Backyard,Tuesday,09.10-09.35,Ms. Agnes,"supervise students, remind them to play safely, not disturb PE lesson"
+Break 1 (Grade 1-2),Grade 1-2,ESE Backyard,Wednesday,09.10-09.35,Ms. Destha,"supervise students, remind them to play safely, not disturb PE lesson"
+Break 1 (Grade 1-2),Grade 1-2,ESE Backyard,Thursday,09.30-09.45,Ms. Agnes,"supervise students, remind them to play safely, not disturb PE lesson"
+Break 1 (Grade 1-2),Grade 1-2,ESE Backyard,Friday,09.10-09.35,Ms. Destha,"supervise students, remind them to play safely, not disturb PE lesson"
+Break 2 (Grade 1-2),Grade 1-2,Canteen,Monday,11.20-11.50,Ms. Gloria,remind students to behave in the canteen area
+Break 2 (Grade 1-2),Grade 1-2,Canteen,Tuesday,11.20-11.50,Ms. Rachelle,remind students to behave in the canteen area
+Break 2 (Grade 1-2),Grade 1-2,Canteen,Wednesday,11.20-11.50,Ms. Rachelle,remind students to behave in the canteen area
+Break 2 (Grade 1-2),Grade 1-2,Canteen,Thursday,11.30-11.50,Ms. Gloria,remind students to behave in the canteen area
+Break 2 (Grade 1-2),Grade 1-2,Canteen,Friday,11.20-11.50,Ms. Gloria,remind students to behave in the canteen area
+Break 2 (Grade 1-2),Grade 1-2,ESE Backyard,Monday,11.20-11.50,Ms. Jenny P,"supervise students, remind them to play safely, not disturb PE lesson"
+Break 2 (Grade 1-2),Grade 1-2,ESE Backyard,Tuesday,11.20-11.50,Ms. Endah,"supervise students, remind them to play safely, not disturb PE lesson"
+Break 2 (Grade 1-2),Grade 1-2,ESE Backyard,Wednesday,11.20-11.50,Ms. Jenny P,"supervise students, remind them to play safely, not disturb PE lesson"
+Break 2 (Grade 1-2),Grade 1-2,ESE Backyard,Thursday,11.30-11.50,Ms. Vita,"supervise students, remind them to play safely, not disturb PE lesson"
+Break 2 (Grade 1-2),Grade 1-2,ESE Backyard,Friday,11.20-11.50,Ms. Jenny P,"supervise students, remind them to play safely, not disturb PE lesson"
+Go Home (Grade 1-2),Grade 1-2,Announcer (front gate),Monday,13.00-13.35,Mr. Adhik,call those who join drive thru first
+Go Home (Grade 1-2),Grade 1-2,Announcer (front gate),Tuesday,13.00-13.35,Mr. Angga,call those who join drive thru first
+Go Home (Grade 1-2),Grade 1-2,Announcer (front gate),Wednesday,13.00-13.35,Ms. Endah,call those who join drive thru first
+Go Home (Grade 1-2),Grade 1-2,Announcer (front gate),Thursday,13.25-13.50,Ms. Endah,call those who join drive thru first
+Go Home (Grade 1-2),Grade 1-2,Announcer (front gate),Friday,13.00-13.35,Mr. Angga,call those who join drive thru first
+Go Home (Grade 1-2),Grade 1-2,Announcer (back gate),Monday,13.00-13.35,Mr. Hakim,
+Go Home (Grade 1-2),Grade 1-2,Announcer (back gate),Tuesday,13.00-13.35,Mr. Hakim,
+Go Home (Grade 1-2),Grade 1-2,Announcer (back gate),Wednesday,13.00-13.35,Mr. Hakim,
+Go Home (Grade 1-2),Grade 1-2,Announcer (back gate),Thursday,13.25-13.50,Mr. Hakim,
+Go Home (Grade 1-2),Grade 1-2,Announcer (back gate),Friday,13.00-13.35,Mr. Hakim,
+Break 1 (Grade 3-4),Grade 3-4,Canteen,Monday,09.10-09.35,Ms. Kristiani,"supervise students, remind them to behave in the canteen area"
+Break 1 (Grade 3-4),Grade 3-4,Canteen,Tuesday,09.10-09.35,Mr. Kornelius,"supervise students, remind them to behave in the canteen area"
+Break 1 (Grade 3-4),Grade 3-4,Canteen,Wednesday,09.30-09.45,Ms. Phoebe,"supervise students, remind them to behave in the canteen area"
+Break 1 (Grade 3-4),Grade 3-4,Canteen,Thursday,09.10-09.35,Mr. Kornelius,"supervise students, remind them to behave in the canteen area"
+Break 1 (Grade 3-4),Grade 3-4,Canteen,Friday,09.10-09.35,Ms. Kristiani,"supervise students, remind them to behave in the canteen area"
+Break 1 (Grade 3-4),Grade 3-4,ESE Backyard,Monday,09.10-09.35,Mr. Dion,"supervise students, remind them to play safely, not disturb PE lesson"
+Break 1 (Grade 3-4),Grade 3-4,ESE Backyard,Tuesday,09.10-09.35,Mr. Dion,"supervise students, remind them to play safely, not disturb PE lesson"
+Break 1 (Grade 3-4),Grade 3-4,ESE Backyard,Wednesday,09.30-09.45,Mr. Kornelius,"supervise students, remind them to play safely, not disturb PE lesson"
+Break 1 (Grade 3-4),Grade 3-4,ESE Backyard,Thursday,09.10-09.35,Mr. Dion,"supervise students, remind them to play safely, not disturb PE lesson"
+Break 1 (Grade 3-4),Grade 3-4,ESE Backyard,Friday,09.10-09.35,Mr. Dion,"supervise students, remind them to play safely, not disturb PE lesson"
+Break 1 (Grade 3-4),Grade 3-4,2nd floor lobby,Monday,09.10-09.35,Ms. Meitha,Remind student to play safely. Not run in the building and not make too loud noise
+Break 1 (Grade 3-4),Grade 3-4,2nd floor lobby,Tuesday,09.10-09.35,Ms. Citra,Remind student to play safely. Not run in the building and not make too loud noise
+Break 1 (Grade 3-4),Grade 3-4,2nd floor lobby,Wednesday,09.30-09.45,Ms. Meitha,Remind student to play safely. Not run in the building and not make too loud noise
+Break 1 (Grade 3-4),Grade 3-4,2nd floor lobby,Thursday,09.10-09.35,Ms. Citra,Remind student to play safely. Not run in the building and not make too loud noise
+Break 1 (Grade 3-4),Grade 3-4,2nd floor lobby,Friday,09.10-09.35,Ms. Meitha,Remind student to play safely. Not run in the building and not make too loud noise
+Break 2 (Grade 3-4),Grade 3-4,Canteen,Monday,11.55-12.25,Ms. Sherly,"supervise students, remind them to behave in the canteen area"
+Break 2 (Grade 3-4),Grade 3-4,Canteen,Tuesday,11.55-12.25,Ms. Destha,"supervise students, remind them to behave in the canteen area"
+Break 2 (Grade 3-4),Grade 3-4,Canteen,Wednesday,11.30-11.50,Ms. Phoebe,"supervise students, remind them to behave in the canteen area"
+Break 2 (Grade 3-4),Grade 3-4,Canteen,Thursday,11.55-12.25,Ms. Destha,"supervise students, remind them to behave in the canteen area"
+Break 2 (Grade 3-4),Grade 3-4,Canteen,Friday,11.55-12.25,Ms. Kristiani,"supervise students, remind them to behave in the canteen area"
+Break 2 (Grade 3-4),Grade 3-4,ESE Backyard,Monday,11.55-12.25,Mr. Kornelius,"supervise students, remind them to play safely, not disturb PE lesson"
+Break 2 (Grade 3-4),Grade 3-4,ESE Backyard,Tuesday,11.55-12.25,Ms. Meitha,"supervise students, remind them to play safely, not disturb PE lesson"
+Break 2 (Grade 3-4),Grade 3-4,ESE Backyard,Wednesday,11.30-11.50,Ms. Meitha,"supervise students, remind them to play safely, not disturb PE lesson"
+Break 2 (Grade 3-4),Grade 3-4,ESE Backyard,Thursday,11.55-12.25,Ms. Meitha,"supervise students, remind them to play safely, not disturb PE lesson"
+Break 2 (Grade 3-4),Grade 3-4,ESE Backyard,Friday,11.55-12.25,Mr. Kornelius,"supervise students, remind them to play safely, not disturb PE lesson"
+Break 2 (Grade 3-4),Grade 3-4,2nd floor lobby,Monday,11.55-12.25,Ms. Vita,Remind student to play safely. Not run in the building and not make too loud noise
+Break 2 (Grade 3-4),Grade 3-4,2nd floor lobby,Tuesday,11.55-12.25,Ms. Vita,Remind student to play safely. Not run in the building and not make too loud noise
+Break 2 (Grade 3-4),Grade 3-4,2nd floor lobby,Wednesday,11.30-11.50,Ms. Vita,Remind student to play safely. Not run in the building and not make too loud noise
+Break 2 (Grade 3-4),Grade 3-4,2nd floor lobby,Thursday,11.55-12.25,Ms. Endah,Remind student to play safely. Not run in the building and not make too loud noise
+Break 2 (Grade 3-4),Grade 3-4,2nd floor lobby,Friday,11.55-12.25,Ms. Vita,Remind student to play safely. Not run in the building and not make too loud noise
+Go Home (Grade 3-4),Grade 3-4,Announcer (front gate),Monday,13.35-14.00,Mr. Kornelius,call those who join drive thru first
+Go Home (Grade 3-4),Grade 3-4,Announcer (front gate),Tuesday,13.35-14.00,Ms. Meitha,call those who join drive thru first
+Go Home (Grade 3-4),Grade 3-4,Announcer (front gate),Wednesday,13.50-14.00,Mr. Dion,call those who join drive thru first
+Go Home (Grade 3-4),Grade 3-4,Announcer (front gate),Thursday,13.35-14.00,Ms. Meitha,call those who join drive thru first
+Go Home (Grade 3-4),Grade 3-4,Announcer (front gate),Friday,13.35-14.00,Mr. Kornelius,call those who join drive thru first
+Go Home (Grade 3-4),Grade 3-4,Announcer (back gate),Monday,13.35-14.00,Mr. Hindra,
+Go Home (Grade 3-4),Grade 3-4,Announcer (back gate),Tuesday,13.35-14.00,Mr. Hindra,
+Go Home (Grade 3-4),Grade 3-4,Announcer (back gate),Wednesday,13.50-14.00,Mr. Hindra,
+Go Home (Grade 3-4),Grade 3-4,Announcer (back gate),Thursday,13.35-14.00,Mr. Hindra,
+Go Home (Grade 3-4),Grade 3-4,Announcer (back gate),Friday,13.35-14.00,Mr. Hindra,
+Break 1 (Grade 5-6),Grade 5-6,Canteen,Monday,10.20-10.45,Ms. Inggrid,remind students to behave in the canteen area
+Break 1 (Grade 5-6),Grade 5-6,Canteen,Tuesday,10.20-10.45,Mr. Percy,remind students to behave in the canteen area
+Break 1 (Grade 5-6),Grade 5-6,Canteen,Wednesday,10.20-10.45,Ms. Inggrid,remind students to behave in the canteen area
+Break 1 (Grade 5-6),Grade 5-6,Canteen,Thursday,10.20-10.45,Mr. Percy,remind students to behave in the canteen area
+Break 1 (Grade 5-6),Grade 5-6,Canteen,Friday,10.20-10.45,Ms. Inggrid,remind students to behave in the canteen area
+Break 1 (Grade 5-6),Grade 5-6,ESE Backyard,Monday,10.20-10.45,Ms. Angi,"remind students to play safely, not disturb PE lesson"
+Break 1 (Grade 5-6),Grade 5-6,ESE Backyard,Tuesday,10.20-10.45,Ms. Kristiani,"remind students to play safely, not disturb PE lesson"
+Break 1 (Grade 5-6),Grade 5-6,ESE Backyard,Wednesday,10.20-10.45,Ms. Angi,"remind students to play safely, not disturb PE lesson"
+Break 1 (Grade 5-6),Grade 5-6,ESE Backyard,Thursday,10.20-10.45,Ms. Kristiani,"remind students to play safely, not disturb PE lesson"
+Break 1 (Grade 5-6),Grade 5-6,ESE Backyard,Friday,10.20-10.45,Ms. Angi,"remind students to play safely, not disturb PE lesson"
+Break 1 (Grade 5-6),Grade 5-6,3rd floor lobby,Monday,10.20-10.45,Ms. Wang,Remind student to play safely. Not run in the building and not make too loud noise
+Break 1 (Grade 5-6),Grade 5-6,3rd floor lobby,Tuesday,10.20-10.45,Ms. Wang,Remind student to play safely. Not run in the building and not make too loud noise
+Break 1 (Grade 5-6),Grade 5-6,3rd floor lobby,Wednesday,10.20-10.45,Mr. Hendy,Remind student to play safely. Not run in the building and not make too loud noise
+Break 1 (Grade 5-6),Grade 5-6,3rd floor lobby,Thursday,10.20-10.45,Ms. Wang,Remind student to play safely. Not run in the building and not make too loud noise
+Break 1 (Grade 5-6),Grade 5-6,3rd floor lobby,Friday,10.20-10.45,Ms. Wang,Remind student to play safely. Not run in the building and not make too loud noise
+Break 1 (Grade 5-6),Grade 5-6,4th floor lobby,Monday,10.20-10.45,Mr. Minh,
+Break 1 (Grade 5-6),Grade 5-6,4th floor lobby,Tuesday,10.20-10.45,Mr. Minh,
+Break 1 (Grade 5-6),Grade 5-6,4th floor lobby,Wednesday,10.20-10.45,Mr. Minh,
+Break 1 (Grade 5-6),Grade 5-6,4th floor lobby,Thursday,10.20-10.45,Mr. Minh,
+Break 1 (Grade 5-6),Grade 5-6,4th floor lobby,Friday,10.20-10.45,Mr. Minh,
+Break 2 (Grade 5-6),Grade 5-6,Canteen,Monday,11.55-12.25,Mr. Hendro,remind students to behave in the canteen area
+Break 2 (Grade 5-6),Grade 5-6,Canteen,Tuesday,11.55-12.25,Mr. Gideon,remind students to behave in the canteen area
+Break 2 (Grade 5-6),Grade 5-6,Canteen,Wednesday,11.55-12.25,Mr. Hendro,remind students to behave in the canteen area
+Break 2 (Grade 5-6),Grade 5-6,Canteen,Thursday,12.05-12.25,Mr. Hendro,remind students to behave in the canteen area
+Break 2 (Grade 5-6),Grade 5-6,Canteen,Friday,11.55-12.25,Mr. Hendro,remind students to behave in the canteen area
+Break 2 (Grade 5-6),Grade 5-6,ESE Backyard,Monday,11.55-12.25,Mr. Nano,"remind students to play safely, not disturb PE lesson"
+Break 2 (Grade 5-6),Grade 5-6,ESE Backyard,Tuesday,11.55-12.25,Ms. Angi,"remind students to play safely, not disturb PE lesson"
+Break 2 (Grade 5-6),Grade 5-6,ESE Backyard,Wednesday,11.55-12.25,Mr. Nano,"remind students to play safely, not disturb PE lesson"
+Break 2 (Grade 5-6),Grade 5-6,ESE Backyard,Thursday,12.05-12.25,Ms. Angi,"remind students to play safely, not disturb PE lesson"
+Break 2 (Grade 5-6),Grade 5-6,ESE Backyard,Friday,11.55-12.25,Mr. Gideon,"remind students to play safely, not disturb PE lesson"
+Break 2 (Grade 5-6),Grade 5-6,3rd floor lobby,Monday,11.55-12.25,Mr. Minh,Remind student to play safely. Not run in the building and not make too loud noise
+Break 2 (Grade 5-6),Grade 5-6,3rd floor lobby,Tuesday,11.55-12.25,Mr. Minh,Remind student to play safely. Not run in the building and not make too loud noise
+Break 2 (Grade 5-6),Grade 5-6,3rd floor lobby,Wednesday,11.55-12.25,Ms. Wang,Remind student to play safely. Not run in the building and not make too loud noise
+Break 2 (Grade 5-6),Grade 5-6,3rd floor lobby,Thursday,12.05-12.25,Mr. Hendy,Remind student to play safely. Not run in the building and not make too loud noise
+Break 2 (Grade 5-6),Grade 5-6,3rd floor lobby,Friday,11.55-12.25,Mr. Minh,Remind student to play safely. Not run in the building and not make too loud noise
+Break 2 (Grade 5-6),Grade 5-6,4th floor lobby,Monday,11.55-12.25,Mr. Ridham,
+Break 2 (Grade 5-6),Grade 5-6,4th floor lobby,Tuesday,11.55-12.25,Ms. Inggrid,
+Break 2 (Grade 5-6),Grade 5-6,4th floor lobby,Wednesday,11.55-12.25,Mr. Ridham,
+Break 2 (Grade 5-6),Grade 5-6,4th floor lobby,Thursday,12.05-12.25,Ms. Inggrid,
+Break 2 (Grade 5-6),Grade 5-6,4th floor lobby,Friday,11.55-12.25,Ms. Wang,
+Go Home (Grade 5-6),Grade 5-6,Announcer (front gate),Monday,14.10-14.35,Mr. Ardhi,call those who join drive thru first
+Go Home (Grade 5-6),Grade 5-6,Announcer (front gate),Tuesday,14.10-14.35,Mr. Ardhi,call those who join drive thru first
+Go Home (Grade 5-6),Grade 5-6,Announcer (front gate),Wednesday,14.10-14.35,Mr. Ardhi,call those who join drive thru first
+Go Home (Grade 5-6),Grade 5-6,Announcer (front gate),Thursday,14.35-14.50,Mr. Ardhi,call those who join drive thru first
+Go Home (Grade 5-6),Grade 5-6,Announcer (front gate),Friday,14.10-14.35,Mr. Ardhi,call those who join drive thru first
+Go Home (Grade 5-6),Grade 5-6,Announcer (back gate),Monday,14.10-14.35,Mr. Benu,
+Go Home (Grade 5-6),Grade 5-6,Announcer (back gate),Tuesday,14.10-14.35,Mr. Benu,
+Go Home (Grade 5-6),Grade 5-6,Announcer (back gate),Wednesday,14.10-14.35,Mr. Benu,
+Go Home (Grade 5-6),Grade 5-6,Announcer (back gate),Thursday,14.35-14.50,Mr. Benu,
+Go Home (Grade 5-6),Grade 5-6,Announcer (back gate),Friday,14.10-14.35,Mr. Benu,

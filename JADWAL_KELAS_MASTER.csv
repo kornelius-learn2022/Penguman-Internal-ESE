@@ -1,0 +1,1380 @@
+class_name,day_of_week,time_slot,subject,teacher_name,teacher_role,grade
+1A,Monday,07.45-08.00,PC Session,Ms. Debby,Wali Kelas,Grade 1
+1A,Tuesday,07.45-08.00,PC Session,Ms. Debby,Wali Kelas,Grade 1
+1A,Wednesday,07.45-08.00,PC Session,Ms. Debby,Wali Kelas,Grade 1
+1A,Thursday,07.45-08.20,UoI,Ms. Debby,Wali Kelas,Grade 1
+1A,Friday,07.45-08.20,PC Session,Ms. Debby,Wali Kelas,Grade 1
+1A,Monday,08.00-08.35,Assembly,Ms. Debby,Wali Kelas,Grade 1
+1A,Tuesday,08.00-08.35,Mandarin,Ms. Renlin,Guru Spesialis,Grade 1
+1A,Wednesday,08.00-08.35,PSPE,Mr. Adhik,Guru Spesialis,Grade 1
+1A,Thursday,08.20-08.55,English B,Ms. Jenny P,Guru Spesialis,Grade 1
+1A,Friday,08.20-08.55,Math,Ms. Debby,Wali Kelas,Grade 1
+1A,Monday,08.35-09.10,UoI,Ms. Debby,Wali Kelas,Grade 1
+1A,Tuesday,08.35-09.10,Mandarin,Ms. Renlin,Guru Spesialis,Grade 1
+1A,Wednesday,08.35-09.10,PSPE,Mr. Adhik,Guru Spesialis,Grade 1
+1A,Thursday,08.55-09.30,English B,Ms. Jenny P,Guru Spesialis,Grade 1
+1A,Friday,08.55-09.30,Math,Ms. Debby,Wali Kelas,Grade 1
+1A,Monday,09.10-09.35,Break,Break,Wali Kelas,Grade 1
+1A,Tuesday,09.10-09.35,Break,Break,Wali Kelas,Grade 1
+1A,Wednesday,09.10-09.35,Break,Break,Wali Kelas,Grade 1
+1A,Thursday,09.30-09.45,Break,Break,Wali Kelas,Grade 1
+1A,Friday,09.30-09.45,Break,Break,Wali Kelas,Grade 1
+1A,Monday,09.35-10.10,UoI,Ms. Debby,Wali Kelas,Grade 1
+1A,Tuesday,09.35-10.10,BI,Ms. Debby,Wali Kelas,Grade 1
+1A,Wednesday,09.35-10.10,Library,Library Team,Guru Spesialis,Grade 1
+1A,Thursday,09.45-10.20,Singing/Music,Guru Spesialis (Singing/Music),Guru Spesialis,Grade 1
+1A,Friday,09.45-10.20,UoI,Ms. Debby,Wali Kelas,Grade 1
+1A,Monday,10.10-10.45,English A,Ms. Katherine,Guru Spesialis,Grade 1
+1A,Tuesday,10.10-10.45,VA,Ms. Jenny P,Guru Spesialis,Grade 1
+1A,Wednesday,10.10-10.45,Math,Ms. Debby,Wali Kelas,Grade 1
+1A,Thursday,10.20-10.55,BI,Ms. Debby,Wali Kelas,Grade 1
+1A,Friday,10.20-10.55,UoI,Ms. Debby,Wali Kelas,Grade 1
+1A,Monday,10.45-11.20,English A,Ms. Katherine,Guru Spesialis,Grade 1
+1A,Tuesday,10.45-11.20,BI,Ms. Debby,Wali Kelas,Grade 1
+1A,Wednesday,10.45-11.20,Math,Ms. Debby,Wali Kelas,Grade 1
+1A,Thursday,10.55-11.30,BI,Ms. Debby,Wali Kelas,Grade 1
+1A,Friday,10.55-11.30,UoI,Ms. Debby,Wali Kelas,Grade 1
+1A,Monday,11.20-11.50,Break,Break,Wali Kelas,Grade 1
+1A,Tuesday,11.20-11.50,Break,Break,Wali Kelas,Grade 1
+1A,Wednesday,11.20-11.50,Break,Break,Wali Kelas,Grade 1
+1A,Thursday,11.30-11.50,Break,Break,Wali Kelas,Grade 1
+1A,Friday,11.30-11.50,Break,Break,Wali Kelas,Grade 1
+1A,Monday,11.50-12.25,IT,Guru Spesialis (IT),Guru Spesialis,Grade 1
+1A,Tuesday,11.50-12.25,SEL,Ms. Shenny,Guru Spesialis,Grade 1
+1A,Wednesday,11.50-12.25,Reacter,Ms. Gloria,Guru Spesialis,Grade 1
+1A,Thursday,11.50-12.25,Math,Ms. Debby,Wali Kelas,Grade 1
+1A,Friday,11.50-12.25,English B,Ms. Jenny P,Guru Spesialis,Grade 1
+1A,Monday,12.25-13.00,IT,Guru Spesialis (IT),Guru Spesialis,Grade 1
+1A,Tuesday,12.25-13.00,P.Pancasila,Ms. Debby,Wali Kelas,Grade 1
+1A,Wednesday,12.25-13.00,Reacter,Ms. Gloria,Guru Spesialis,Grade 1
+1A,Thursday,12.25-13.25,Excur,Ms. Debby,Wali Kelas,Grade 1
+1A,Friday,12.25-13.25,English B,Guru Spesialis (English B),Guru Spesialis,Grade 1
+1A,Monday,13.00-13.10,Preparation,Ms. Debby,Wali Kelas,Grade 1
+1A,Tuesday,13.00-13.10,Preparation,Ms. Debby,Wali Kelas,Grade 1
+1A,Wednesday,13.00-13.10,Preparation,Ms. Debby,Wali Kelas,Grade 1
+1A,Thursday,13.25-13.30,Preparation,Ms. Debby,Wali Kelas,Grade 1
+1A,Friday,13.25-13.30,Preparation,Ms. Debby,Wali Kelas,Grade 1
+1B,Monday,07.45-08.00,PC Session,Ms. Hermin,Wali Kelas,Grade 1
+1B,Tuesday,07.45-08.00,PC Session,Ms. Hermin,Wali Kelas,Grade 1
+1B,Wednesday,07.45-08.00,PC Session,Ms. Hermin,Wali Kelas,Grade 1
+1B,Thursday,07.45-08.20,Math,Ms. Hermin,Wali Kelas,Grade 1
+1B,Friday,07.45-08.20,PC Session,Ms. Hermin,Wali Kelas,Grade 1
+1B,Monday,08.00-08.35,Assembly,Ms. Hermin,Wali Kelas,Grade 1
+1B,Tuesday,08.00-08.35,English B,Ms. Jenny P,Guru Spesialis,Grade 1
+1B,Wednesday,08.00-08.35,Reacter,Ms. Gloria,Guru Spesialis,Grade 1
+1B,Thursday,08.20-08.55,Math,Ms. Hermin,Wali Kelas,Grade 1
+1B,Friday,08.20-08.55,IT,Guru Spesialis (IT),Guru Spesialis,Grade 1
+1B,Monday,08.35-09.10,English A,Ms. Katherine,Guru Spesialis,Grade 1
+1B,Tuesday,08.35-09.10,English B,Ms. Jenny P,Guru Spesialis,Grade 1
+1B,Wednesday,08.35-09.10,Reacter,Ms. Gloria,Guru Spesialis,Grade 1
+1B,Thursday,08.55-09.30,BI,Ms. Hermin,Wali Kelas,Grade 1
+1B,Friday,08.55-09.30,IT,Guru Spesialis (IT),Guru Spesialis,Grade 1
+1B,Monday,09.10-09.35,Break,Break,Wali Kelas,Grade 1
+1B,Tuesday,09.10-09.35,Break,Break,Wali Kelas,Grade 1
+1B,Wednesday,09.10-09.35,Break,Break,Wali Kelas,Grade 1
+1B,Thursday,09.30-09.45,Break,Break,Wali Kelas,Grade 1
+1B,Friday,09.30-09.45,Break,Break,Wali Kelas,Grade 1
+1B,Monday,09.35-10.10,English A,Ms. Katherine,Guru Spesialis,Grade 1
+1B,Tuesday,09.35-10.10,Mandarin,Ms. Renlin,Guru Spesialis,Grade 1
+1B,Wednesday,09.35-10.10,Math,Ms. Hermin,Wali Kelas,Grade 1
+1B,Thursday,09.45-10.20,BI,Ms. Hermin,Wali Kelas,Grade 1
+1B,Friday,09.45-10.20,UoI,Ms. Hermin,Wali Kelas,Grade 1
+1B,Monday,10.10-10.45,UoI,Ms. Hermin,Wali Kelas,Grade 1
+1B,Tuesday,10.10-10.45,Mandarin,Ms. Renlin,Guru Spesialis,Grade 1
+1B,Wednesday,10.10-10.45,PSPE,Mr. Adhik,Guru Spesialis,Grade 1
+1B,Thursday,10.20-10.55,Singing/Music,Guru Spesialis (Singing/Music),Guru Spesialis,Grade 1
+1B,Friday,10.20-10.55,UoI,Ms. Hermin,Wali Kelas,Grade 1
+1B,Monday,10.45-11.20,UoI,Ms. Hermin,Wali Kelas,Grade 1
+1B,Tuesday,10.45-11.20,BI,Ms. Hermin,Wali Kelas,Grade 1
+1B,Wednesday,10.45-11.20,PSPE,Mr. Adhik,Guru Spesialis,Grade 1
+1B,Thursday,10.55-11.30,English B,Ms. Jenny P,Guru Spesialis,Grade 1
+1B,Friday,10.55-11.30,UoI,Ms. Hermin,Wali Kelas,Grade 1
+1B,Monday,11.20-11.50,Break,Break,Wali Kelas,Grade 1
+1B,Tuesday,11.20-11.50,Break,Break,Wali Kelas,Grade 1
+1B,Wednesday,11.20-11.50,Break,Break,Wali Kelas,Grade 1
+1B,Thursday,11.30-11.50,Break,Break,Wali Kelas,Grade 1
+1B,Friday,11.30-11.50,Break,Break,Wali Kelas,Grade 1
+1B,Monday,11.50-12.25,VA,Ms. Jenny P,Guru Spesialis,Grade 1
+1B,Tuesday,11.50-12.25,BI,Ms. Hermin,Wali Kelas,Grade 1
+1B,Wednesday,11.50-12.25,Library,Library Team,Guru Spesialis,Grade 1
+1B,Thursday,11.50-12.25,English B,Ms. Jenny P,Guru Spesialis,Grade 1
+1B,Friday,11.50-12.25,Math,Ms. Hermin,Wali Kelas,Grade 1
+1B,Monday,12.25-13.00,SEL,Ms. Shenny,Guru Spesialis,Grade 1
+1B,Tuesday,12.25-13.00,P.Pancasila,Ms. Hermin,Wali Kelas,Grade 1
+1B,Wednesday,12.25-13.00,UoI,Ms. Hermin,Wali Kelas,Grade 1
+1B,Thursday,12.25-13.25,Excur,Ms. Hermin,Wali Kelas,Grade 1
+1B,Friday,12.25-13.25,Math,Ms. Hermin,Wali Kelas,Grade 1
+1B,Monday,13.00-13.10,Preparation,Ms. Hermin,Wali Kelas,Grade 1
+1B,Tuesday,13.00-13.10,Preparation,Ms. Hermin,Wali Kelas,Grade 1
+1B,Wednesday,13.00-13.10,Preparation,Ms. Hermin,Wali Kelas,Grade 1
+1B,Thursday,13.25-13.30,Preparation,Ms. Hermin,Wali Kelas,Grade 1
+1B,Friday,13.25-13.30,Preparation,Ms. Hermin,Wali Kelas,Grade 1
+1C,Monday,07.45-08.00,PC Session,Ms. Natalia,Wali Kelas,Grade 1
+1C,Tuesday,07.45-08.00,PC Session,Ms. Natalia,Wali Kelas,Grade 1
+1C,Wednesday,07.45-08.00,PC Session,Ms. Natalia,Wali Kelas,Grade 1
+1C,Thursday,07.45-08.20,Math,Ms. Natalia,Wali Kelas,Grade 1
+1C,Friday,07.45-08.20,PC Session,Ms. Natalia,Wali Kelas,Grade 1
+1C,Monday,08.00-08.35,Assembly,Ms. Natalia,Wali Kelas,Grade 1
+1C,Tuesday,08.00-08.35,Math,Ms. Natalia,Wali Kelas,Grade 1
+1C,Wednesday,08.00-08.35,BI,Ms. Natalia,Wali Kelas,Grade 1
+1C,Thursday,08.20-08.55,Math,Ms. Natalia,Wali Kelas,Grade 1
+1C,Friday,08.20-08.55,English B,Guru Spesialis (English B),Guru Spesialis,Grade 1
+1C,Monday,08.35-09.10,UoI,Ms. Natalia,Wali Kelas,Grade 1
+1C,Tuesday,08.35-09.10,Math,Ms. Natalia,Wali Kelas,Grade 1
+1C,Wednesday,08.35-09.10,BI,Ms. Natalia,Wali Kelas,Grade 1
+1C,Thursday,08.55-09.30,BI,Ms. Natalia,Wali Kelas,Grade 1
+1C,Friday,08.55-09.30,English B,Guru Spesialis (English B),Guru Spesialis,Grade 1
+1C,Monday,09.10-09.35,Break,Break,Wali Kelas,Grade 1
+1C,Tuesday,09.10-09.35,Break,Break,Wali Kelas,Grade 1
+1C,Wednesday,09.10-09.35,Break,Break,Wali Kelas,Grade 1
+1C,Thursday,09.30-09.45,Break,Break,Wali Kelas,Grade 1
+1C,Friday,09.30-09.45,Break,Break,Wali Kelas,Grade 1
+1C,Monday,09.35-10.10,UoI,Ms. Natalia,Wali Kelas,Grade 1
+1C,Tuesday,09.35-10.10,UoI,Ms. Natalia,Wali Kelas,Grade 1
+1C,Wednesday,09.35-10.10,Reacter,Ms. Gloria,Guru Spesialis,Grade 1
+1C,Thursday,09.45-10.20,English B,Ms. Jenny P,Guru Spesialis,Grade 1
+1C,Friday,09.45-10.20,UoI,Ms. Natalia,Wali Kelas,Grade 1
+1C,Monday,10.10-10.45,VA,Ms. Jenny P,Guru Spesialis,Grade 1
+1C,Tuesday,10.10-10.45,P.Pancasila,Ms. Natalia,Wali Kelas,Grade 1
+1C,Wednesday,10.10-10.45,Reacter,Ms. Gloria,Guru Spesialis,Grade 1
+1C,Thursday,10.20-10.55,English B,Ms. Jenny P,Guru Spesialis,Grade 1
+1C,Friday,10.20-10.55,UoI,Ms. Natalia,Wali Kelas,Grade 1
+1C,Monday,10.45-11.20,Math,Ms. Natalia,Wali Kelas,Grade 1
+1C,Tuesday,10.45-11.20,Mandarin,Ms. Renlin,Guru Spesialis,Grade 1
+1C,Wednesday,10.45-11.20,Lib,Library Team,Guru Spesialis,Grade 1
+1C,Thursday,10.55-11.30,Singing/Music,Guru Spesialis (Singing/Music),Guru Spesialis,Grade 1
+1C,Friday,10.55-11.30,UoI,Ms. Natalia,Wali Kelas,Grade 1
+1C,Monday,11.20-11.50,Break,Break,Wali Kelas,Grade 1
+1C,Tuesday,11.20-11.50,Break,Break,Wali Kelas,Grade 1
+1C,Wednesday,11.20-11.50,Break,Break,Wali Kelas,Grade 1
+1C,Thursday,11.30-11.50,Break,Break,Wali Kelas,Grade 1
+1C,Friday,11.30-11.50,Break,Break,Wali Kelas,Grade 1
+1C,Monday,11.50-12.25,English A,Ms. Katherine,Guru Spesialis,Grade 1
+1C,Tuesday,11.50-12.25,Mandarin,Ms. Renlin,Guru Spesialis,Grade 1
+1C,Wednesday,11.50-12.25,PSPE,Mr. Adhik,Guru Spesialis,Grade 1
+1C,Thursday,11.50-12.25,BI,Ms. Natalia,Wali Kelas,Grade 1
+1C,Friday,11.50-12.25,IT,Mr. Percy,Guru Spesialis,Grade 1
+1C,Monday,12.25-13.00,English A,Ms. Katherine,Guru Spesialis,Grade 1
+1C,Tuesday,12.25-13.00,SEL,Ms. Shenny,Guru Spesialis,Grade 1
+1C,Wednesday,12.25-13.00,PSPE,Mr. Adhik,Guru Spesialis,Grade 1
+1C,Thursday,12.25-13.25,Excur,Ms. Natalia,Wali Kelas,Grade 1
+1C,Friday,12.25-13.25,IT,Guru Spesialis (IT),Guru Spesialis,Grade 1
+1C,Monday,13.00-13.10,Preparation,Ms. Natalia,Wali Kelas,Grade 1
+1C,Tuesday,13.00-13.10,Preparation,Ms. Natalia,Wali Kelas,Grade 1
+1C,Wednesday,13.00-13.10,Preparation,Ms. Natalia,Wali Kelas,Grade 1
+1C,Thursday,13.25-13.30,Preparation,Ms. Natalia,Wali Kelas,Grade 1
+1C,Friday,13.25-13.30,Preparation,Ms. Natalia,Wali Kelas,Grade 1
+2A,Monday,07.45-08.00,PC Session,Ms. Yanti,Wali Kelas,Grade 2
+2A,Tuesday,07.45-08.00,PC Session,Ms. Yanti,Wali Kelas,Grade 2
+2A,Wednesday,07.45-08.00,PC Session,Ms. Yanti,Wali Kelas,Grade 2
+2A,Thursday,07.45-08.20,SEL,Ms. Shenny,Guru Spesialis,Grade 2
+2A,Friday,07.45-08.20,PC Session,Ms. Yanti,Wali Kelas,Grade 2
+2A,Monday,08.00-08.35,PSPE,Mr. Adhik,Guru Spesialis,Grade 2
+2A,Tuesday,08.00-08.35,English A,Ms. Rachelle,Guru Spesialis,Grade 2
+2A,Wednesday,08.00-08.35,English B,Ms. Rahayu,Guru Spesialis,Grade 2
+2A,Thursday,08.20-08.55,Math,Ms. Yanti,Wali Kelas,Grade 2
+2A,Friday,08.20-08.55,UoI,Ms. Yanti,Wali Kelas,Grade 2
+2A,Monday,08.35-09.10,PSPE,Mr. Adhik,Guru Spesialis,Grade 2
+2A,Tuesday,08.35-09.10,English A,Ms. Rachelle,Guru Spesialis,Grade 2
+2A,Wednesday,08.35-09.10,English B,Ms. Rahayu,Guru Spesialis,Grade 2
+2A,Thursday,08.55-09.30,Math,Ms. Yanti,Wali Kelas,Grade 2
+2A,Friday,08.55-09.30,UoI,Ms. Yanti,Wali Kelas,Grade 2
+2A,Monday,09.10-09.35,Break,Break,Wali Kelas,Grade 2
+2A,Tuesday,09.10-09.35,Break,Break,Wali Kelas,Grade 2
+2A,Wednesday,09.10-09.35,Break,Break,Wali Kelas,Grade 2
+2A,Thursday,09.30-09.45,Break,Break,Wali Kelas,Grade 2
+2A,Friday,09.30-09.45,Break,Break,Wali Kelas,Grade 2
+2A,Monday,09.35-10.10,UoI,Ms. Yanti,Wali Kelas,Grade 2
+2A,Tuesday,09.35-10.10,Reacter,Ms. Gloria,Guru Spesialis,Grade 2
+2A,Wednesday,09.35-10.10,Mandarin,Ms. Wang,Guru Spesialis,Grade 2
+2A,Thursday,09.45-10.20,Music/Singing,Guru Spesialis (Music/Singing),Guru Spesialis,Grade 2
+2A,Friday,09.45-10.20,Math,Ms. Yanti,Wali Kelas,Grade 2
+2A,Monday,10.10-10.45,UoI,Ms. Yanti,Wali Kelas,Grade 2
+2A,Tuesday,10.10-10.45,Reacter,Ms. Gloria,Guru Spesialis,Grade 2
+2A,Wednesday,10.10-10.45,Mandarin,Ms. Wang,Guru Spesialis,Grade 2
+2A,Thursday,10.20-10.55,IT,Guru Spesialis (IT),Guru Spesialis,Grade 2
+2A,Friday,10.20-10.55,Math,Ms. Yanti,Wali Kelas,Grade 2
+2A,Monday,10.45-11.20,BI,Ms. Yanti,Wali Kelas,Grade 2
+2A,Tuesday,10.45-11.20,Math,Ms. Yanti,Wali Kelas,Grade 2
+2A,Wednesday,10.45-11.20,VA,Ms. Jenny P,Guru Spesialis,Grade 2
+2A,Thursday,10.55-11.30,IT,Guru Spesialis (IT),Guru Spesialis,Grade 2
+2A,Friday,10.55-11.30,P.Pancasila,Ms. Yanti,Wali Kelas,Grade 2
+2A,Monday,11.20-11.50,Break,Break,Wali Kelas,Grade 2
+2A,Tuesday,11.20-11.50,Break,Break,Wali Kelas,Grade 2
+2A,Wednesday,11.20-11.50,Break,Break,Wali Kelas,Grade 2
+2A,Thursday,11.30-11.50,Break,Break,Wali Kelas,Grade 2
+2A,Friday,11.30-11.50,Break,Break,Wali Kelas,Grade 2
+2A,Monday,11.50-12.25,BI,Ms. Yanti,Wali Kelas,Grade 2
+2A,Tuesday,11.50-12.25,UoI,Ms. Yanti,Wali Kelas,Grade 2
+2A,Wednesday,11.50-12.25,BI,Ms. Yanti,Wali Kelas,Grade 2
+2A,Thursday,11.50-12.25,Library,Library Team,Guru Spesialis,Grade 2
+2A,Friday,11.50-12.25,English B,Ms. Rahayu,Guru Spesialis,Grade 2
+2A,Monday,12.25-13.00,Assembly,Ms. Yanti,Wali Kelas,Grade 2
+2A,Tuesday,12.25-13.00,UoI,Ms. Yanti,Wali Kelas,Grade 2
+2A,Wednesday,12.25-13.00,BI,Ms. Yanti,Wali Kelas,Grade 2
+2A,Thursday,12.25-13.25,Excur,Ms. Yanti,Wali Kelas,Grade 2
+2A,Friday,12.25-13.25,English B,Guru Spesialis (English B),Guru Spesialis,Grade 2
+2A,Monday,13.00-13.10,Preparation,Ms. Yanti,Wali Kelas,Grade 2
+2A,Tuesday,13.00-13.10,Preparation,Ms. Yanti,Wali Kelas,Grade 2
+2A,Wednesday,13.00-13.10,Preparation,Ms. Yanti,Wali Kelas,Grade 2
+2A,Thursday,13.25-13.30,Preparation,Ms. Yanti,Wali Kelas,Grade 2
+2A,Friday,13.25-13.30,Preparation,Ms. Yanti,Wali Kelas,Grade 2
+2B,Monday,07.45-08.00,PC Session,Ms. Yudith,Wali Kelas,Grade 2
+2B,Tuesday,07.45-08.00,PC Session,Ms. Yudith,Wali Kelas,Grade 2
+2B,Wednesday,07.45-08.00,PC Session,Ms. Yudith,Wali Kelas,Grade 2
+2B,Thursday,07.45-08.20,Math,Ms. Yudith,Wali Kelas,Grade 2
+2B,Friday,07.45-08.20,PC Session,Ms. Yudith,Wali Kelas,Grade 2
+2B,Monday,08.00-08.35,English B,Ms. Rahayu,Guru Spesialis,Grade 2
+2B,Tuesday,08.00-08.35,Reacter,Ms. Gloria,Guru Spesialis,Grade 2
+2B,Wednesday,08.00-08.35,UoI,Ms. Yudith,Wali Kelas,Grade 2
+2B,Thursday,08.20-08.55,SEL,Ms. Shenny,Guru Spesialis,Grade 2
+2B,Friday,08.20-08.55,UoI,Ms. Yudith,Wali Kelas,Grade 2
+2B,Monday,08.35-09.10,English B,Ms. Rahayu,Guru Spesialis,Grade 2
+2B,Tuesday,08.35-09.10,Reacter,Ms. Gloria,Guru Spesialis,Grade 2
+2B,Wednesday,08.35-09.10,VA,Ms. Jenny P,Guru Spesialis,Grade 2
+2B,Thursday,08.55-09.30,Mandarin,Ms. Wang,Guru Spesialis,Grade 2
+2B,Friday,08.55-09.30,UoI,Ms. Yudith,Wali Kelas,Grade 2
+2B,Monday,09.10-09.35,Break,Break,Wali Kelas,Grade 2
+2B,Tuesday,09.10-09.35,Break,Break,Wali Kelas,Grade 2
+2B,Wednesday,09.10-09.35,Break,Break,Wali Kelas,Grade 2
+2B,Thursday,09.30-09.45,Break,Break,Wali Kelas,Grade 2
+2B,Friday,09.30-09.45,Break,Break,Wali Kelas,Grade 2
+2B,Monday,09.35-10.10,PSPE,Mr. Adhik,Guru Spesialis,Grade 2
+2B,Tuesday,09.35-10.10,Math,Ms. Yudith,Wali Kelas,Grade 2
+2B,Wednesday,09.35-10.10,UoI,Ms. Yudith,Wali Kelas,Grade 2
+2B,Thursday,09.45-10.20,Mandarin,Ms. Wang,Guru Spesialis,Grade 2
+2B,Friday,09.45-10.20,IT,Guru Spesialis (IT),Guru Spesialis,Grade 2
+2B,Monday,10.10-10.45,PSPE,Mr. Adhik,Guru Spesialis,Grade 2
+2B,Tuesday,10.10-10.45,BI,Ms. Yudith,Wali Kelas,Grade 2
+2B,Wednesday,10.10-10.45,BI,Ms. Yudith,Wali Kelas,Grade 2
+2B,Thursday,10.20-10.55,Music/Singing,Guru Spesialis (Music/Singing),Guru Spesialis,Grade 2
+2B,Friday,10.20-10.55,IT,Guru Spesialis (IT),Guru Spesialis,Grade 2
+2B,Monday,10.45-11.20,UoI,Ms. Yudith,Wali Kelas,Grade 2
+2B,Tuesday,10.45-11.20,BI,Ms. Yudith,Wali Kelas,Grade 2
+2B,Wednesday,10.45-11.20,BI,Ms. Yudith,Wali Kelas,Grade 2
+2B,Thursday,10.55-11.30,Math,Ms. Yudith,Wali Kelas,Grade 2
+2B,Friday,10.55-11.30,Math,Ms. Yudith,Wali Kelas,Grade 2
+2B,Monday,11.20-11.50,Break,Break,Wali Kelas,Grade 2
+2B,Tuesday,11.20-11.50,Break,Break,Wali Kelas,Grade 2
+2B,Wednesday,11.20-11.50,Break,Break,Wali Kelas,Grade 2
+2B,Thursday,11.30-11.50,Break,Break,Wali Kelas,Grade 2
+2B,Friday,11.30-11.50,Break,Break,Wali Kelas,Grade 2
+2B,Monday,11.50-12.25,UoI,Ms. Yudith,Wali Kelas,Grade 2
+2B,Tuesday,11.50-12.25,English B,Ms. Rahayu,Guru Spesialis,Grade 2
+2B,Wednesday,11.50-12.25,English A,Ms. Rachelle,Guru Spesialis,Grade 2
+2B,Thursday,11.50-12.25,P.Pancasila,Ms. Yudith,Wali Kelas,Grade 2
+2B,Friday,11.50-12.25,Math,Ms. Yudith,Wali Kelas,Grade 2
+2B,Monday,12.25-13.00,Assembly,Ms. Yudith,Wali Kelas,Grade 2
+2B,Tuesday,12.25-13.00,English B,Ms. Rahayu,Guru Spesialis,Grade 2
+2B,Wednesday,12.25-13.00,English A,Ms. Rachelle,Guru Spesialis,Grade 2
+2B,Thursday,12.25-13.25,Excur,Ms. Yudith,Wali Kelas,Grade 2
+2B,Friday,12.25-13.25,Library,Guru Spesialis (Library),Guru Spesialis,Grade 2
+2B,Monday,13.00-13.10,Preparation,Ms. Yudith,Wali Kelas,Grade 2
+2B,Tuesday,13.00-13.10,Preparation,Ms. Yudith,Wali Kelas,Grade 2
+2B,Wednesday,13.00-13.10,Preparation,Ms. Yudith,Wali Kelas,Grade 2
+2B,Thursday,13.25-13.30,Preparation,Ms. Yudith,Wali Kelas,Grade 2
+2B,Friday,13.25-13.30,Preparation,Ms. Yudith,Wali Kelas,Grade 2
+2C,Monday,07.45-08.00,PC Session,Ms. Dewi,Wali Kelas,Grade 2
+2C,Tuesday,07.45-08.00,PC Session,Ms. Dewi,Wali Kelas,Grade 2
+2C,Wednesday,07.45-08.00,PC Session,Ms. Dewi,Wali Kelas,Grade 2
+2C,Thursday,07.45-08.20,Mandarin,Ms. Wang,Guru Spesialis,Grade 2
+2C,Friday,07.45-08.20,PC Session,Ms. Dewi,Wali Kelas,Grade 2
+2C,Monday,08.00-08.35,Reacter,Ms. Gloria,Guru Spesialis,Grade 2
+2C,Tuesday,08.00-08.35,PSPE,Mr. Adhik,Guru Spesialis,Grade 2
+2C,Wednesday,08.00-08.35,IT,Mr. Percy,Guru Spesialis,Grade 2
+2C,Thursday,08.20-08.55,Mandarin,Ms. Wang,Guru Spesialis,Grade 2
+2C,Friday,08.20-08.55,UoI,Ms. Dewi,Wali Kelas,Grade 2
+2C,Monday,08.35-09.10,Reacter,Ms. Gloria,Guru Spesialis,Grade 2
+2C,Tuesday,08.35-09.10,PSPE,Mr. Adhik,Guru Spesialis,Grade 2
+2C,Wednesday,08.35-09.10,IT,Mr. Percy,Guru Spesialis,Grade 2
+2C,Thursday,08.55-09.30,Math,Ms. Dewi,Wali Kelas,Grade 2
+2C,Friday,08.55-09.30,UoI,Ms. Dewi,Wali Kelas,Grade 2
+2C,Monday,09.10-09.35,Break,Break,Wali Kelas,Grade 2
+2C,Tuesday,09.10-09.35,Break,Break,Wali Kelas,Grade 2
+2C,Wednesday,09.10-09.35,Break,Break,Wali Kelas,Grade 2
+2C,Thursday,09.30-09.45,Break,Break,Wali Kelas,Grade 2
+2C,Friday,09.30-09.45,Break,Break,Wali Kelas,Grade 2
+2C,Monday,09.35-10.10,UoI,Ms. Dewi,Wali Kelas,Grade 2
+2C,Tuesday,09.35-10.10,English A,Ms. Rachelle,Guru Spesialis,Grade 2
+2C,Wednesday,09.35-10.10,VA,Ms. Jenny P,Guru Spesialis,Grade 2
+2C,Thursday,09.45-10.20,Library,Library Team,Guru Spesialis,Grade 2
+2C,Friday,09.45-10.20,English B,Guru Spesialis (English B),Guru Spesialis,Grade 2
+2C,Monday,10.10-10.45,UoI,Ms. Dewi,Wali Kelas,Grade 2
+2C,Tuesday,10.10-10.45,English A,Ms. Rachelle,Guru Spesialis,Grade 2
+2C,Wednesday,10.10-10.45,UoI,Ms. Dewi,Wali Kelas,Grade 2
+2C,Thursday,10.20-10.55,Math,Ms. Dewi,Wali Kelas,Grade 2
+2C,Friday,10.20-10.55,English B,Guru Spesialis (English B),Guru Spesialis,Grade 2
+2C,Monday,10.45-11.20,BI,Ms. Dewi,Wali Kelas,Grade 2
+2C,Tuesday,10.45-11.20,Math,Ms. Dewi,Wali Kelas,Grade 2
+2C,Wednesday,10.45-11.20,UoI,Ms. Dewi,Wali Kelas,Grade 2
+2C,Thursday,10.55-11.30,Music/Singing,Guru Spesialis (Music/Singing),Guru Spesialis,Grade 2
+2C,Friday,10.55-11.30,P.Pancasila,Ms. Dewi,Wali Kelas,Grade 2
+2C,Monday,11.20-11.50,Break,Break,Wali Kelas,Grade 2
+2C,Tuesday,11.20-11.50,Break,Break,Wali Kelas,Grade 2
+2C,Wednesday,11.20-11.50,Break,Break,Wali Kelas,Grade 2
+2C,Thursday,11.30-11.50,Break,Break,Wali Kelas,Grade 2
+2C,Friday,11.30-11.50,Break,Break,Wali Kelas,Grade 2
+2C,Monday,11.50-12.25,BI,Ms. Dewi,Wali Kelas,Grade 2
+2C,Tuesday,11.50-12.25,BI,Ms. Dewi,Wali Kelas,Grade 2
+2C,Wednesday,11.50-12.25,English B,Ms. Rahayu,Guru Spesialis,Grade 2
+2C,Thursday,11.50-12.25,SEL,Ms. Shenny,Guru Spesialis,Grade 2
+2C,Friday,11.50-12.25,Math,Ms. Dewi,Wali Kelas,Grade 2
+2C,Monday,12.25-13.00,Assembly,Ms. Dewi,Wali Kelas,Grade 2
+2C,Tuesday,12.25-13.00,BI,Ms. Dewi,Wali Kelas,Grade 2
+2C,Wednesday,12.25-13.00,English B,Ms. Rahayu,Guru Spesialis,Grade 2
+2C,Thursday,12.25-13.25,Excur,Ms. Dewi,Wali Kelas,Grade 2
+2C,Friday,12.25-13.25,Math,Ms. Dewi,Wali Kelas,Grade 2
+2C,Monday,13.00-13.10,Preparation,Ms. Dewi,Wali Kelas,Grade 2
+2C,Tuesday,13.00-13.10,Preparation,Ms. Dewi,Wali Kelas,Grade 2
+2C,Wednesday,13.00-13.10,Preparation,Ms. Dewi,Wali Kelas,Grade 2
+2C,Thursday,13.25-13.30,Preparation,Ms. Dewi,Wali Kelas,Grade 2
+2C,Friday,13.25-13.30,Preparation,Ms. Dewi,Wali Kelas,Grade 2
+2D,Monday,07.45-08.00,PC Session,Ms. Celine,Wali Kelas,Grade 2
+2D,Tuesday,07.45-08.00,PC Session,Ms. Celine,Wali Kelas,Grade 2
+2D,Wednesday,07.45-08.00,PC Session,Ms. Celine,Wali Kelas,Grade 2
+2D,Thursday,07.45-08.20,Math,Ms. Celine,Wali Kelas,Grade 2
+2D,Friday,07.45-08.20,PC Session,Ms. Celine,Wali Kelas,Grade 2
+2D,Monday,08.00-08.35,UoI,Ms. Celine,Wali Kelas,Grade 2
+2D,Tuesday,08.00-08.35,IT,Mr. Percy,Guru Spesialis,Grade 2
+2D,Wednesday,08.00-08.35,Mandarin,Ms. Wang,Guru Spesialis,Grade 2
+2D,Thursday,08.20-08.55,Math,Ms. Celine,Wali Kelas,Grade 2
+2D,Friday,08.20-08.55,UoI,Ms. Celine,Wali Kelas,Grade 2
+2D,Monday,08.35-09.10,UoI,Ms. Celine,Wali Kelas,Grade 2
+2D,Tuesday,08.35-09.10,IT,Mr. Percy,Guru Spesialis,Grade 2
+2D,Wednesday,08.35-09.10,Mandarin,Ms. Wang,Guru Spesialis,Grade 2
+2D,Thursday,08.55-09.30,BI,Ms. Celine,Wali Kelas,Grade 2
+2D,Friday,08.55-09.30,UoI,Ms. Celine,Wali Kelas,Grade 2
+2D,Monday,09.10-09.35,Break,Break,Wali Kelas,Grade 2
+2D,Tuesday,09.10-09.35,Break,Break,Wali Kelas,Grade 2
+2D,Wednesday,09.10-09.35,Break,Break,Wali Kelas,Grade 2
+2D,Thursday,09.30-09.45,Break,Break,Wali Kelas,Grade 2
+2D,Friday,09.30-09.45,Break,Break,Wali Kelas,Grade 2
+2D,Monday,09.35-10.10,Reacter,Ms. Gloria,Guru Spesialis,Grade 2
+2D,Tuesday,09.35-10.10,PSPE,Mr. Adhik,Guru Spesialis,Grade 2
+2D,Wednesday,09.35-10.10,UoI,Ms. Celine,Wali Kelas,Grade 2
+2D,Thursday,09.45-10.20,BI,Ms. Celine,Wali Kelas,Grade 2
+2D,Friday,09.45-10.20,Math,Ms. Celine,Wali Kelas,Grade 2
+2D,Monday,10.10-10.45,Reacter,Ms. Gloria,Guru Spesialis,Grade 2
+2D,Tuesday,10.10-10.45,PSPE,Mr. Adhik,Guru Spesialis,Grade 2
+2D,Wednesday,10.10-10.45,English B,Ms. Rahayu,Guru Spesialis,Grade 2
+2D,Thursday,10.20-10.55,Library,Library Team,Guru Spesialis,Grade 2
+2D,Friday,10.20-10.55,Math,Ms. Celine,Wali Kelas,Grade 2
+2D,Monday,10.45-11.20,English B,Ms. Rahayu,Guru Spesialis,Grade 2
+2D,Tuesday,10.45-11.20,Math,Ms. Celine,Wali Kelas,Grade 2
+2D,Wednesday,10.45-11.20,English B,Ms. Rahayu,Guru Spesialis,Grade 2
+2D,Thursday,10.55-11.30,SEL,Ms. Shenny,Guru Spesialis,Grade 2
+2D,Friday,10.55-11.30,P.Pancasila,Ms. Celine,Wali Kelas,Grade 2
+2D,Monday,11.20-11.50,Break,Break,Wali Kelas,Grade 2
+2D,Tuesday,11.20-11.50,Break,Break,Wali Kelas,Grade 2
+2D,Wednesday,11.20-11.50,Break,Break,Wali Kelas,Grade 2
+2D,Thursday,11.30-11.50,Break,Break,Wali Kelas,Grade 2
+2D,Friday,11.30-11.50,Break,Break,Wali Kelas,Grade 2
+2D,Monday,11.50-12.25,English B,Ms. Rahayu,Guru Spesialis,Grade 2
+2D,Tuesday,11.50-12.25,BI,Ms. Celine,Wali Kelas,Grade 2
+2D,Wednesday,11.50-12.25,VA,Ms. Jenny P,Guru Spesialis,Grade 2
+2D,Thursday,11.50-12.25,Music/Singing,Ms. Alitha,Guru Spesialis,Grade 2
+2D,Friday,11.50-12.25,English A,Ms. Rachelle,Guru Spesialis,Grade 2
+2D,Monday,12.25-13.00,Assembly,Ms. Celine,Wali Kelas,Grade 2
+2D,Tuesday,12.25-13.00,BI,Ms. Celine,Wali Kelas,Grade 2
+2D,Wednesday,12.25-13.00,UoI,Ms. Celine,Wali Kelas,Grade 2
+2D,Thursday,12.25-13.25,Excur,Ms. Celine,Wali Kelas,Grade 2
+2D,Friday,12.25-13.25,English A,Guru Spesialis (English A),Guru Spesialis,Grade 2
+2D,Monday,13.00-13.10,Preparation,Ms. Celine,Wali Kelas,Grade 2
+2D,Tuesday,13.00-13.10,Preparation,Ms. Celine,Wali Kelas,Grade 2
+2D,Wednesday,13.00-13.10,Preparation,Ms. Celine,Wali Kelas,Grade 2
+2D,Thursday,13.25-13.30,Preparation,Ms. Celine,Wali Kelas,Grade 2
+2D,Friday,13.25-13.30,Preparation,Ms. Celine,Wali Kelas,Grade 2
+3A,Monday,07.45-08.00,PC Session,Ms. Tina,Wali Kelas,Grade 3
+3A,Tuesday,07.45-08.00,PC Session,Ms. Tina,Wali Kelas,Grade 3
+3A,Wednesday,07.45-08.20,Assembly,Ms. Tina,Wali Kelas,Grade 3
+3A,Thursday,07.45-08.20,PC Session,Ms. Tina,Wali Kelas,Grade 3
+3A,Friday,07.45-08.20,PC Session,Ms. Tina,Wali Kelas,Grade 3
+3A,Monday,08.00-08.35,IT,Mr. Kornelius,Guru Spesialis,Grade 3
+3A,Tuesday,08.00-08.35,English B,Ms. Rahayu,Guru Spesialis,Grade 3
+3A,Wednesday,08.20-08.55,English A,Ms. Rachelle,Guru Spesialis,Grade 3
+3A,Thursday,08.20-08.55,Math,Ms. Tina,Wali Kelas,Grade 3
+3A,Friday,08.20-08.55,BI,Ms. Tina,Wali Kelas,Grade 3
+3A,Monday,08.35-09.10,IT,Mr. Kornelius,Guru Spesialis,Grade 3
+3A,Tuesday,08.35-09.10,English B,Ms. Rahayu,Guru Spesialis,Grade 3
+3A,Wednesday,08.55-09.30,English A,Ms. Rachelle,Guru Spesialis,Grade 3
+3A,Thursday,08.55-09.30,Math,Ms. Tina,Wali Kelas,Grade 3
+3A,Friday,08.55-09.30,Library,Guru Spesialis (Library),Guru Spesialis,Grade 3
+3A,Monday,09.10-09.35,Break,Break,Wali Kelas,Grade 3
+3A,Tuesday,09.10-09.35,Break,Break,Wali Kelas,Grade 3
+3A,Wednesday,09.30-09.45,Break,Break,Wali Kelas,Grade 3
+3A,Thursday,09.30-09.45,Break,Break,Wali Kelas,Grade 3
+3A,Friday,09.30-09.45,Break,Break,Wali Kelas,Grade 3
+3A,Monday,09.35-10.10,P.Pancasila,Ms. Tina,Wali Kelas,Grade 3
+3A,Tuesday,09.35-10.10,Math,Ms. Tina,Wali Kelas,Grade 3
+3A,Wednesday,09.45-10.20,VA,Ms. Sherly,Guru Spesialis,Grade 3
+3A,Thursday,09.45-10.20,English B,Guru Spesialis (English B),Guru Spesialis,Grade 3
+3A,Friday,09.45-10.20,Math,Ms. Tina,Wali Kelas,Grade 3
+3A,Monday,10.10-10.45,Music,Mr. Hendro,Guru Spesialis,Grade 3
+3A,Tuesday,10.10-10.45,Singing,Ms. Alitha,Guru Spesialis,Grade 3
+3A,Wednesday,10.20-10.55,VA,Ms. Sherly,Guru Spesialis,Grade 3
+3A,Thursday,10.20-10.55,English B,Guru Spesialis (English B),Guru Spesialis,Grade 3
+3A,Friday,10.20-10.55,Math,Ms. Tina,Wali Kelas,Grade 3
+3A,Monday,10.45-11.20,UoI,Ms. Tina,Wali Kelas,Grade 3
+3A,Tuesday,10.45-11.20,Math,Ms. Tina,Wali Kelas,Grade 3
+3A,Wednesday,10.55-11.30,UoI,Ms. Tina,Wali Kelas,Grade 3
+3A,Thursday,10.55-11.30,SEL,Guru Spesialis (SEL),Guru Spesialis,Grade 3
+3A,Friday,10.55-11.30,PSPE,Guru Spesialis (PSPE),Guru Spesialis,Grade 3
+3A,Monday,11.20-11.55,UoI,Ms. Tina,Wali Kelas,Grade 3
+3A,Tuesday,11.20-11.55,Math,Ms. Tina,Wali Kelas,Grade 3
+3A,Wednesday,11.30-11.50,Break,Break,Wali Kelas,Grade 3
+3A,Thursday,11.30-11.50,BI,Ms. Tina,Wali Kelas,Grade 3
+3A,Friday,11.30-11.50,PSPE,Guru Spesialis (PSPE),Guru Spesialis,Grade 3
+3A,Monday,11.55-12.25,Break,Break,Wali Kelas,Grade 3
+3A,Tuesday,11.55-12.25,Break,Break,Wali Kelas,Grade 3
+3A,Wednesday,11.50-12.25,BI,Ms. Tina,Wali Kelas,Grade 3
+3A,Thursday,11.50-12.25,Break,Break,Wali Kelas,Grade 3
+3A,Friday,11.50-12.25,Break,Break,Wali Kelas,Grade 3
+3A,Monday,12.25-13.00,Mandarin,Ms. Renlin,Guru Spesialis,Grade 3
+3A,Tuesday,12.25-13.00,Reacter,Ms. Meitha,Guru Spesialis,Grade 3
+3A,Wednesday,12.25-13.00,BI,Ms. Tina,Wali Kelas,Grade 3
+3A,Thursday,12.25-13.00,UoI,Ms. Tina,Wali Kelas,Grade 3
+3A,Friday,12.25-13.00,UoI,Ms. Tina,Wali Kelas,Grade 3
+3A,Monday,13.00-13.35,Mandarin,Ms. Renlin,Guru Spesialis,Grade 3
+3A,Tuesday,13.00-13.35,Reacter,Ms. Meitha,Guru Spesialis,Grade 3
+3A,Wednesday,13.00-14.00,Excur,Ms. Tina,Wali Kelas,Grade 3
+3A,Thursday,13.00-14.00,UoI,Ms. Tina,Wali Kelas,Grade 3
+3A,Friday,13.00-14.00,UoI,Ms. Tina,Wali Kelas,Grade 3
+3A,Monday,13.35-13.45,Preparation,Ms. Tina,Wali Kelas,Grade 3
+3A,Tuesday,13.35-13.45,Preparation,Ms. Tina,Wali Kelas,Grade 3
+3A,Wednesday,14.00-14.05,Preparation,Ms. Tina,Wali Kelas,Grade 3
+3A,Thursday,14.00-14.05,Preparation,Ms. Tina,Wali Kelas,Grade 3
+3A,Friday,14.00-14.05,Preparation,Ms. Tina,Wali Kelas,Grade 3
+3B,Monday,07.45-08.00,PC Session,Ms. Etha,Wali Kelas,Grade 3
+3B,Tuesday,07.45-08.00,PC Session,Ms. Etha,Wali Kelas,Grade 3
+3B,Wednesday,07.45-08.20,Assembly,Ms. Etha,Wali Kelas,Grade 3
+3B,Thursday,07.45-08.20,PC Session,Ms. Etha,Wali Kelas,Grade 3
+3B,Friday,07.45-08.20,PC Session,Ms. Etha,Wali Kelas,Grade 3
+3B,Monday,08.00-08.35,UoI,Ms. Etha,Wali Kelas,Grade 3
+3B,Tuesday,08.00-08.35,Math,Ms. Etha,Wali Kelas,Grade 3
+3B,Wednesday,08.20-08.55,Reacter,Ms. Meitha,Guru Spesialis,Grade 3
+3B,Thursday,08.20-08.55,English B,Guru Spesialis (English B),Guru Spesialis,Grade 3
+3B,Friday,08.20-08.55,VA,Guru Spesialis (VA),Guru Spesialis,Grade 3
+3B,Monday,08.35-09.10,UoI,Ms. Etha,Wali Kelas,Grade 3
+3B,Tuesday,08.35-09.10,Math,Ms. Etha,Wali Kelas,Grade 3
+3B,Wednesday,08.55-09.30,Reacter,Ms. Meitha,Guru Spesialis,Grade 3
+3B,Thursday,08.55-09.30,English B,Guru Spesialis (English B),Guru Spesialis,Grade 3
+3B,Friday,08.55-09.30,VA,Guru Spesialis (VA),Guru Spesialis,Grade 3
+3B,Monday,09.10-09.35,Break,Break,Wali Kelas,Grade 3
+3B,Tuesday,09.10-09.35,Break,Break,Wali Kelas,Grade 3
+3B,Wednesday,09.30-09.45,Break,Break,Wali Kelas,Grade 3
+3B,Thursday,09.30-09.45,Break,Break,Wali Kelas,Grade 3
+3B,Friday,09.30-09.45,Break,Break,Wali Kelas,Grade 3
+3B,Monday,09.35-10.10,Mandarin,Ms. Renlin,Guru Spesialis,Grade 3
+3B,Tuesday,09.35-10.10,English B,Ms. Rahayu,Guru Spesialis,Grade 3
+3B,Wednesday,09.45-10.20,English A,Ms. Rachelle,Guru Spesialis,Grade 3
+3B,Thursday,09.45-10.20,PSPE,Guru Spesialis (PSPE),Guru Spesialis,Grade 3
+3B,Friday,09.45-10.20,Library,Guru Spesialis (Library),Guru Spesialis,Grade 3
+3B,Monday,10.10-10.45,Mandarin,Ms. Renlin,Guru Spesialis,Grade 3
+3B,Tuesday,10.10-10.45,English B,Ms. Rahayu,Guru Spesialis,Grade 3
+3B,Wednesday,10.20-10.55,English A,Ms. Rachelle,Guru Spesialis,Grade 3
+3B,Thursday,10.20-10.55,PSPE,Guru Spesialis (PSPE),Guru Spesialis,Grade 3
+3B,Friday,10.20-10.55,Math,Ms. Etha,Wali Kelas,Grade 3
+3B,Monday,10.45-11.20,Music,Mr. Hendro,Guru Spesialis,Grade 3
+3B,Tuesday,10.45-11.20,Singing,Ms. Alitha,Guru Spesialis,Grade 3
+3B,Wednesday,10.55-11.30,UoI,Ms. Etha,Wali Kelas,Grade 3
+3B,Thursday,10.55-11.30,Math,Ms. Etha,Wali Kelas,Grade 3
+3B,Friday,10.55-11.30,Math,Ms. Etha,Wali Kelas,Grade 3
+3B,Monday,11.20-11.55,P.Pancasila,Ms. Etha,Wali Kelas,Grade 3
+3B,Tuesday,11.20-11.55,SEL,Mr. Albert,Guru Spesialis,Grade 3
+3B,Wednesday,11.30-11.50,Break,Break,Wali Kelas,Grade 3
+3B,Thursday,11.30-11.50,Math,Ms. Etha,Wali Kelas,Grade 3
+3B,Friday,11.30-11.50,BI,Ms. Etha,Wali Kelas,Grade 3
+3B,Monday,11.55-12.25,Break,Break,Wali Kelas,Grade 3
+3B,Tuesday,11.55-12.25,Break,Break,Wali Kelas,Grade 3
+3B,Wednesday,11.50-12.25,BI,Ms. Etha,Wali Kelas,Grade 3
+3B,Thursday,11.50-12.25,Break,Break,Wali Kelas,Grade 3
+3B,Friday,11.50-12.25,Break,Break,Wali Kelas,Grade 3
+3B,Monday,12.25-13.00,IT,Mr. Kornelius,Guru Spesialis,Grade 3
+3B,Tuesday,12.25-13.00,Math,Ms. Etha,Wali Kelas,Grade 3
+3B,Wednesday,12.25-13.00,BI,Ms. Etha,Wali Kelas,Grade 3
+3B,Thursday,12.25-13.00,UoI,Ms. Etha,Wali Kelas,Grade 3
+3B,Friday,12.25-13.00,UoI,Ms. Etha,Wali Kelas,Grade 3
+3B,Monday,13.00-13.35,IT,Mr. Kornelius,Guru Spesialis,Grade 3
+3B,Tuesday,13.00-13.35,BI,Ms. Etha,Wali Kelas,Grade 3
+3B,Wednesday,13.00-14.00,Excur,Ms. Etha,Wali Kelas,Grade 3
+3B,Thursday,13.00-14.00,UoI,Ms. Etha,Wali Kelas,Grade 3
+3B,Friday,13.00-14.00,UoI,Ms. Etha,Wali Kelas,Grade 3
+3B,Monday,13.35-13.45,Preparation,Ms. Etha,Wali Kelas,Grade 3
+3B,Tuesday,13.35-13.45,Preparation,Ms. Etha,Wali Kelas,Grade 3
+3B,Wednesday,14.00-14.05,Preparation,Ms. Etha,Wali Kelas,Grade 3
+3B,Thursday,14.00-14.05,Preparation,Ms. Etha,Wali Kelas,Grade 3
+3B,Friday,14.00-14.05,Preparation,Ms. Etha,Wali Kelas,Grade 3
+3C,Monday,07.45-08.00,PC Session,Ms. Icha,Wali Kelas,Grade 3
+3C,Tuesday,07.45-08.00,PC Session,Ms. Icha,Wali Kelas,Grade 3
+3C,Wednesday,07.45-08.20,Assembly,Ms. Icha,Wali Kelas,Grade 3
+3C,Thursday,07.45-08.20,PC Session,Ms. Icha,Wali Kelas,Grade 3
+3C,Friday,07.45-08.20,PC Session,Ms. Icha,Wali Kelas,Grade 3
+3C,Monday,08.00-08.35,Mandarin,Ms. Renlin,Guru Spesialis,Grade 3
+3C,Tuesday,08.00-08.35,English B,Ms. Kristiani,Guru Spesialis,Grade 3
+3C,Wednesday,08.20-08.55,IT,Mr. Kornelius,Guru Spesialis,Grade 3
+3C,Thursday,08.20-08.55,BI,Ms. Icha,Wali Kelas,Grade 3
+3C,Friday,08.20-08.55,PSPE,Guru Spesialis (PSPE),Guru Spesialis,Grade 3
+3C,Monday,08.35-09.10,Mandarin,Ms. Renlin,Guru Spesialis,Grade 3
+3C,Tuesday,08.35-09.10,English B,Ms. Kristiani,Guru Spesialis,Grade 3
+3C,Wednesday,08.55-09.30,IT,Mr. Kornelius,Guru Spesialis,Grade 3
+3C,Thursday,08.55-09.30,SEL,Guru Spesialis (SEL),Guru Spesialis,Grade 3
+3C,Friday,08.55-09.30,PSPE,Guru Spesialis (PSPE),Guru Spesialis,Grade 3
+3C,Monday,09.10-09.35,Break,Break,Wali Kelas,Grade 3
+3C,Tuesday,09.10-09.35,Break,Break,Wali Kelas,Grade 3
+3C,Wednesday,09.30-09.45,Break,Break,Wali Kelas,Grade 3
+3C,Thursday,09.30-09.45,Break,Break,Wali Kelas,Grade 3
+3C,Friday,09.30-09.45,Break,Break,Wali Kelas,Grade 3
+3C,Monday,09.35-10.10,UoI,Ms. Icha,Wali Kelas,Grade 3
+3C,Tuesday,09.35-10.10,Math,Ms. Icha,Wali Kelas,Grade 3
+3C,Wednesday,09.45-10.20,Reacter,Ms. Meitha,Guru Spesialis,Grade 3
+3C,Thursday,09.45-10.20,English A,Guru Spesialis (English A),Guru Spesialis,Grade 3
+3C,Friday,09.45-10.20,BI,Ms. Icha,Wali Kelas,Grade 3
+3C,Monday,10.10-10.45,UoI,Ms. Icha,Wali Kelas,Grade 3
+3C,Tuesday,10.10-10.45,Math,Ms. Icha,Wali Kelas,Grade 3
+3C,Wednesday,10.20-10.55,Reacter,Ms. Meitha,Guru Spesialis,Grade 3
+3C,Thursday,10.20-10.55,English A,Guru Spesialis (English A),Guru Spesialis,Grade 3
+3C,Friday,10.20-10.55,Library,Guru Spesialis (Library),Guru Spesialis,Grade 3
+3C,Monday,10.45-11.20,P.Pancasila,Ms. Icha,Wali Kelas,Grade 3
+3C,Tuesday,10.45-11.20,Math,Ms. Icha,Wali Kelas,Grade 3
+3C,Wednesday,10.55-11.30,UoI,Ms. Icha,Wali Kelas,Grade 3
+3C,Thursday,10.55-11.30,Math,Ms. Icha,Wali Kelas,Grade 3
+3C,Friday,10.55-11.30,Math,Ms. Icha,Wali Kelas,Grade 3
+3C,Monday,11.20-11.55,Music,Mr. Hendro,Guru Spesialis,Grade 3
+3C,Tuesday,11.20-11.55,Singing,Ms. Alitha,Guru Spesialis,Grade 3
+3C,Wednesday,11.30-11.50,Break,Break,Wali Kelas,Grade 3
+3C,Thursday,11.30-11.50,Math,Ms. Icha,Wali Kelas,Grade 3
+3C,Friday,11.30-11.50,Math,Ms. Icha,Wali Kelas,Grade 3
+3C,Monday,11.55-12.25,Break,Break,Wali Kelas,Grade 3
+3C,Tuesday,11.55-12.25,Break,Break,Wali Kelas,Grade 3
+3C,Wednesday,11.50-12.25,BI,Ms. Icha,Wali Kelas,Grade 3
+3C,Thursday,11.50-12.25,Break,Break,Wali Kelas,Grade 3
+3C,Friday,11.50-12.25,Break,Break,Wali Kelas,Grade 3
+3C,Monday,12.25-13.00,English B,Ms. Kristiani,Guru Spesialis,Grade 3
+3C,Tuesday,12.25-13.00,VA,Ms. Sherly,Guru Spesialis,Grade 3
+3C,Wednesday,12.25-13.00,BI,Ms. Icha,Wali Kelas,Grade 3
+3C,Thursday,12.25-13.00,UoI,Ms. Icha,Wali Kelas,Grade 3
+3C,Friday,12.25-13.00,UoI,Ms. Icha,Wali Kelas,Grade 3
+3C,Monday,13.00-13.35,English B,Ms. Kristiani,Guru Spesialis,Grade 3
+3C,Tuesday,13.00-13.35,VA,Ms. Sherly,Guru Spesialis,Grade 3
+3C,Wednesday,13.00-14.00,Excur,Ms. Icha,Wali Kelas,Grade 3
+3C,Thursday,13.00-14.00,UoI,Ms. Icha,Wali Kelas,Grade 3
+3C,Friday,13.00-14.00,UoI,Ms. Icha,Wali Kelas,Grade 3
+3C,Monday,13.35-13.45,Preparation,Ms. Icha,Wali Kelas,Grade 3
+3C,Tuesday,13.35-13.45,Preparation,Ms. Icha,Wali Kelas,Grade 3
+3C,Wednesday,14.00-14.05,Preparation,Ms. Icha,Wali Kelas,Grade 3
+3C,Thursday,14.00-14.05,Preparation,Ms. Icha,Wali Kelas,Grade 3
+3C,Friday,14.00-14.05,Preparation,Ms. Icha,Wali Kelas,Grade 3
+3D,Monday,07.45-08.00,PC Session,Ms. Fefe,Wali Kelas,Grade 3
+3D,Tuesday,07.45-08.00,PC Session,Ms. Fefe,Wali Kelas,Grade 3
+3D,Wednesday,07.45-08.20,Assembly,Ms. Fefe,Wali Kelas,Grade 3
+3D,Thursday,07.45-08.20,PC Session,Ms. Fefe,Wali Kelas,Grade 3
+3D,Friday,07.45-08.20,PC Session,Ms. Fefe,Wali Kelas,Grade 3
+3D,Monday,08.00-08.35,UoI,Ms. Fefe,Wali Kelas,Grade 3
+3D,Tuesday,08.00-08.35,Math,Ms. Fefe,Wali Kelas,Grade 3
+3D,Wednesday,08.20-08.55,Mandarin,Ms. Renlin,Guru Spesialis,Grade 3
+3D,Thursday,08.20-08.55,English A,Guru Spesialis (English A),Guru Spesialis,Grade 3
+3D,Friday,08.20-08.55,Math,Ms. Fefe,Wali Kelas,Grade 3
+3D,Monday,08.35-09.10,UoI,Ms. Fefe,Wali Kelas,Grade 3
+3D,Tuesday,08.35-09.10,Math,Ms. Fefe,Wali Kelas,Grade 3
+3D,Wednesday,08.55-09.30,Mandarin,Ms. Renlin,Guru Spesialis,Grade 3
+3D,Thursday,08.55-09.30,English A,Guru Spesialis (English A),Guru Spesialis,Grade 3
+3D,Friday,08.55-09.30,Math,Ms. Fefe,Wali Kelas,Grade 3
+3D,Monday,09.10-09.35,Break,Break,Wali Kelas,Grade 3
+3D,Tuesday,09.10-09.35,Break,Break,Wali Kelas,Grade 3
+3D,Wednesday,09.30-09.45,Break,Break,Wali Kelas,Grade 3
+3D,Thursday,09.30-09.45,Break,Break,Wali Kelas,Grade 3
+3D,Friday,09.30-09.45,Break,Break,Wali Kelas,Grade 3
+3D,Monday,09.35-10.10,English B,Ms. Kristiani,Guru Spesialis,Grade 3
+3D,Tuesday,09.35-10.10,English B,Ms. Kristiani,Guru Spesialis,Grade 3
+3D,Wednesday,09.45-10.20,IT,Mr. Kornelius,Guru Spesialis,Grade 3
+3D,Thursday,09.45-10.20,Math,Ms. Fefe,Wali Kelas,Grade 3
+3D,Friday,09.45-10.20,PSPE,Guru Spesialis (PSPE),Guru Spesialis,Grade 3
+3D,Monday,10.10-10.45,English B,Ms. Kristiani,Guru Spesialis,Grade 3
+3D,Tuesday,10.10-10.45,English B,Ms. Kristiani,Guru Spesialis,Grade 3
+3D,Wednesday,10.20-10.55,IT,Mr. Kornelius,Guru Spesialis,Grade 3
+3D,Thursday,10.20-10.55,Math,Ms. Fefe,Wali Kelas,Grade 3
+3D,Friday,10.20-10.55,PSPE,Guru Spesialis (PSPE),Guru Spesialis,Grade 3
+3D,Monday,10.45-11.20,Reacter,Ms. Meitha,Guru Spesialis,Grade 3
+3D,Tuesday,10.45-11.20,VA,Ms. Sherly,Guru Spesialis,Grade 3
+3D,Wednesday,10.55-11.30,UoI,Ms. Fefe,Wali Kelas,Grade 3
+3D,Thursday,10.55-11.30,Math,Ms. Fefe,Wali Kelas,Grade 3
+3D,Friday,10.55-11.30,Library,Guru Spesialis (Library),Guru Spesialis,Grade 3
+3D,Monday,11.20-11.55,Reacter,Ms. Meitha,Guru Spesialis,Grade 3
+3D,Tuesday,11.20-11.55,VA,Ms. Sherly,Guru Spesialis,Grade 3
+3D,Wednesday,11.30-11.50,Break,Break,Wali Kelas,Grade 3
+3D,Thursday,11.30-11.50,BI,Ms. Fefe,Wali Kelas,Grade 3
+3D,Friday,11.30-11.50,BI,Ms. Fefe,Wali Kelas,Grade 3
+3D,Monday,11.55-12.25,Break,Break,Wali Kelas,Grade 3
+3D,Tuesday,11.55-12.25,Break,Break,Wali Kelas,Grade 3
+3D,Wednesday,11.50-12.25,BI,Ms. Fefe,Wali Kelas,Grade 3
+3D,Thursday,11.50-12.25,Break,Break,Wali Kelas,Grade 3
+3D,Friday,11.50-12.25,Break,Break,Wali Kelas,Grade 3
+3D,Monday,12.25-13.00,Music,Mr. Hendro,Guru Spesialis,Grade 3
+3D,Tuesday,12.25-13.00,Singing,Ms. Alitha,Guru Spesialis,Grade 3
+3D,Wednesday,12.25-13.00,BI,Ms. Fefe,Wali Kelas,Grade 3
+3D,Thursday,12.25-13.00,UoI,Ms. Fefe,Wali Kelas,Grade 3
+3D,Friday,12.25-13.00,UoI,Ms. Fefe,Wali Kelas,Grade 3
+3D,Monday,13.00-13.35,P.Pancasila,Ms. Fefe,Wali Kelas,Grade 3
+3D,Tuesday,13.00-13.35,SEL,Mr. Albert,Guru Spesialis,Grade 3
+3D,Wednesday,13.00-14.00,Excur,Ms. Fefe,Wali Kelas,Grade 3
+3D,Thursday,13.00-14.00,UoI,Ms. Fefe,Wali Kelas,Grade 3
+3D,Friday,13.00-14.00,UoI,Ms. Fefe,Wali Kelas,Grade 3
+3D,Monday,13.35-13.45,Preparation,Ms. Fefe,Wali Kelas,Grade 3
+3D,Tuesday,13.35-13.45,Preparation,Ms. Fefe,Wali Kelas,Grade 3
+3D,Wednesday,14.00-14.05,Preparation,Ms. Fefe,Wali Kelas,Grade 3
+3D,Thursday,14.00-14.05,Preparation,Ms. Fefe,Wali Kelas,Grade 3
+3D,Friday,14.00-14.05,Preparation,Ms. Fefe,Wali Kelas,Grade 3
+3E,Monday,07.45-08.00,PC Session,Ms. Natali,Wali Kelas,Grade 3
+3E,Tuesday,07.45-08.00,PC Session,Ms. Natali,Wali Kelas,Grade 3
+3E,Wednesday,07.45-08.20,Assembly,Ms. Natali,Wali Kelas,Grade 3
+3E,Thursday,07.45-08.20,PC Session,Ms. Natali,Wali Kelas,Grade 3
+3E,Friday,07.45-08.20,PC Session,Ms. Natali,Wali Kelas,Grade 3
+3E,Monday,08.00-08.35,UoI,Ms. Natali,Wali Kelas,Grade 3
+3E,Tuesday,08.00-08.35,Math,Ms. Natali,Wali Kelas,Grade 3
+3E,Wednesday,08.20-08.55,VA,Ms. Sherly,Guru Spesialis,Grade 3
+3E,Thursday,08.20-08.55,PSPE,Guru Spesialis (PSPE),Guru Spesialis,Grade 3
+3E,Friday,08.20-08.55,Math,Ms. Natali,Wali Kelas,Grade 3
+3E,Monday,08.35-09.10,UoI,Ms. Natali,Wali Kelas,Grade 3
+3E,Tuesday,08.35-09.10,Math,Ms. Natali,Wali Kelas,Grade 3
+3E,Wednesday,08.55-09.30,VA,Ms. Sherly,Guru Spesialis,Grade 3
+3E,Thursday,08.55-09.30,PSPE,Guru Spesialis (PSPE),Guru Spesialis,Grade 3
+3E,Friday,08.55-09.30,Math,Ms. Natali,Wali Kelas,Grade 3
+3E,Monday,09.10-09.35,Break,Break,Wali Kelas,Grade 3
+3E,Tuesday,09.10-09.35,Break,Break,Wali Kelas,Grade 3
+3E,Wednesday,09.30-09.45,Break,Break,Wali Kelas,Grade 3
+3E,Thursday,09.30-09.45,Break,Break,Wali Kelas,Grade 3
+3E,Friday,09.30-09.45,Break,Break,Wali Kelas,Grade 3
+3E,Monday,09.35-10.10,Reacter,Ms. Meitha,Guru Spesialis,Grade 3
+3E,Tuesday,09.35-10.10,Math,Ms. Natali,Wali Kelas,Grade 3
+3E,Wednesday,09.45-10.20,Mandarin,Ms. Renlin,Guru Spesialis,Grade 3
+3E,Thursday,09.45-10.20,Math,Ms. Natali,Wali Kelas,Grade 3
+3E,Friday,09.45-10.20,IT,Guru Spesialis (IT),Guru Spesialis,Grade 3
+3E,Monday,10.10-10.45,Reacter,Ms. Meitha,Guru Spesialis,Grade 3
+3E,Tuesday,10.10-10.45,BI,Ms. Natali,Wali Kelas,Grade 3
+3E,Wednesday,10.20-10.55,Mandarin,Ms. Renlin,Guru Spesialis,Grade 3
+3E,Thursday,10.20-10.55,Math,Ms. Natali,Wali Kelas,Grade 3
+3E,Friday,10.20-10.55,IT,Guru Spesialis (IT),Guru Spesialis,Grade 3
+3E,Monday,10.45-11.20,English B,Ms. Kristiani,Guru Spesialis,Grade 3
+3E,Tuesday,10.45-11.20,English B,Ms. Kristiani,Guru Spesialis,Grade 3
+3E,Wednesday,10.55-11.30,UoI,Ms. Natali,Wali Kelas,Grade 3
+3E,Thursday,10.55-11.30,English A,Guru Spesialis (English A),Guru Spesialis,Grade 3
+3E,Friday,10.55-11.30,BI,Ms. Natali,Wali Kelas,Grade 3
+3E,Monday,11.20-11.55,English B,Ms. Kristiani,Guru Spesialis,Grade 3
+3E,Tuesday,11.20-11.55,English B,Ms. Kristiani,Guru Spesialis,Grade 3
+3E,Wednesday,11.30-11.50,Break,Break,Wali Kelas,Grade 3
+3E,Thursday,11.30-11.50,English A,Guru Spesialis (English A),Guru Spesialis,Grade 3
+3E,Friday,11.30-11.50,Library,Guru Spesialis (Library),Guru Spesialis,Grade 3
+3E,Monday,11.55-12.25,Break,Break,Wali Kelas,Grade 3
+3E,Tuesday,11.55-12.25,Break,Break,Wali Kelas,Grade 3
+3E,Wednesday,11.50-12.25,BI,Ms. Natali,Wali Kelas,Grade 3
+3E,Thursday,11.50-12.25,Break,Break,Wali Kelas,Grade 3
+3E,Friday,11.50-12.25,Break,Break,Wali Kelas,Grade 3
+3E,Monday,12.25-13.00,P.Pancasila,Ms. Natali,Wali Kelas,Grade 3
+3E,Tuesday,12.25-13.00,SEL,Mr. Albert,Guru Spesialis,Grade 3
+3E,Wednesday,12.25-13.00,BI,Ms. Natali,Wali Kelas,Grade 3
+3E,Thursday,12.25-13.00,UoI,Ms. Natali,Wali Kelas,Grade 3
+3E,Friday,12.25-13.00,UoI,Ms. Natali,Wali Kelas,Grade 3
+3E,Monday,13.00-13.35,Music,Mr. Hendro,Guru Spesialis,Grade 3
+3E,Tuesday,13.00-13.35,Singing,Ms. Alitha,Guru Spesialis,Grade 3
+3E,Wednesday,13.00-14.00,Excur,Ms. Natali,Wali Kelas,Grade 3
+3E,Thursday,13.00-14.00,UoI,Ms. Natali,Wali Kelas,Grade 3
+3E,Friday,13.00-14.00,UoI,Ms. Natali,Wali Kelas,Grade 3
+3E,Monday,13.35-13.45,Preparation,Ms. Natali,Wali Kelas,Grade 3
+3E,Tuesday,13.35-13.45,Preparation,Ms. Natali,Wali Kelas,Grade 3
+3E,Wednesday,14.00-14.05,Preparation,Ms. Natali,Wali Kelas,Grade 3
+3E,Thursday,14.00-14.05,Preparation,Ms. Natali,Wali Kelas,Grade 3
+3E,Friday,14.00-14.05,Preparation,Ms. Natali,Wali Kelas,Grade 3
+4A,Monday,07.45-08.00,PC Session,Ms. Sharon,Wali Kelas,Grade 4
+4A,Tuesday,07.45-08.00,PC Session,Ms. Sharon,Wali Kelas,Grade 4
+4A,Wednesday,07.45-08.20,UoI,Ms. Sharon,Wali Kelas,Grade 4
+4A,Thursday,07.45-08.20,PC Session,Ms. Sharon,Wali Kelas,Grade 4
+4A,Friday,07.45-08.20,PC Session,Ms. Sharon,Wali Kelas,Grade 4
+4A,Monday,08.00-08.35,PSPE,Mr. Angga,Guru Spesialis,Grade 4
+4A,Tuesday,08.00-08.35,IT,Mr. Kornelius,Guru Spesialis,Grade 4
+4A,Wednesday,08.20-08.55,UoI,Ms. Sharon,Wali Kelas,Grade 4
+4A,Thursday,08.20-08.55,Mandarin,Guru Spesialis (Mandarin),Guru Spesialis,Grade 4
+4A,Friday,08.20-08.55,Math,Ms. Sharon,Wali Kelas,Grade 4
+4A,Monday,08.35-09.10,PSPE,Mr. Angga,Guru Spesialis,Grade 4
+4A,Tuesday,08.35-09.10,IT,Mr. Kornelius,Guru Spesialis,Grade 4
+4A,Wednesday,08.55-09.30,UoI,Ms. Sharon,Wali Kelas,Grade 4
+4A,Thursday,08.55-09.30,Mandarin,Guru Spesialis (Mandarin),Guru Spesialis,Grade 4
+4A,Friday,08.55-09.30,Math,Ms. Sharon,Wali Kelas,Grade 4
+4A,Monday,09.10-09.35,Break,Break,Wali Kelas,Grade 4
+4A,Tuesday,09.10-09.35,Break,Break,Wali Kelas,Grade 4
+4A,Wednesday,09.30-09.45,Break,Break,Wali Kelas,Grade 4
+4A,Thursday,09.30-09.45,Break,Break,Wali Kelas,Grade 4
+4A,Friday,09.30-09.45,Break,Break,Wali Kelas,Grade 4
+4A,Monday,09.35-10.10,English B,Ms.Destha,Guru Spesialis,Grade 4
+4A,Tuesday,09.35-10.10,English B,Ms.Destha,Guru Spesialis,Grade 4
+4A,Wednesday,09.45-10.20,Math,Ms. Sharon,Wali Kelas,Grade 4
+4A,Thursday,09.45-10.20,BI,Ms. Sharon,Wali Kelas,Grade 4
+4A,Friday,09.45-10.20,English A,Guru Spesialis (English A),Guru Spesialis,Grade 4
+4A,Monday,10.10-10.45,English B,Ms.Destha,Guru Spesialis,Grade 4
+4A,Tuesday,10.10-10.45,English B,Ms.Destha,Guru Spesialis,Grade 4
+4A,Wednesday,10.20-10.55,Math,Ms. Sharon,Wali Kelas,Grade 4
+4A,Thursday,10.20-10.55,BI,Ms. Sharon,Wali Kelas,Grade 4
+4A,Friday,10.20-10.55,English A,Guru Spesialis (English A),Guru Spesialis,Grade 4
+4A,Monday,10.45-11.20,SEL,Mr. Albert,Guru Spesialis,Grade 4
+4A,Tuesday,10.45-11.20,Singing,Mr. Ivan,Guru Spesialis,Grade 4
+4A,Wednesday,10.55-11.30,Reacter,Ms. Meitha,Guru Spesialis,Grade 4
+4A,Thursday,10.55-11.30,Math,Ms. Sharon,Wali Kelas,Grade 4
+4A,Friday,10.55-11.30,BI,Ms. Sharon,Wali Kelas,Grade 4
+4A,Monday,11.20-11.55,P.Pancasila,Ms. Sharon,Wali Kelas,Grade 4
+4A,Tuesday,11.20-11.55,Library,Library Team,Guru Spesialis,Grade 4
+4A,Wednesday,11.30-11.50,Break,Break,Wali Kelas,Grade 4
+4A,Thursday,11.30-11.50,Math,Ms. Sharon,Wali Kelas,Grade 4
+4A,Friday,11.30-11.50,BI,Ms. Sharon,Wali Kelas,Grade 4
+4A,Monday,11.55-12.25,Break,Break,Wali Kelas,Grade 4
+4A,Tuesday,11.55-12.25,Break,Break,Wali Kelas,Grade 4
+4A,Wednesday,11.50-12.25,Reacter,Ms. Meitha,Guru Spesialis,Grade 4
+4A,Thursday,11.50-12.25,Break,Break,Wali Kelas,Grade 4
+4A,Friday,11.50-12.25,Break,Break,Wali Kelas,Grade 4
+4A,Monday,12.25-13.00,UoI,Ms. Sharon,Wali Kelas,Grade 4
+4A,Tuesday,12.25-13.00,Math,Ms. Sharon,Wali Kelas,Grade 4
+4A,Wednesday,12.25-13.00,Assembly,Ms. Sharon,Wali Kelas,Grade 4
+4A,Thursday,12.25-13.00,UoI,Ms. Sharon,Wali Kelas,Grade 4
+4A,Friday,12.25-13.00,VA,Ms. Sherly,Guru Spesialis,Grade 4
+4A,Monday,13.00-13.35,UoI,Ms. Sharon,Wali Kelas,Grade 4
+4A,Tuesday,13.00-13.35,Music,Mr. Hendro,Guru Spesialis,Grade 4
+4A,Wednesday,13.00-14.00,Excur,Ms. Sharon,Wali Kelas,Grade 4
+4A,Thursday,13.00-14.00,UoI,Ms. Sharon,Wali Kelas,Grade 4
+4A,Friday,13.00-14.00,VA,Guru Spesialis (VA),Guru Spesialis,Grade 4
+4A,Monday,13.35-13.45,Preparation,Ms. Sharon,Wali Kelas,Grade 4
+4A,Tuesday,13.35-13.45,Preparation,Ms. Sharon,Wali Kelas,Grade 4
+4A,Wednesday,14.00-14.05,Preparation,Ms. Sharon,Wali Kelas,Grade 4
+4A,Thursday,14.00-14.05,Preparation,Ms. Sharon,Wali Kelas,Grade 4
+4A,Friday,14.00-14.05,Preparation,Ms. Sharon,Wali Kelas,Grade 4
+4B,Monday,07.45-08.00,PC Session,Ms. Lia,Wali Kelas,Grade 4
+4B,Tuesday,07.45-08.00,PC Session,Ms. Lia,Wali Kelas,Grade 4
+4B,Wednesday,07.45-08.20,UoI,Ms. Lia,Wali Kelas,Grade 4
+4B,Thursday,07.45-08.20,PC Session,Ms. Lia,Wali Kelas,Grade 4
+4B,Friday,07.45-08.20,PC Session,Ms. Lia,Wali Kelas,Grade 4
+4B,Monday,08.00-08.35,UoI,Ms. Lia,Wali Kelas,Grade 4
+4B,Tuesday,08.00-08.35,BI,Ms. Lia,Wali Kelas,Grade 4
+4B,Wednesday,08.20-08.55,UoI,Ms. Lia,Wali Kelas,Grade 4
+4B,Thursday,08.20-08.55,VA,Guru Spesialis (VA),Guru Spesialis,Grade 4
+4B,Friday,08.20-08.55,English A,Guru Spesialis (English A),Guru Spesialis,Grade 4
+4B,Monday,08.35-09.10,UoI,Ms. Lia,Wali Kelas,Grade 4
+4B,Tuesday,08.35-09.10,BI,Ms. Lia,Wali Kelas,Grade 4
+4B,Wednesday,08.55-09.30,UoI,Ms. Lia,Wali Kelas,Grade 4
+4B,Thursday,08.55-09.30,VA,Guru Spesialis (VA),Guru Spesialis,Grade 4
+4B,Friday,08.55-09.30,English A,Guru Spesialis (English A),Guru Spesialis,Grade 4
+4B,Monday,09.10-09.35,Break,Break,Wali Kelas,Grade 4
+4B,Tuesday,09.10-09.35,Break,Break,Wali Kelas,Grade 4
+4B,Wednesday,09.30-09.45,Break,Break,Wali Kelas,Grade 4
+4B,Thursday,09.30-09.45,Break,Break,Wali Kelas,Grade 4
+4B,Friday,09.30-09.45,Break,Break,Wali Kelas,Grade 4
+4B,Monday,09.35-10.10,PSPE,Mr. Angga,Guru Spesialis,Grade 4
+4B,Tuesday,09.35-10.10,Math,Ms. Lia,Wali Kelas,Grade 4
+4B,Wednesday,09.45-10.20,Math,Ms. Lia,Wali Kelas,Grade 4
+4B,Thursday,09.45-10.20,Mandarin,Guru Spesialis (Mandarin),Guru Spesialis,Grade 4
+4B,Friday,09.45-10.20,Reacter,Guru Spesialis (Reacter),Guru Spesialis,Grade 4
+4B,Monday,10.10-10.45,PSPE,Mr. Angga,Guru Spesialis,Grade 4
+4B,Tuesday,10.10-10.45,Music,Mr. Hendro,Guru Spesialis,Grade 4
+4B,Wednesday,10.20-10.55,Math,Ms. Lia,Wali Kelas,Grade 4
+4B,Thursday,10.20-10.55,Mandarin,Guru Spesialis (Mandarin),Guru Spesialis,Grade 4
+4B,Friday,10.20-10.55,Reacter,Guru Spesialis (Reacter),Guru Spesialis,Grade 4
+4B,Monday,10.45-11.20,P.Pancasila,Ms. Lia,Wali Kelas,Grade 4
+4B,Tuesday,10.45-11.20,Library,Library Team,Guru Spesialis,Grade 4
+4B,Wednesday,10.55-11.30,English B,Ms.Destha,Guru Spesialis,Grade 4
+4B,Thursday,10.55-11.30,Math,Ms. Lia,Wali Kelas,Grade 4
+4B,Friday,10.55-11.30,Math,Ms. Lia,Wali Kelas,Grade 4
+4B,Monday,11.20-11.55,English B,Guru Spesialis (English B),Guru Spesialis,Grade 4
+4B,Tuesday,11.20-11.55,Singing,Mr. Ivan,Guru Spesialis,Grade 4
+4B,Wednesday,11.30-11.50,Break,Break,Wali Kelas,Grade 4
+4B,Thursday,11.30-11.50,Math,Ms. Lia,Wali Kelas,Grade 4
+4B,Friday,11.30-11.50,Math,Ms. Lia,Wali Kelas,Grade 4
+4B,Monday,11.55-12.25,Break,Break,Wali Kelas,Grade 4
+4B,Tuesday,11.55-12.25,Break,Break,Wali Kelas,Grade 4
+4B,Wednesday,11.50-12.25,English B,Ms.Destha,Guru Spesialis,Grade 4
+4B,Thursday,11.50-12.25,Break,Break,Wali Kelas,Grade 4
+4B,Friday,11.50-12.25,Break,Break,Wali Kelas,Grade 4
+4B,Monday,12.25-13.00,English B,Ms.Destha,Guru Spesialis,Grade 4
+4B,Tuesday,12.25-13.00,IT,Mr. Kornelius,Guru Spesialis,Grade 4
+4B,Wednesday,12.25-13.00,Assembly,Ms. Lia,Wali Kelas,Grade 4
+4B,Thursday,12.25-13.00,UoI,Ms. Lia,Wali Kelas,Grade 4
+4B,Friday,12.25-13.00,BI,Ms. Lia,Wali Kelas,Grade 4
+4B,Monday,13.00-13.35,SEL,Mr. Albert,Guru Spesialis,Grade 4
+4B,Tuesday,13.00-13.35,IT,Mr. Kornelius,Guru Spesialis,Grade 4
+4B,Wednesday,13.00-14.00,Excur,Ms. Lia,Wali Kelas,Grade 4
+4B,Thursday,13.00-14.00,UoI,Ms. Lia,Wali Kelas,Grade 4
+4B,Friday,13.00-14.00,BI,Ms. Lia,Wali Kelas,Grade 4
+4B,Monday,13.35-13.45,Preparation,Ms. Lia,Wali Kelas,Grade 4
+4B,Tuesday,13.35-13.45,Preparation,Ms. Lia,Wali Kelas,Grade 4
+4B,Wednesday,14.00-14.05,Preparation,Ms. Lia,Wali Kelas,Grade 4
+4B,Thursday,14.00-14.05,Preparation,Ms. Lia,Wali Kelas,Grade 4
+4B,Friday,14.00-14.05,Preparation,Ms. Lia,Wali Kelas,Grade 4
+4C,Monday,07.45-08.00,PC Session,Ms. Fosa,Wali Kelas,Grade 4
+4C,Tuesday,07.45-08.00,PC Session,Ms. Fosa,Wali Kelas,Grade 4
+4C,Wednesday,07.45-08.20,UoI,Ms. Fosa,Wali Kelas,Grade 4
+4C,Thursday,07.45-08.20,PC Session,Ms. Fosa,Wali Kelas,Grade 4
+4C,Friday,07.45-08.20,PC Session,Ms. Fosa,Wali Kelas,Grade 4
+4C,Monday,08.00-08.35,P.Pancasila,Ms. Fosa,Wali Kelas,Grade 4
+4C,Tuesday,08.00-08.35,Math,Ms. Fosa,Wali Kelas,Grade 4
+4C,Wednesday,08.20-08.55,UoI,Ms. Fosa,Wali Kelas,Grade 4
+4C,Thursday,08.20-08.55,English B,Guru Spesialis (English B),Guru Spesialis,Grade 4
+4C,Friday,08.20-08.55,Mandarin,Guru Spesialis (Mandarin),Guru Spesialis,Grade 4
+4C,Monday,08.35-09.10,SEL,Mr. Albert,Guru Spesialis,Grade 4
+4C,Tuesday,08.35-09.10,Library,Library Team,Guru Spesialis,Grade 4
+4C,Wednesday,08.55-09.30,UoI,Ms. Fosa,Wali Kelas,Grade 4
+4C,Thursday,08.55-09.30,English B,Guru Spesialis (English B),Guru Spesialis,Grade 4
+4C,Friday,08.55-09.30,Mandarin,Guru Spesialis (Mandarin),Guru Spesialis,Grade 4
+4C,Monday,09.10-09.35,Break,Break,Wali Kelas,Grade 4
+4C,Tuesday,09.10-09.35,Break,Break,Wali Kelas,Grade 4
+4C,Wednesday,09.30-09.45,Break,Break,Wali Kelas,Grade 4
+4C,Thursday,09.30-09.45,Break,Break,Wali Kelas,Grade 4
+4C,Friday,09.30-09.45,Break,Break,Wali Kelas,Grade 4
+4C,Monday,09.35-10.10,English A,Ms. Rachelle,Guru Spesialis,Grade 4
+4C,Tuesday,09.35-10.10,BI,Ms. Fosa,Wali Kelas,Grade 4
+4C,Wednesday,09.45-10.20,English B,Ms.Destha,Guru Spesialis,Grade 4
+4C,Thursday,09.45-10.20,VA,Guru Spesialis (VA),Guru Spesialis,Grade 4
+4C,Friday,09.45-10.20,Math,Ms. Fosa,Wali Kelas,Grade 4
+4C,Monday,10.10-10.45,English A,Ms. Rachelle,Guru Spesialis,Grade 4
+4C,Tuesday,10.10-10.45,BI,Ms. Fosa,Wali Kelas,Grade 4
+4C,Wednesday,10.20-10.55,English B,Ms.Destha,Guru Spesialis,Grade 4
+4C,Thursday,10.20-10.55,VA,Guru Spesialis (VA),Guru Spesialis,Grade 4
+4C,Friday,10.20-10.55,Math,Ms. Fosa,Wali Kelas,Grade 4
+4C,Monday,10.45-11.20,PSPE,Mr. Angga,Guru Spesialis,Grade 4
+4C,Tuesday,10.45-11.20,IT,Mr. Kornelius,Guru Spesialis,Grade 4
+4C,Wednesday,10.55-11.30,Math,Ms. Fosa,Wali Kelas,Grade 4
+4C,Thursday,10.55-11.30,Math,Ms. Fosa,Wali Kelas,Grade 4
+4C,Friday,10.55-11.30,Reacter,Guru Spesialis (Reacter),Guru Spesialis,Grade 4
+4C,Monday,11.20-11.55,PSPE,Mr. Angga,Guru Spesialis,Grade 4
+4C,Tuesday,11.20-11.55,IT,Mr. Kornelius,Guru Spesialis,Grade 4
+4C,Wednesday,11.30-11.50,Break,Break,Wali Kelas,Grade 4
+4C,Thursday,11.30-11.50,Math,Ms. Fosa,Wali Kelas,Grade 4
+4C,Friday,11.30-11.50,Reacter,Guru Spesialis (Reacter),Guru Spesialis,Grade 4
+4C,Monday,11.55-12.25,Break,Break,Wali Kelas,Grade 4
+4C,Tuesday,11.55-12.25,Break,Break,Wali Kelas,Grade 4
+4C,Wednesday,11.50-12.25,Math,Ms. Fosa,Wali Kelas,Grade 4
+4C,Thursday,11.50-12.25,Break,Break,Wali Kelas,Grade 4
+4C,Friday,11.50-12.25,Break,Break,Wali Kelas,Grade 4
+4C,Monday,12.25-13.00,UoI,Ms. Fosa,Wali Kelas,Grade 4
+4C,Tuesday,12.25-13.00,Music,Mr. Hendro,Guru Spesialis,Grade 4
+4C,Wednesday,12.25-13.00,Assembly,Ms. Fosa,Wali Kelas,Grade 4
+4C,Thursday,12.25-13.00,UoI,Ms. Fosa,Wali Kelas,Grade 4
+4C,Friday,12.25-13.00,BI,Ms. Fosa,Wali Kelas,Grade 4
+4C,Monday,13.00-13.35,UoI,Ms. Fosa,Wali Kelas,Grade 4
+4C,Tuesday,13.00-13.35,Singing,Mr. Ivan,Guru Spesialis,Grade 4
+4C,Wednesday,13.00-14.00,Excur,Ms. Fosa,Wali Kelas,Grade 4
+4C,Thursday,13.00-14.00,UoI,Ms. Fosa,Wali Kelas,Grade 4
+4C,Friday,13.00-14.00,BI,Ms. Fosa,Wali Kelas,Grade 4
+4C,Monday,13.35-13.45,Preparation,Ms. Fosa,Wali Kelas,Grade 4
+4C,Tuesday,13.35-13.45,Preparation,Ms. Fosa,Wali Kelas,Grade 4
+4C,Wednesday,14.00-14.05,Preparation,Ms. Fosa,Wali Kelas,Grade 4
+4C,Thursday,14.00-14.05,Preparation,Ms. Fosa,Wali Kelas,Grade 4
+4C,Friday,14.00-14.05,Preparation,Ms. Fosa,Wali Kelas,Grade 4
+4D,Monday,07.45-08.00,PC Session,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Tuesday,07.45-08.00,PC Session,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Wednesday,07.45-08.20,UoI,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Thursday,07.45-08.20,PC Session,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Friday,07.45-08.20,PC Session,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Monday,08.00-08.35,SEL,Mr. Albert,Guru Spesialis,Grade 4
+4D,Tuesday,08.00-08.35,BI,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Wednesday,08.20-08.55,UoI,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Thursday,08.20-08.55,Reacter,Guru Spesialis (Reacter),Guru Spesialis,Grade 4
+4D,Friday,08.20-08.55,English B,Guru Spesialis (English B),Guru Spesialis,Grade 4
+4D,Monday,08.35-09.10,P.Pancasila,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Tuesday,08.35-09.10,BI,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Wednesday,08.55-09.30,UoI,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Thursday,08.55-09.30,Reacter,Guru Spesialis (Reacter),Guru Spesialis,Grade 4
+4D,Friday,08.55-09.30,English B,Guru Spesialis (English B),Guru Spesialis,Grade 4
+4D,Monday,09.10-09.35,Break,Break,Wali Kelas,Grade 4
+4D,Tuesday,09.10-09.35,Break,Break,Wali Kelas,Grade 4
+4D,Wednesday,09.30-09.45,Break,Break,Wali Kelas,Grade 4
+4D,Thursday,09.30-09.45,Break,Break,Wali Kelas,Grade 4
+4D,Friday,09.30-09.45,Break,Break,Wali Kelas,Grade 4
+4D,Monday,09.35-10.10,UoI,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Tuesday,09.35-10.10,Music,Mr. Hendro,Guru Spesialis,Grade 4
+4D,Wednesday,09.45-10.20,Math,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Thursday,09.45-10.20,Math,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Friday,09.45-10.20,Mandarin,Guru Spesialis (Mandarin),Guru Spesialis,Grade 4
+4D,Monday,10.10-10.45,UoI,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Tuesday,10.10-10.45,Library,Library Team,Guru Spesialis,Grade 4
+4D,Wednesday,10.20-10.55,PSPE,Mr. Angga,Guru Spesialis,Grade 4
+4D,Thursday,10.20-10.55,Math,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Friday,10.20-10.55,Mandarin,Guru Spesialis (Mandarin),Guru Spesialis,Grade 4
+4D,Monday,10.45-11.20,English A,Ms. Rachelle,Guru Spesialis,Grade 4
+4D,Tuesday,10.45-11.20,English B,Ms.Destha,Guru Spesialis,Grade 4
+4D,Wednesday,10.55-11.30,PSPE,Mr. Angga,Guru Spesialis,Grade 4
+4D,Thursday,10.55-11.30,IT,Guru Spesialis (IT),Guru Spesialis,Grade 4
+4D,Friday,10.55-11.30,VA,Guru Spesialis (VA),Guru Spesialis,Grade 4
+4D,Monday,11.20-11.55,English A,Ms. Rachelle,Guru Spesialis,Grade 4
+4D,Tuesday,11.20-11.55,English B,Ms.Destha,Guru Spesialis,Grade 4
+4D,Wednesday,11.30-11.50,Break,Break,Wali Kelas,Grade 4
+4D,Thursday,11.30-11.50,IT,Guru Spesialis (IT),Guru Spesialis,Grade 4
+4D,Friday,11.30-11.50,VA,Guru Spesialis (VA),Guru Spesialis,Grade 4
+4D,Monday,11.55-12.25,Break,Break,Wali Kelas,Grade 4
+4D,Tuesday,11.55-12.25,Break,Break,Wali Kelas,Grade 4
+4D,Wednesday,11.50-12.25,Math,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Thursday,11.50-12.25,Break,Break,Wali Kelas,Grade 4
+4D,Friday,11.50-12.25,Break,Break,Wali Kelas,Grade 4
+4D,Monday,12.25-13.00,BI,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Tuesday,12.25-13.00,Singing,Mr. Ivan,Guru Spesialis,Grade 4
+4D,Wednesday,12.25-13.00,Assembly,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Thursday,12.25-13.00,UoI,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Friday,12.25-13.00,Math,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Monday,13.00-13.35,BI,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Tuesday,13.00-13.35,Math,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Wednesday,13.00-14.00,Excur,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Thursday,13.00-14.00,UoI,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Friday,13.00-14.00,Math,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Monday,13.35-13.45,Preparation,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Tuesday,13.35-13.45,Preparation,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Wednesday,14.00-14.05,Preparation,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Thursday,14.00-14.05,Preparation,Mr. Ferdi,Wali Kelas,Grade 4
+4D,Friday,14.00-14.05,Preparation,Mr. Ferdi,Wali Kelas,Grade 4
+5A,Monday,07.45-08.00,PC Session,Mr. Christian,Wali Kelas,Grade 5
+5A,Tuesday,07.45-08.00,PC Session,Mr. Christian,Wali Kelas,Grade 5
+5A,Wednesday,07.45-08.00,PC Session,Mr. Christian,Wali Kelas,Grade 5
+5A,Thursday,07.45-08.20,English B,Ms. Kristiani,Guru Spesialis,Grade 5
+5A,Friday,07.45-08.20,PC Session,Mr. Christian,Wali Kelas,Grade 5
+5A,Monday,08.00-08.35,Math,Mr. Gideon,Guru Spesialis,Grade 5
+5A,Tuesday,08.00-08.35,Assembly,Mr. Christian,Wali Kelas,Grade 5
+5A,Wednesday,08.00-08.35,BI,Mr. Christian,Wali Kelas,Grade 5
+5A,Thursday,08.20-08.55,English B,Ms. Kristiani,Guru Spesialis,Grade 5
+5A,Friday,08.20-08.55,Mandarin,Guru Spesialis (Mandarin),Guru Spesialis,Grade 5
+5A,Monday,08.35-09.10,Math,Mr. Gideon,Guru Spesialis,Grade 5
+5A,Tuesday,08.35-09.10,BI,Mr. Christian,Wali Kelas,Grade 5
+5A,Wednesday,08.35-09.10,BI,Mr. Christian,Wali Kelas,Grade 5
+5A,Thursday,08.55-09.30,Math,Mr. Gideon,Guru Spesialis,Grade 5
+5A,Friday,08.55-09.30,Mandarin,Guru Spesialis (Mandarin),Guru Spesialis,Grade 5
+5A,Monday,09.10-09.45,VA,Ms. Sherly,Guru Spesialis,Grade 5
+5A,Tuesday,09.10-09.45,PSPE,Mr. Angga,Guru Spesialis,Grade 5
+5A,Wednesday,09.10-09.45,Math,Mr. Gideon,Guru Spesialis,Grade 5
+5A,Thursday,9.30-10.05,Math,Mr. Gideon,Guru Spesialis,Grade 5
+5A,Friday,9.30-10.05,Math,Guru Spesialis (Math),Guru Spesialis,Grade 5
+5A,Monday,09.45-10.20,VA,Ms. Sherly,Guru Spesialis,Grade 5
+5A,Tuesday,09.45-10.20,PSPE,Mr. Angga,Guru Spesialis,Grade 5
+5A,Wednesday,09.45-10.20,Math,Mr. Gideon,Guru Spesialis,Grade 5
+5A,Thursday,10.05-10.20,Break,Break,Wali Kelas,Grade 5
+5A,Friday,10.05-10.20,Math,Guru Spesialis (Math),Guru Spesialis,Grade 5
+5A,Monday,10.20-10.45,Break,Break,Wali Kelas,Grade 5
+5A,Tuesday,10.20-10.45,Break,Break,Wali Kelas,Grade 5
+5A,Wednesday,10.20-10.45,Break,Break,Wali Kelas,Grade 5
+5A,Thursday,10.20-10.55,Singing,Mr. Ivan,Guru Spesialis,Grade 5
+5A,Friday,10.20-10.55,Break,Break,Wali Kelas,Grade 5
+5A,Monday,10.45-11.20,UoI,Mr. Christian,Wali Kelas,Grade 5
+5A,Tuesday,10.45-11.20,IT,Mr. Percy,Guru Spesialis,Grade 5
+5A,Wednesday,10.45-11.20,Music,Mr. Hendro,Guru Spesialis,Grade 5
+5A,Thursday,10.55-11.30,Reacter,Ms. Gloria,Guru Spesialis,Grade 5
+5A,Friday,10.55-11.30,English B,Guru Spesialis (English B),Guru Spesialis,Grade 5
+5A,Monday,11.20-11.55,UoI,Mr. Christian,Wali Kelas,Grade 5
+5A,Tuesday,11.20-11.55,IT,Mr. Percy,Guru Spesialis,Grade 5
+5A,Wednesday,11.20-11.55,SEL,Mr. Albert,Guru Spesialis,Grade 5
+5A,Thursday,11.30-12.05,Reacter,Ms. Gloria,Guru Spesialis,Grade 5
+5A,Friday,11.30-12.05,English B,Guru Spesialis (English B),Guru Spesialis,Grade 5
+5A,Monday,11.55-12.25,Break,Break,Wali Kelas,Grade 5
+5A,Tuesday,11.55-12.25,Break,Break,Wali Kelas,Grade 5
+5A,Wednesday,11.55-12.25,Break,Break,Wali Kelas,Grade 5
+5A,Thursday,12.05-12.25,Break,Break,Wali Kelas,Grade 5
+5A,Friday,12.05-12.25,Break,Break,Wali Kelas,Grade 5
+5A,Monday,12.25-13.00,P.Pancasila,Mr. Christian,Wali Kelas,Grade 5
+5A,Tuesday,12.25-13.00,Library,Library Team,Guru Spesialis,Grade 5
+5A,Wednesday,12.25-13.00,UoI,Mr. Christian,Wali Kelas,Grade 5
+5A,Thursday,12.25-13.00,BI,Mr. Christian,Wali Kelas,Grade 5
+5A,Friday,12.25-13.00,UoI,Mr. Christian,Wali Kelas,Grade 5
+5A,Monday,13.00-13.35,English A,Mr. Minh,Guru Spesialis,Grade 5
+5A,Tuesday,13.00-13.35,UoI,Mr. Christian,Wali Kelas,Grade 5
+5A,Wednesday,13.00-13.35,UoI,Mr. Christian,Wali Kelas,Grade 5
+5A,Thursday,13.00-13.35,BI,Mr. Christian,Wali Kelas,Grade 5
+5A,Friday,13.00-13.35,UoI,Mr. Christian,Wali Kelas,Grade 5
+5A,Monday,13.35-14.10,English A,Mr. Minh,Guru Spesialis,Grade 5
+5A,Tuesday,13.35-14.10,UoI,Mr. Christian,Wali Kelas,Grade 5
+5A,Wednesday,13.35-14.10,BI,Mr. Christian,Wali Kelas,Grade 5
+5A,Thursday,13.35-14.35,Excur,Mr. Christian,Wali Kelas,Grade 5
+5A,Friday,13.35-14.35,UoI,Mr. Christian,Wali Kelas,Grade 5
+5A,Monday,14.10-14.20,Preparation,Mr. Christian,Wali Kelas,Grade 5
+5A,Tuesday,14.10-14.20,Preparation,Mr. Christian,Wali Kelas,Grade 5
+5A,Wednesday,14.10-14.20,Preparation,Mr. Christian,Wali Kelas,Grade 5
+5A,Thursday,14.35-14.40,Preparation,Mr. Christian,Wali Kelas,Grade 5
+5A,Friday,14.35-14.40,Preparation,Mr. Christian,Wali Kelas,Grade 5
+5B,Monday,07.45-08.00,PC Session,Ms. Rina,Wali Kelas,Grade 5
+5B,Tuesday,07.45-08.00,PC Session,Ms. Rina,Wali Kelas,Grade 5
+5B,Wednesday,07.45-08.00,PC Session,Ms. Rina,Wali Kelas,Grade 5
+5B,Thursday,07.45-08.20,IT,Mr. Percy,Guru Spesialis,Grade 5
+5B,Friday,07.45-08.20,PC Session,Ms. Rina,Wali Kelas,Grade 5
+5B,Monday,08.00-08.35,UoI,Ms. Rina,Wali Kelas,Grade 5
+5B,Tuesday,08.00-08.35,Assembly,Ms. Rina,Wali Kelas,Grade 5
+5B,Wednesday,08.00-08.35,Math,Mr. Gideon,Guru Spesialis,Grade 5
+5B,Thursday,08.20-08.55,IT,Mr. Percy,Guru Spesialis,Grade 5
+5B,Friday,08.20-08.55,Reacter,Guru Spesialis (Reacter),Guru Spesialis,Grade 5
+5B,Monday,08.35-09.10,UoI,Ms. Rina,Wali Kelas,Grade 5
+5B,Tuesday,08.35-09.10,BI,Ms. Rina,Wali Kelas,Grade 5
+5B,Wednesday,08.35-09.10,Math,Mr. Gideon,Guru Spesialis,Grade 5
+5B,Thursday,08.55-09.30,English B,Ms. Kristiani,Guru Spesialis,Grade 5
+5B,Friday,08.55-09.30,Reacter,Guru Spesialis (Reacter),Guru Spesialis,Grade 5
+5B,Monday,09.10-09.45,Math,Mr. Gideon,Guru Spesialis,Grade 5
+5B,Tuesday,09.10-09.45,English A,Mr. Minh,Guru Spesialis,Grade 5
+5B,Wednesday,09.10-09.45,English B,Ms. Kristiani,Guru Spesialis,Grade 5
+5B,Thursday,9.30-10.05,English B,Ms. Kristiani,Guru Spesialis,Grade 5
+5B,Friday,9.30-10.05,Mandarin,Guru Spesialis (Mandarin),Guru Spesialis,Grade 5
+5B,Monday,09.45-10.20,Math,Mr. Gideon,Guru Spesialis,Grade 5
+5B,Tuesday,09.45-10.20,English A,Mr. Minh,Guru Spesialis,Grade 5
+5B,Wednesday,09.45-10.20,English B,Ms. Kristiani,Guru Spesialis,Grade 5
+5B,Thursday,10.05-10.20,Break,Break,Wali Kelas,Grade 5
+5B,Friday,10.05-10.20,Mandarin,Guru Spesialis (Mandarin),Guru Spesialis,Grade 5
+5B,Monday,10.20-10.45,Break,Break,Wali Kelas,Grade 5
+5B,Tuesday,10.20-10.45,Break,Break,Wali Kelas,Grade 5
+5B,Wednesday,10.20-10.45,Break,Break,Wali Kelas,Grade 5
+5B,Thursday,10.20-10.55,BI,Ms. Rina,Wali Kelas,Grade 5
+5B,Friday,10.20-10.55,Break,Break,Wali Kelas,Grade 5
+5B,Monday,10.45-11.20,VA,Ms. Sherly,Guru Spesialis,Grade 5
+5B,Tuesday,10.45-11.20,PSPE,Mr. Angga,Guru Spesialis,Grade 5
+5B,Wednesday,10.45-11.20,SEL,Mr. Albert,Guru Spesialis,Grade 5
+5B,Thursday,10.55-11.30,Singing,Mr. Ivan,Guru Spesialis,Grade 5
+5B,Friday,10.55-11.30,Math,Guru Spesialis (Math),Guru Spesialis,Grade 5
+5B,Monday,11.20-11.55,VA,Ms. Sherly,Guru Spesialis,Grade 5
+5B,Tuesday,11.20-11.55,PSPE,Mr. Angga,Guru Spesialis,Grade 5
+5B,Wednesday,11.20-11.55,Music,Mr. Hendro,Guru Spesialis,Grade 5
+5B,Thursday,11.30-12.05,BI,Ms. Rina,Wali Kelas,Grade 5
+5B,Monday,11.55-12.25,Break,Break,Wali Kelas,Grade 5
+5B,Tuesday,11.55-12.25,Break,Break,Wali Kelas,Grade 5
+5B,Wednesday,11.55-12.25,Break,Break,Wali Kelas,Grade 5
+5B,Thursday,12.05-12.25,Break,Break,Wali Kelas,Grade 5
+5B,Friday,12.05-12.25,Break,Break,Wali Kelas,Grade 5
+5B,Monday,12.25-13.00,BI,Ms. Rina,Wali Kelas,Grade 5
+5B,Tuesday,12.25-13.00,UoI,Ms. Rina,Wali Kelas,Grade 5
+5B,Wednesday,12.25-13.00,P.Pancasila,Ms. Rina,Wali Kelas,Grade 5
+5B,Thursday,12.25-13.00,Math,Mr. Gideon,Guru Spesialis,Grade 5
+5B,Friday,12.25-13.00,UoI,Ms. Rina,Wali Kelas,Grade 5
+5B,Monday,13.00-13.35,BI,Ms. Rina,Wali Kelas,Grade 5
+5B,Tuesday,13.00-13.35,Library,Library Team,Guru Spesialis,Grade 5
+5B,Wednesday,13.00-13.35,UoI,Ms. Rina,Wali Kelas,Grade 5
+5B,Thursday,13.00-13.35,Math,Mr. Gideon,Guru Spesialis,Grade 5
+5B,Friday,13.00-13.35,UoI,Ms. Rina,Wali Kelas,Grade 5
+5B,Monday,13.35-14.10,BI,Ms. Rina,Wali Kelas,Grade 5
+5B,Tuesday,13.35-14.10,UoI,Ms. Rina,Wali Kelas,Grade 5
+5B,Wednesday,13.35-14.10,UoI,Ms. Rina,Wali Kelas,Grade 5
+5B,Thursday,13.35-14.35,Excur,Ms. Rina,Wali Kelas,Grade 5
+5B,Friday,13.35-14.35,UoI,Ms. Rina,Wali Kelas,Grade 5
+5B,Monday,14.10-14.20,Preparation,Ms. Rina,Wali Kelas,Grade 5
+5B,Tuesday,14.10-14.20,Preparation,Ms. Rina,Wali Kelas,Grade 5
+5B,Wednesday,14.10-14.20,Preparation,Ms. Rina,Wali Kelas,Grade 5
+5B,Thursday,14.35-14.40,Preparation,Ms. Rina,Wali Kelas,Grade 5
+5B,Friday,14.35-14.40,Preparation,Ms. Rina,Wali Kelas,Grade 5
+5C,Monday,07.45-08.00,PC Session,Ms. Lisa,Wali Kelas,Grade 5
+5C,Tuesday,07.45-08.00,PC Session,Ms. Lisa,Wali Kelas,Grade 5
+5C,Wednesday,07.45-08.00,PC Session,Ms. Lisa,Wali Kelas,Grade 5
+5C,Thursday,07.45-08.20,Math,Mr. Gideon,Guru Spesialis,Grade 5
+5C,Friday,07.45-08.20,PC Session,Ms. Lisa,Wali Kelas,Grade 5
+5C,Monday,08.00-08.35,UoI,Ms. Lisa,Wali Kelas,Grade 5
+5C,Tuesday,08.00-08.35,Assembly,Ms. Lisa,Wali Kelas,Grade 5
+5C,Wednesday,08.00-08.35,UoI,Ms. Lisa,Wali Kelas,Grade 5
+5C,Thursday,08.20-08.55,Math,Mr. Gideon,Guru Spesialis,Grade 5
+5C,Friday,08.20-08.55,Math,Guru Spesialis (Math),Guru Spesialis,Grade 5
+5C,Monday,08.35-09.10,UoI,Ms. Lisa,Wali Kelas,Grade 5
+5C,Tuesday,08.35-09.10,UoI,Ms. Lisa,Wali Kelas,Grade 5
+5C,Wednesday,08.35-09.10,UoI,Ms. Lisa,Wali Kelas,Grade 5
+5C,Thursday,08.55-09.30,IT,Mr. Percy,Guru Spesialis,Grade 5
+5C,Friday,08.55-09.30,Math,Guru Spesialis (Math),Guru Spesialis,Grade 5
+5C,Monday,09.10-09.45,BI,Ms. Lisa,Wali Kelas,Grade 5
+5C,Tuesday,09.10-09.45,UoI,Ms. Lisa,Wali Kelas,Grade 5
+5C,Wednesday,09.10-09.45,P.Pancasila,Ms. Lisa,Wali Kelas,Grade 5
+5C,Thursday,9.30-10.05,IT,Mr. Percy,Guru Spesialis,Grade 5
+5C,Friday,9.30-10.05,Reacter,Guru Spesialis (Reacter),Guru Spesialis,Grade 5
+5C,Monday,09.45-10.20,BI,Ms. Lisa,Wali Kelas,Grade 5
+5C,Tuesday,09.45-10.20,BI,Ms. Lisa,Wali Kelas,Grade 5
+5C,Wednesday,09.45-10.20,SEL,Mr. Albert,Guru Spesialis,Grade 5
+5C,Thursday,10.05-10.20,Break,Break,Wali Kelas,Grade 5
+5C,Friday,10.05-10.20,Reacter,Guru Spesialis (Reacter),Guru Spesialis,Grade 5
+5C,Monday,10.20-10.45,Break,Break,Wali Kelas,Grade 5
+5C,Tuesday,10.20-10.45,Break,Break,Wali Kelas,Grade 5
+5C,Wednesday,10.20-10.45,Break,Break,Wali Kelas,Grade 5
+5C,Thursday,10.20-10.55,English B,Ms. Kristiani,Guru Spesialis,Grade 5
+5C,Friday,10.20-10.55,Break,Break,Wali Kelas,Grade 5
+5C,Monday,10.45-11.20,Math,Mr. Gideon,Guru Spesialis,Grade 5
+5C,Tuesday,10.45-11.20,English A,Mr. Minh,Guru Spesialis,Grade 5
+5C,Wednesday,10.45-11.20,English B,Ms. Kristiani,Guru Spesialis,Grade 5
+5C,Thursday,10.55-11.30,English B,Ms. Kristiani,Guru Spesialis,Grade 5
+5C,Friday,10.55-11.30,Mandarin,Guru Spesialis (Mandarin),Guru Spesialis,Grade 5
+5C,Monday,11.20-11.55,Math,Mr. Gideon,Guru Spesialis,Grade 5
+5C,Tuesday,11.20-11.55,English A,Mr. Minh,Guru Spesialis,Grade 5
+5C,Wednesday,11.20-11.55,English B,Ms. Kristiani,Guru Spesialis,Grade 5
+5C,Thursday,11.30-12.05,Singing,Mr. Ivan,Guru Spesialis,Grade 5
+5C,Friday,11.30-12.05,Mandarin,Guru Spesialis (Mandarin),Guru Spesialis,Grade 5
+5C,Monday,11.55-12.25,Break,Break,Wali Kelas,Grade 5
+5C,Tuesday,11.55-12.25,Break,Break,Wali Kelas,Grade 5
+5C,Wednesday,11.55-12.25,Break,Break,Wali Kelas,Grade 5
+5C,Thursday,12.05-12.25,Break,Break,Wali Kelas,Grade 5
+5C,Friday,12.05-12.25,Break,Break,Wali Kelas,Grade 5
+5C,Monday,12.25-13.00,VA,Ms. Sherly,Guru Spesialis,Grade 5
+5C,Tuesday,12.25-13.00,PSPE,Mr. Angga,Guru Spesialis,Grade 5
+5C,Wednesday,12.25-13.00,Music,Mr. Hendro,Guru Spesialis,Grade 5
+5C,Thursday,12.25-13.00,BI,Ms. Lisa,Wali Kelas,Grade 5
+5C,Friday,12.25-13.00,UoI,Ms. Lisa,Wali Kelas,Grade 5
+5C,Monday,13.00-13.35,VA,Ms. Sherly,Guru Spesialis,Grade 5
+5C,Tuesday,13.00-13.35,PSPE,Mr. Angga,Guru Spesialis,Grade 5
+5C,Wednesday,13.00-13.35,Math,Mr. Gideon,Guru Spesialis,Grade 5
+5C,Thursday,13.00-13.35,BI,Ms. Lisa,Wali Kelas,Grade 5
+5C,Friday,13.00-13.35,UoI,Ms. Lisa,Wali Kelas,Grade 5
+5C,Monday,13.35-14.10,BI,Ms. Lisa,Wali Kelas,Grade 5
+5C,Tuesday,13.35-14.10,Library,Library Team,Guru Spesialis,Grade 5
+5C,Wednesday,13.35-14.10,Math,Mr. Gideon,Guru Spesialis,Grade 5
+5C,Thursday,13.35-14.35,Excur,Ms. Lisa,Wali Kelas,Grade 5
+5C,Friday,13.35-14.35,UoI,Ms. Lisa,Wali Kelas,Grade 5
+5C,Monday,14.10-14.20,Preparation,Ms. Lisa,Wali Kelas,Grade 5
+5C,Tuesday,14.10-14.20,Preparation,Ms. Lisa,Wali Kelas,Grade 5
+5C,Wednesday,14.10-14.20,Preparation,Ms. Lisa,Wali Kelas,Grade 5
+5C,Thursday,14.35-14.40,Preparation,Ms. Lisa,Wali Kelas,Grade 5
+5C,Friday,14.35-14.40,Preparation,Ms. Lisa,Wali Kelas,Grade 5
+6A,Monday,07.45-08.00,PC Session,Mr. Johan,Wali Kelas,Grade 6
+6A,Tuesday,07.45-08.00,PC Session,Mr. Johan,Wali Kelas,Grade 6
+6A,Wednesday,07.45-08.00,PC Session,Mr. Johan,Wali Kelas,Grade 6
+6A,Thursday,07.45-08.20,Math B,Ms. Angi,Guru Spesialis,Grade 6
+6A,Friday,07.45-08.20,PC Session,Mr. Johan,Wali Kelas,Grade 6
+6A,Monday,08.00-08.35,Mandarin,Ms. Wang,Guru Spesialis,Grade 6
+6A,Tuesday,08.00-08.35,UoI,Mr. Johan,Wali Kelas,Grade 6
+6A,Wednesday,08.00-08.35,Math A,Mr. Ridham,Guru Spesialis,Grade 6
+6A,Thursday,08.20-08.55,Math B,Ms. Angi,Guru Spesialis,Grade 6
+6A,Friday,08.20-08.55,English A,Guru Spesialis (English A),Guru Spesialis,Grade 6
+6A,Monday,08.35-09.10,Mandarin,Ms. Wang,Guru Spesialis,Grade 6
+6A,Tuesday,08.35-09.10,UoI,Mr. Johan,Wali Kelas,Grade 6
+6A,Wednesday,08.35-09.10,Math A,Mr. Ridham,Guru Spesialis,Grade 6
+6A,Thursday,08.55-09.30,Music,Mr. Hendro,Guru Spesialis,Grade 6
+6A,Friday,08.55-09.30,English A,Guru Spesialis (English A),Guru Spesialis,Grade 6
+6A,Monday,09.10-09.45,Math A,Mr. Ridham,Guru Spesialis,Grade 6
+6A,Tuesday,09.10-09.45,BI,Mr. Johan,Wali Kelas,Grade 6
+6A,Wednesday,09.10-09.45,BI,Mr. Johan,Wali Kelas,Grade 6
+6A,Thursday,9.30-10.05,BI,Mr. Johan,Wali Kelas,Grade 6
+6A,Friday,9.30-10.05,VA,Guru Spesialis (VA),Guru Spesialis,Grade 6
+6A,Monday,09.45-10.20,Math A,Mr. Ridham,Guru Spesialis,Grade 6
+6A,Tuesday,09.45-10.20,BI,Mr. Johan,Wali Kelas,Grade 6
+6A,Wednesday,09.45-10.20,Singing,Mr. Ivan,Guru Spesialis,Grade 6
+6A,Thursday,10.05-10.20,Break,Break,Wali Kelas,Grade 6
+6A,Friday,10.05-10.20,VA,Guru Spesialis (VA),Guru Spesialis,Grade 6
+6A,Monday,10.20-10.45,Break,Break,Wali Kelas,Grade 6
+6A,Tuesday,10.20-10.45,Break,Break,Wali Kelas,Grade 6
+6A,Wednesday,10.20-10.45,Break,Break,Wali Kelas,Grade 6
+6A,Thursday,10.20-10.55,PSPE,Mr. Angga,Guru Spesialis,Grade 6
+6A,Friday,10.20-10.55,Break,Break,Wali Kelas,Grade 6
+6A,Monday,10.45-11.20,English B,Ms. Inggrid,Guru Spesialis,Grade 6
+6A,Tuesday,10.45-11.20,Math B,Ms. Angi,Guru Spesialis,Grade 6
+6A,Wednesday,10.45-11.20,English B,Ms. Inggrid,Guru Spesialis,Grade 6
+6A,Thursday,10.55-11.30,PSPE,Mr. Angga,Guru Spesialis,Grade 6
+6A,Friday,10.55-11.30,Reacter,Guru Spesialis (Reacter),Guru Spesialis,Grade 6
+6A,Monday,11.20-11.55,English B,Ms. Inggrid,Guru Spesialis,Grade 6
+6A,Tuesday,11.20-11.55,Math B,Ms. Angi,Guru Spesialis,Grade 6
+6A,Wednesday,11.20-11.55,English B,Ms. Inggrid,Guru Spesialis,Grade 6
+6A,Thursday,11.30-12.05,SEL,Mr. Albert,Guru Spesialis,Grade 6
+6A,Friday,11.30-12.05,Reacter,Guru Spesialis (Reacter),Guru Spesialis,Grade 6
+6A,Monday,11.55-12.25,Break,Break,Wali Kelas,Grade 6
+6A,Tuesday,11.55-12.25,Break,Break,Wali Kelas,Grade 6
+6A,Wednesday,11.55-12.25,Break,Break,Wali Kelas,Grade 6
+6A,Thursday,12.05-12.25,Break,Break,Wali Kelas,Grade 6
+6A,Friday,12.05-12.25,Break,Break,Wali Kelas,Grade 6
+6A,Monday,12.25-13.00,UoI,Mr. Johan,Wali Kelas,Grade 6
+6A,Tuesday,12.25-13.00,IT,Mr. Ridham,Guru Spesialis,Grade 6
+6A,Wednesday,12.25-13.00,BI,Mr. Johan,Wali Kelas,Grade 6
+6A,Thursday,12.25-13.00,Library,Library Team,Guru Spesialis,Grade 6
+6A,Friday,12.25-13.00,UoI,Mr. Johan,Wali Kelas,Grade 6
+6A,Monday,13.00-13.35,UoI,Mr. Johan,Wali Kelas,Grade 6
+6A,Tuesday,13.00-13.35,IT,Mr. Ridham,Guru Spesialis,Grade 6
+6A,Wednesday,13.00-13.35,UoI,Mr. Johan,Wali Kelas,Grade 6
+6A,Thursday,13.00-13.35,BI,Mr. Johan,Wali Kelas,Grade 6
+6A,Friday,13.00-13.35,UoI,Mr. Johan,Wali Kelas,Grade 6
+6A,Monday,13.35-14.10,UoI,Mr. Johan,Wali Kelas,Grade 6
+6A,Tuesday,13.35-14.10,Assembly,Mr. Johan,Wali Kelas,Grade 6
+6A,Wednesday,13.35-14.10,UoI,Mr. Johan,Wali Kelas,Grade 6
+6A,Thursday,13.35-14.35,Excur,Mr. Johan,Wali Kelas,Grade 6
+6A,Friday,13.35-14.35,P.Pancasila,Mr. Johan,Wali Kelas,Grade 6
+6A,Monday,14.10-14.20,Preparation,Mr. Johan,Wali Kelas,Grade 6
+6A,Tuesday,14.10-14.20,Preparation,Mr. Johan,Wali Kelas,Grade 6
+6A,Wednesday,14.10-14.20,Preparation,Mr. Johan,Wali Kelas,Grade 6
+6A,Thursday,14.35-14.40,Preparation,Mr. Johan,Wali Kelas,Grade 6
+6A,Friday,14.35-14.40,Preparation,Mr. Johan,Wali Kelas,Grade 6
+6B,Monday,07.45-08.00,PC Session,Ms. Rani,Wali Kelas,Grade 6
+6B,Tuesday,07.45-08.00,PC Session,Ms. Rani,Wali Kelas,Grade 6
+6B,Wednesday,07.45-08.00,PC Session,Ms. Rani,Wali Kelas,Grade 6
+6B,Thursday,07.45-08.20,Library,Library Team,Guru Spesialis,Grade 6
+6B,Friday,07.45-08.20,PC Session,Ms. Rani,Wali Kelas,Grade 6
+6B,Monday,08.00-08.35,Math A,Mr. Ridham,Guru Spesialis,Grade 6
+6B,Tuesday,08.00-08.35,BI,Ms. Rani,Wali Kelas,Grade 6
+6B,Wednesday,08.00-08.35,BI,Ms. Rani,Wali Kelas,Grade 6
+6B,Thursday,08.20-08.55,English B,Ms. Inggrid,Guru Spesialis,Grade 6
+6B,Friday,08.20-08.55,PSPE,Guru Spesialis (PSPE),Guru Spesialis,Grade 6
+6B,Monday,08.35-09.10,Math A,Mr. Ridham,Guru Spesialis,Grade 6
+6B,Tuesday,08.35-09.10,BI,Ms. Rani,Wali Kelas,Grade 6
+6B,Wednesday,08.35-09.10,BI,Ms. Rani,Wali Kelas,Grade 6
+6B,Thursday,08.55-09.30,English B,Ms. Inggrid,Guru Spesialis,Grade 6
+6B,Friday,08.55-09.30,PSPE,Guru Spesialis (PSPE),Guru Spesialis,Grade 6
+6B,Monday,09.10-09.45,Mandarin,Ms. Wang,Guru Spesialis,Grade 6
+6B,Tuesday,09.10-09.45,Math B,Ms. Angi,Guru Spesialis,Grade 6
+6B,Wednesday,09.10-09.45,English B,Ms. Inggrid,Guru Spesialis,Grade 6
+6B,Thursday,9.30-10.05,Music,Mr. Hendro,Guru Spesialis,Grade 6
+6B,Friday,9.30-10.05,English A,Guru Spesialis (English A),Guru Spesialis,Grade 6
+6B,Monday,09.45-10.20,Mandarin,Ms. Wang,Guru Spesialis,Grade 6
+6B,Tuesday,09.45-10.20,Math B,Ms. Angi,Guru Spesialis,Grade 6
+6B,Wednesday,09.45-10.20,English B,Ms. Inggrid,Guru Spesialis,Grade 6
+6B,Thursday,10.05-10.20,Break,Break,Wali Kelas,Grade 6
+6B,Friday,10.05-10.20,English A,Guru Spesialis (English A),Guru Spesialis,Grade 6
+6B,Monday,10.20-10.45,Break,Break,Wali Kelas,Grade 6
+6B,Tuesday,10.20-10.45,Break,Break,Wali Kelas,Grade 6
+6B,Wednesday,10.20-10.45,Break,Break,Wali Kelas,Grade 6
+6B,Thursday,10.20-10.55,Math B,Ms. Angi,Guru Spesialis,Grade 6
+6B,Friday,10.20-10.55,Break,Break,Wali Kelas,Grade 6
+6B,Monday,10.45-11.20,IT,Mr. Ridham,Guru Spesialis,Grade 6
+6B,Tuesday,10.45-11.20,Reacter,Mr. Nano,Guru Spesialis,Grade 6
+6B,Wednesday,10.45-11.20,Singing,Mr. Ivan,Guru Spesialis,Grade 6
+6B,Thursday,10.55-11.30,Math B,Ms. Angi,Guru Spesialis,Grade 6
+6B,Friday,10.55-11.30,UoI,Ms. Rani,Wali Kelas,Grade 6
+6B,Monday,11.20-11.55,IT,Mr. Ridham,Guru Spesialis,Grade 6
+6B,Tuesday,11.20-11.55,Reacter,Mr. Nano,Guru Spesialis,Grade 6
+6B,Wednesday,11.20-11.55,Math B,Mr. Ridham,Guru Spesialis,Grade 6
+6B,Thursday,11.30-12.05,P.Pancasila,Ms. Rani,Wali Kelas,Grade 6
+6B,Friday,11.30-12.05,UoI,Ms. Rani,Wali Kelas,Grade 6
+6B,Monday,11.55-12.25,Break,Break,Wali Kelas,Grade 6
+6B,Tuesday,11.55-12.25,Break,Break,Wali Kelas,Grade 6
+6B,Wednesday,11.55-12.25,Break,Break,Wali Kelas,Grade 6
+6B,Thursday,12.05-12.25,Break,Break,Wali Kelas,Grade 6
+6B,Friday,12.05-12.25,Break,Break,Wali Kelas,Grade 6
+6B,Monday,12.25-13.00,UoI,Ms. Rani,Wali Kelas,Grade 6
+6B,Tuesday,12.25-13.00,UoI,Ms. Rani,Wali Kelas,Grade 6
+6B,Wednesday,12.25-13.00,Math B,Mr. Ridham,Guru Spesialis,Grade 6
+6B,Thursday,12.25-13.00,BI,Ms. Rani,Wali Kelas,Grade 6
+6B,Friday,12.25-13.00,SEL,Mr. Albert,Guru Spesialis,Grade 6
+6B,Monday,13.00-13.35,UoI,Ms. Rani,Wali Kelas,Grade 6
+6B,Tuesday,13.00-13.35,UoI,Ms. Rani,Wali Kelas,Grade 6
+6B,Wednesday,13.00-13.35,UoI,Ms. Rani,Wali Kelas,Grade 6
+6B,Thursday,13.00-13.35,BI,Ms. Rani,Wali Kelas,Grade 6
+6B,Friday,13.00-13.35,VA,Ms. Inggrid,Guru Spesialis,Grade 6
+6B,Monday,13.35-14.10,UoI,Ms. Rani,Wali Kelas,Grade 6
+6B,Tuesday,13.35-14.10,Assembly,Ms. Rani,Wali Kelas,Grade 6
+6B,Wednesday,13.35-14.10,UoI,Ms. Rani,Wali Kelas,Grade 6
+6B,Thursday,13.35-14.35,Excur,Ms. Rani,Wali Kelas,Grade 6
+6B,Friday,13.35-14.35,VA,Guru Spesialis (VA),Guru Spesialis,Grade 6
+6B,Monday,14.10-14.20,Preparation,Ms. Rani,Wali Kelas,Grade 6
+6B,Tuesday,14.10-14.20,Preparation,Ms. Rani,Wali Kelas,Grade 6
+6B,Wednesday,14.10-14.20,Preparation,Ms. Rani,Wali Kelas,Grade 6
+6B,Thursday,14.35-14.40,Preparation,Ms. Rani,Wali Kelas,Grade 6
+6B,Friday,14.35-14.40,Preparation,Ms. Rani,Wali Kelas,Grade 6
+6C,Monday,07.45-08.00,PC Session,Ms. Sandri,Wali Kelas,Grade 6
+6C,Tuesday,07.45-08.00,PC Session,Ms. Sandri,Wali Kelas,Grade 6
+6C,Wednesday,07.45-08.00,PC Session,Ms. Sandri,Wali Kelas,Grade 6
+6C,Thursday,07.45-08.20,Math A,Mr. Ridham,Guru Spesialis,Grade 6
+6C,Friday,07.45-08.20,PC Session,Ms. Sandri,Wali Kelas,Grade 6
+6C,Monday,08.00-08.35,English B,Ms. Inggrid,Guru Spesialis,Grade 6
+6C,Tuesday,08.00-08.35,Mandarin,Ms. Wang,Guru Spesialis,Grade 6
+6C,Wednesday,08.00-08.35,English B,Ms. Inggrid,Guru Spesialis,Grade 6
+6C,Thursday,08.20-08.55,Math A,Mr. Ridham,Guru Spesialis,Grade 6
+6C,Friday,08.20-08.55,Math B,Guru Spesialis (Math B),Guru Spesialis,Grade 6
+6C,Monday,08.35-09.10,English B,Ms. Inggrid,Guru Spesialis,Grade 6
+6C,Tuesday,08.35-09.10,Mandarin,Ms. Wang,Guru Spesialis,Grade 6
+6C,Wednesday,08.35-09.10,English B,Ms. Inggrid,Guru Spesialis,Grade 6
+6C,Thursday,08.55-09.30,BI,Ms. Sandri,Wali Kelas,Grade 6
+6C,Friday,08.55-09.30,Math B,Guru Spesialis (Math B),Guru Spesialis,Grade 6
+6C,Monday,09.10-09.45,P.Pancasila,Ms. Sandri,Wali Kelas,Grade 6
+6C,Tuesday,09.10-09.45,Reacter,Mr. Nano,Guru Spesialis,Grade 6
+6C,Wednesday,09.10-09.45,Math B,Ms. Angi,Guru Spesialis,Grade 6
+6C,Thursday,9.30-10.05,BI,Ms. Sandri,Wali Kelas,Grade 6
+6C,Friday,9.30-10.05,PSPE,Guru Spesialis (PSPE),Guru Spesialis,Grade 6
+6C,Monday,09.45-10.20,Library,Library Team,Guru Spesialis,Grade 6
+6C,Tuesday,09.45-10.20,Reacter,Mr. Nano,Guru Spesialis,Grade 6
+6C,Wednesday,09.45-10.20,Math B,Ms. Angi,Guru Spesialis,Grade 6
+6C,Thursday,10.05-10.20,Break,Break,Wali Kelas,Grade 6
+6C,Friday,10.05-10.20,PSPE,Guru Spesialis (PSPE),Guru Spesialis,Grade 6
+6C,Monday,10.20-10.45,Break,Break,Wali Kelas,Grade 6
+6C,Tuesday,10.20-10.45,Break,Break,Wali Kelas,Grade 6
+6C,Wednesday,10.20-10.45,Break,Break,Wali Kelas,Grade 6
+6C,Thursday,10.20-10.55,Music,Mr. Hendro,Guru Spesialis,Grade 6
+6C,Friday,10.20-10.55,Break,Break,Wali Kelas,Grade 6
+6C,Monday,10.45-11.20,BI,Ms. Sandri,Wali Kelas,Grade 6
+6C,Tuesday,10.45-11.20,Math A,Mr. Ridham,Guru Spesialis,Grade 6
+6C,Wednesday,10.45-11.20,BI,Ms. Sandri,Wali Kelas,Grade 6
+6C,Thursday,10.55-11.30,English A,Mr. Minh,Guru Spesialis,Grade 6
+6C,Friday,10.55-11.30,VA,Guru Spesialis (VA),Guru Spesialis,Grade 6
+6C,Monday,11.20-11.55,BI,Ms. Sandri,Wali Kelas,Grade 6
+6C,Tuesday,11.20-11.55,Math A,Mr. Ridham,Guru Spesialis,Grade 6
+6C,Wednesday,11.20-11.55,Singing,Mr. Ivan,Guru Spesialis,Grade 6
+6C,Thursday,11.30-12.05,English A,Mr. Minh,Guru Spesialis,Grade 6
+6C,Friday,11.30-12.05,VA,Guru Spesialis (VA),Guru Spesialis,Grade 6
+6C,Monday,11.55-12.25,Break,Break,Wali Kelas,Grade 6
+6C,Tuesday,11.55-12.25,Break,Break,Wali Kelas,Grade 6
+6C,Wednesday,11.55-12.25,Break,Break,Wali Kelas,Grade 6
+6C,Thursday,12.05-12.25,Break,Break,Wali Kelas,Grade 6
+6C,Friday,12.05-12.25,Break,Break,Wali Kelas,Grade 6
+6C,Monday,12.25-13.00,UoI,Ms. Sandri,Wali Kelas,Grade 6
+6C,Tuesday,12.25-13.00,UoI,Ms. Sandri,Wali Kelas,Grade 6
+6C,Wednesday,12.25-13.00,BI,Ms. Sandri,Wali Kelas,Grade 6
+6C,Thursday,12.25-13.00,IT,Mr. Ridham,Guru Spesialis,Grade 6
+6C,Friday,12.25-13.00,UoI,Ms. Sandri,Wali Kelas,Grade 6
+6C,Monday,13.00-13.35,UoI,Ms. Sandri,Wali Kelas,Grade 6
+6C,Tuesday,13.00-13.35,UoI,Ms. Sandri,Wali Kelas,Grade 6
+6C,Wednesday,13.00-13.35,UoI,Ms. Sandri,Wali Kelas,Grade 6
+6C,Thursday,13.00-13.35,IT,Mr. Ridham,Guru Spesialis,Grade 6
+6C,Friday,13.00-13.35,SEL,Mr. Albert,Guru Spesialis,Grade 6
+6C,Monday,13.35-14.10,UoI,Ms. Sandri,Wali Kelas,Grade 6
+6C,Tuesday,13.35-14.10,Assembly,Ms. Sandri,Wali Kelas,Grade 6
+6C,Wednesday,13.35-14.10,UoI,Ms. Sandri,Wali Kelas,Grade 6
+6C,Thursday,13.35-14.35,Excur,Ms. Sandri,Wali Kelas,Grade 6
+6C,Friday,13.35-14.35,UoI,Ms. Sandri,Wali Kelas,Grade 6
+6C,Monday,14.10-14.20,Preparation,Ms. Sandri,Wali Kelas,Grade 6
+6C,Tuesday,14.10-14.20,Preparation,Ms. Sandri,Wali Kelas,Grade 6
+6C,Wednesday,14.10-14.20,Preparation,Ms. Sandri,Wali Kelas,Grade 6
+6C,Thursday,14.35-14.40,Preparation,Ms. Sandri,Wali Kelas,Grade 6
+6C,Friday,14.35-14.40,Preparation,Ms. Sandri,Wali Kelas,Grade 6
+6D,Monday,07.45-08.00,PC Session,Ms. Nia,Wali Kelas,Grade 6
+6D,Tuesday,07.45-08.00,PC Session,Ms. Nia,Wali Kelas,Grade 6
+6D,Wednesday,07.45-08.00,PC Session,Ms. Nia,Wali Kelas,Grade 6
+6D,Thursday,07.45-08.20,English A,Mr. Minh,Guru Spesialis,Grade 6
+6D,Friday,07.45-08.20,PC Session,Ms. Nia,Wali Kelas,Grade 6
+6D,Monday,08.00-08.35,BI,Ms. Nia,Wali Kelas,Grade 6
+6D,Tuesday,08.00-08.35,Math A,Mr. Ridham,Guru Spesialis,Grade 6
+6D,Wednesday,08.00-08.35,BI,Ms. Nia,Wali Kelas,Grade 6
+6D,Thursday,08.20-08.55,English A,Mr. Minh,Guru Spesialis,Grade 6
+6D,Friday,08.20-08.55,UoI,Ms. Nia,Wali Kelas,Grade 6
+6D,Monday,08.35-09.10,BI,Ms. Nia,Wali Kelas,Grade 6
+6D,Tuesday,08.35-09.10,Math A,Mr. Ridham,Guru Spesialis,Grade 6
+6D,Wednesday,08.35-09.10,BI,Ms. Nia,Wali Kelas,Grade 6
+6D,Thursday,08.55-09.30,Math A,Mr. Ridham,Guru Spesialis,Grade 6
+6D,Friday,08.55-09.30,UoI,Ms. Nia,Wali Kelas,Grade 6
+6D,Monday,09.10-09.45,English B,Ms. Inggrid,Guru Spesialis,Grade 6
+6D,Tuesday,09.10-09.45,Mandarin,Ms. Wang,Guru Spesialis,Grade 6
+6D,Wednesday,09.10-09.45,IT,Mr. Ridham,Guru Spesialis,Grade 6
+6D,Thursday,9.30-10.05,Math A,Mr. Ridham,Guru Spesialis,Grade 6
+6D,Friday,9.30-10.05,Reacter,Guru Spesialis (Reacter),Guru Spesialis,Grade 6
+6D,Monday,09.45-10.20,English B,Ms. Inggrid,Guru Spesialis,Grade 6
+6D,Tuesday,09.45-10.20,Mandarin,Ms. Wang,Guru Spesialis,Grade 6
+6D,Wednesday,09.45-10.20,IT,Mr. Ridham,Guru Spesialis,Grade 6
+6D,Thursday,10.05-10.20,Break,Break,Wali Kelas,Grade 6
+6D,Friday,10.05-10.20,Reacter,Guru Spesialis (Reacter),Guru Spesialis,Grade 6
+6D,Monday,10.20-10.45,Break,Break,Wali Kelas,Grade 6
+6D,Tuesday,10.20-10.45,Break,Break,Wali Kelas,Grade 6
+6D,Wednesday,10.20-10.45,Break,Break,Wali Kelas,Grade 6
+6D,Thursday,10.20-10.55,BI,Ms. Nia,Wali Kelas,Grade 6
+6D,Friday,10.20-10.55,Break,Break,Wali Kelas,Grade 6
+6D,Monday,10.45-11.20,Library,Library Team,Guru Spesialis,Grade 6
+6D,Tuesday,10.45-11.20,UoI,Ms. Nia,Wali Kelas,Grade 6
+6D,Wednesday,10.45-11.20,UoI,Ms. Nia,Wali Kelas,Grade 6
+6D,Thursday,10.55-11.30,Music,Mr. Hendro,Guru Spesialis,Grade 6
+6D,Friday,10.55-11.30,PSPE,Guru Spesialis (PSPE),Guru Spesialis,Grade 6
+6D,Monday,11.20-11.55,P.Pancasila,Ms. Nia,Wali Kelas,Grade 6
+6D,Tuesday,11.20-11.55,UoI,Ms. Nia,Wali Kelas,Grade 6
+6D,Wednesday,11.20-11.55,UoI,Ms. Nia,Wali Kelas,Grade 6
+6D,Thursday,11.30-12.05,BI,Ms. Nia,Wali Kelas,Grade 6
+6D,Friday,11.30-12.05,PSPE,Guru Spesialis (PSPE),Guru Spesialis,Grade 6
+6D,Monday,11.55-12.25,Break,Break,Wali Kelas,Grade 6
+6D,Tuesday,11.55-12.25,Break,Break,Wali Kelas,Grade 6
+6D,Wednesday,11.55-12.25,Break,Break,Wali Kelas,Grade 6
+6D,Thursday,12.05-12.25,Break,Break,Wali Kelas,Grade 6
+6D,Friday,12.05-12.25,Break,Break,Wali Kelas,Grade 6
+6D,Monday,12.25-13.00,UoI,Ms. Nia,Wali Kelas,Grade 6
+6D,Tuesday,12.25-13.00,English B,Ms. Inggrid,Guru Spesialis,Grade 6
+6D,Wednesday,12.25-13.00,Singing,Mr. Ivan,Guru Spesialis,Grade 6
+6D,Thursday,12.25-13.00,VA,Ms. Inggrid,Guru Spesialis,Grade 6
+6D,Friday,12.25-13.00,Math B,Ms. Angi,Guru Spesialis,Grade 6
+6D,Monday,13.00-13.35,UoI,Ms. Nia,Wali Kelas,Grade 6
+6D,Tuesday,13.00-13.35,English B,Ms. Inggrid,Guru Spesialis,Grade 6
+6D,Wednesday,13.00-13.35,IT,Ms. Angi,Guru Spesialis,Grade 6
+6D,Thursday,13.00-13.35,VA,Ms. Inggrid,Guru Spesialis,Grade 6
+6D,Friday,13.00-13.35,Math B,Ms. Angi,Guru Spesialis,Grade 6
+6D,Monday,13.35-14.10,UoI,Ms. Nia,Wali Kelas,Grade 6
+6D,Tuesday,13.35-14.10,Assembly,Ms. Nia,Wali Kelas,Grade 6
+6D,Wednesday,13.35-14.10,IT,Ms. Angi,Guru Spesialis,Grade 6
+6D,Thursday,13.35-14.35,Excur,Ms. Nia,Wali Kelas,Grade 6
+6D,Friday,13.35-14.35,SEL,Guru Spesialis (SEL),Guru Spesialis,Grade 6
+6D,Monday,14.10-14.20,Preparation,Ms. Nia,Wali Kelas,Grade 6
+6D,Tuesday,14.10-14.20,Preparation,Ms. Nia,Wali Kelas,Grade 6
+6D,Wednesday,14.10-14.20,Preparation,Ms. Nia,Wali Kelas,Grade 6
+6D,Thursday,14.35-14.40,Preparation,Ms. Nia,Wali Kelas,Grade 6
+6D,Friday,14.35-14.40,Preparation,Ms. Nia,Wali Kelas,Grade 6

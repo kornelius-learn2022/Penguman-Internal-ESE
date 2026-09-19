@@ -88,3 +88,43 @@ class FeedbackLog(Base):
     jawaban_ai = Column(Text, nullable=False)
     catatan_user = Column(String, nullable=True)  # Alasan kenapa disalahkan
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class TeacherSchedule(Base):
+    __tablename__ = "teacher_schedules"
+
+    id_schedule = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    subject_grade = Column(String(100), nullable=False)
+    teacher_name = Column(String(100), nullable=False)
+    day_of_week = Column(String(20), nullable=False)
+    time_slot = Column(String(50), nullable=False)
+    class_name = Column(String(50), nullable=False)
+    note = Column(String(255), nullable=True)
+    admin_update = Column(
+        Integer,
+        ForeignKey("Admin.id_admin", ondelete="RESTRICT", onupdate="CASCADE"),
+        nullable=False,
+    )
+
+    admin_pembuat = relationship("Admin", backref="teacher_schedules")
+
+
+class TeacherDuty(Base):
+    __tablename__ = "teacher_duties"
+
+    id_duty = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    category = Column(String(100), nullable=False)
+    grade_scope = Column(String(50), nullable=False)
+    location = Column(String(100), nullable=False)
+    day_of_week = Column(String(20), nullable=False)
+    time_slot = Column(String(50), nullable=False)
+    teacher_name = Column(String(100), nullable=False)
+    task = Column(String(255), nullable=True)
+    admin_update = Column(
+        Integer,
+        ForeignKey("Admin.id_admin", ondelete="RESTRICT", onupdate="CASCADE"),
+        nullable=False,
+    )
+
+    admin_pembuat = relationship("Admin", backref="teacher_duties")
+
