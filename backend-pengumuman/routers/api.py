@@ -149,12 +149,102 @@ async def delete_announcement(
     return {"message": "Pengumuman berhasil dihapus!"}
 
 
-# (Lanjutkan dengan route Admin & Birthdays seperti contoh Announcements)
+def verify_super_admin(user: dict):
+    role = user.get("role")
+    role_str = getattr(role, "value", str(role))
+    if role_str != "Super":
+        raise HTTPException(
+            status_code=403,
+            detail="Akses ditolak. Hanya Super Admin yang diizinkan untuk tindakan ini.",
+        )
+
+
+# ==========================================
+# ENDPOINT BIRTHDAYS (ULANG TAHUN)
+# ==========================================
 @router.get("/birthdays")
 def get_all_birthdays(db: Session = Depends(get_db)):
     return db.query(models.Birthdays).all()
 
 
+@router.post("/birthdays")
+def create_birthday(
+    data: schemas.BirthdayCreate,
+    db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
+):
+    """
+    Menambah daftar ulang tahun baru. Memerlukan autentikasi JWT admin yang aktif.
+    """
+    admin_id = user_aktif.get("id_admin", 1)
+    new_bday = models.Birthdays(
+        name=data.name,
+        date=data.date,
+        gender=data.gender,
+        admin_update=admin_id,
+    )
+    db.add(new_bday)
+    db.commit()
+    db.refresh(new_bday)
+    return {"message": "Data ulang tahun berhasil ditambahkan!", "data": new_bday}
+
+
+@router.put("/birthdays/{id_birthday}")
+def update_birthday(
+    id_birthday: int,
+    data: schemas.BirthdayUpdate,
+    db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
+):
+    """
+    Mengupdate data ulang tahun. Memerlukan autentikasi JWT admin yang aktif.
+    """
+    bday = (
+        db.query(models.Birthdays)
+        .filter(models.Birthdays.id_birthday == id_birthday)
+        .first()
+    )
+    if not bday:
+        raise HTTPException(status_code=404, detail="Data ulang tahun tidak ditemukan.")
+
+    if data.name is not None:
+        bday.name = data.name
+    if data.date is not None:
+        bday.date = data.date
+    if data.gender is not None:
+        bday.gender = data.gender
+    bday.admin_update = user_aktif.get("id_admin", bday.admin_update)
+
+    db.commit()
+    db.refresh(bday)
+    return {"message": "Data ulang tahun berhasil diupdate!", "data": bday}
+
+
+@router.delete("/birthdays/{id_birthday}")
+def delete_birthday(
+    id_birthday: int,
+    db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
+):
+    """
+    Menghapus data ulang tahun. Memerlukan autentikasi JWT admin yang aktif.
+    """
+    bday = (
+        db.query(models.Birthdays)
+        .filter(models.Birthdays.id_birthday == id_birthday)
+        .first()
+    )
+    if not bday:
+        raise HTTPException(status_code=404, detail="Data ulang tahun tidak ditemukan.")
+
+    db.delete(bday)
+    db.commit()
+    return {"message": "Data ulang tahun berhasil dihapus!"}
+
+
+# ==========================================
+# ENDPOINT MANAJEMEN ADMIN
+# ==========================================
 @router.get("/admin", response_model=List[schemas.AdminResponse])
 def get_all_admins(
     db: Session = Depends(get_db), user_aktif: dict = Depends(get_current_user)
@@ -174,7 +264,9 @@ def create_admin(
 ):
     """
     Endpoint untuk mendaftarkan atau membuat admin baru ke dalam database.
+    Hanya Super Admin yang diizinkan.
     """
+    verify_super_admin(user_aktif)
     # Cek apakah username/name_admin sudah digunakan sebelumnya
     existing_admin = (
         db.query(models.Admin)
@@ -187,7 +279,7 @@ def create_admin(
     # Buat objek admin baru
     new_admin = models.Admin(
         name_admin=data.name_admin,
-        password_admin=data.password_admin,  # Catatan: Di production, disarankan menggunakan hashing password (misal: bcrypt)
+        password_admin=data.password_admin,
         level_admin=data.level_admin,
     )
 
@@ -205,17 +297,72 @@ def create_admin(
     }
 
 
+@router.put("/admin/{id_admin}")
+def update_admin(
+    id_admin: int,
+    data: schemas.AdminUpdate,
+    db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
+):
+    """
+    Mengupdate akun admin. Hanya Super Admin yang dapat mengakses.
+    """
+    verify_super_admin(user_aktif)
+    admin_target = (
+        db.query(models.Admin).filter(models.Admin.id_admin == id_admin).first()
+    )
+    if not admin_target:
+        raise HTTPException(status_code=404, detail="Admin tidak ditemukan.")
+
+    if data.name_admin is not None:
+        admin_target.name_admin = data.name_admin
+    if data.level_admin is not None:
+        admin_target.level_admin = data.level_admin
+    if data.password_admin:
+        admin_target.password_admin = data.password_admin
+
+    db.commit()
+    db.refresh(admin_target)
+    return {
+        "message": "Data admin berhasil diperbarui!",
+        "data": {
+            "id_admin": admin_target.id_admin,
+            "name_admin": admin_target.name_admin,
+            "level_admin": admin_target.level_admin,
+        },
+    }
+
+
+@router.delete("/admin/{id_admin}")
+def delete_admin(
+    id_admin: int,
+    db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
+):
+    """
+    Menghapus akun admin. Hanya Super Admin yang dapat mengakses.
+    """
+    verify_super_admin(user_aktif)
+    if user_aktif.get("id_admin") == id_admin:
+        raise HTTPException(
+            status_code=400,
+            detail="Tidak dapat menghapus akun admin yang sedang login!",
+        )
+
+    admin_target = (
+        db.query(models.Admin).filter(models.Admin.id_admin == id_admin).first()
+    )
+    if not admin_target:
+        raise HTTPException(status_code=404, detail="Admin tidak ditemukan.")
+
+    db.delete(admin_target)
+    db.commit()
+    return {"message": "Akun admin berhasil dihapus."}
+
+
 # ==========================================
 # ENDPOINT JADWAL GURU (TEACHER SCHEDULES)
-# ==========================================
-def verify_super_admin(user: dict):
-    role = user.get("role")
-    role_str = getattr(role, "value", str(role))
-    if role_str != "Super":
-        raise HTTPException(
-            status_code=403,
-            detail="Akses ditolak. Hanya Super Admin yang diizinkan mengelola jadwal sekolah.",
-        )
+
 
 
 @router.get("/schedules", response_model=List[schemas.TeacherScheduleResponse])

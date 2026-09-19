@@ -1,32 +1,53 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { isTokenExpired, clearAdminSession } from "../utils/auth";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [expiredMsg, setExpiredMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
   // State baru untuk fitur show/hide password
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     document.title = "Login - Cita Hati";
 
-    // Cek jika sudah login, lempar langsung ke admin
+    // Cek apakah diarahkan karena sesi expired 12 jam
+    const params = new URLSearchParams(location.search);
+    if (params.get("expired") === "1") {
+      setExpiredMsg(
+        "⚠️ Sesi login Anda telah berakhir (masa aktif 12 jam telah habis). Silakan login kembali untuk mengakses fitur admin."
+      );
+      clearAdminSession();
+    }
+
+    // Cek jika sudah login dan token masih aktif (< 12 jam)
     const token = localStorage.getItem("jwt_token");
     if (token) {
-      navigate("/admin");
+      if (!isTokenExpired(token)) {
+        navigate("/admin");
+      } else {
+        // Token sudah expired di storage, bersihkan
+        clearAdminSession();
+        setExpiredMsg(
+          "⚠️ Sesi login Anda sebelumnya telah kedaluwarsa (12 jam). Silakan login kembali."
+        );
+      }
     }
-  }, [navigate]);
+  }, [navigate, location]);
 
   // Fungsi Login yang sudah terkoneksi ke Server (Real API)
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg("");
+    setExpiredMsg("");
 
     try {
       // Mengambil alamat base URL dari .env
@@ -50,7 +71,7 @@ export default function Login() {
       if (!response.ok) {
         // data.detail adalah format error standar bawaan HTTPException FastAPI
         throw new Error(
-          data.detail || "Gagal masuk. Periksa koneksi atau kredensial Anda.",
+          data.detail || "Gagal masuk. Periksa koneksi atau kredensial Anda."
         );
       }
 
@@ -97,6 +118,16 @@ export default function Login() {
               Silakan masuk untuk mengelola sistem Cita Hati
             </p>
           </div>
+
+          {/* Expired Session Warning */}
+          {expiredMsg && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-left flex items-start gap-3">
+              <span className="text-amber-600 text-lg">⏳</span>
+              <p className="text-amber-800 text-xs font-semibold leading-relaxed">
+                {expiredMsg}
+              </p>
+            </div>
+          )}
 
           {/* Error Alert */}
           {errorMsg && (

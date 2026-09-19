@@ -3,11 +3,12 @@ import React, { useState, useRef, useEffect } from "react";
 export default function ChatAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [chipLang, setChipLang] = useState("all");
+  const [showGuide, setShowGuide] = useState(false);
 
   const [messages, setMessages] = useState([
     {
       sender: "ai",
-      text: "Halo! Welcome! 欢迎! 🤖\n\nI am Cita Hati East Surabaya AI Assistant.\nSilakan tanyakan pengumuman sekolah, jadwal sesi pelajaran, jadwal duty / piket, atau agenda lainnya.\n• 🇬🇧 Ask me in English\n• 🇨🇳 用中文向我提问\n• 🇮🇩 Tanya dalam Bahasa Indonesia",
+      text: "Halo! Welcome! 欢迎! 🤖\n\nSaya Asisten Pintar Cita Hati East Surabaya. Rekan-rekan guru dapat menanyakan:\n• 📚 Jadwal kelas (Homeroom & Spesialis)\n• 🛡️ Jadwal duty/piket (Backyard, Kantin, Lobby, Gate)\n• 📢 Pengumuman & agenda sekolah\n• ☕ Jam istirahat & KBM\n\n• 🇬🇧 Ask me in English\n• 🇨🇳 用中文向我提问\n• 🇮🇩 Tanya dalam Bahasa Indonesia\n\n📌 *Catatan: Jika terdapat ketidaksesuaian/kesalahan jadwal, silakan hubungi Mr. Kornel.*",
       provider: "Cita Hati AI",
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
@@ -172,6 +173,19 @@ export default function ChatAssistant() {
 
             <div className="flex items-center gap-1">
               <button
+                type="button"
+                onClick={() => setShowGuide(!showGuide)}
+                title="Panduan Penggunaan Chatbot & Kontak"
+                className={`p-2 rounded-xl transition-colors ${
+                  showGuide ? "bg-white text-blue-700 font-bold shadow-xs" : "hover:bg-white/15 text-blue-100 hover:text-white"
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+              <button
+                type="button"
                 onClick={clearChat}
                 title="Reset Percakapan"
                 className="p-2 hover:bg-white/15 rounded-xl text-blue-100 hover:text-white transition-colors"
@@ -181,16 +195,77 @@ export default function ChatAssistant() {
                 </svg>
               </button>
               <button
+                type="button"
                 onClick={() => setIsOpen(false)}
                 title="Tutup Chat"
                 className="p-2 hover:bg-white/15 rounded-xl text-blue-100 hover:text-white transition-colors"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
           </div>
+
+          {/* Guide Overlay Panel */}
+          {showGuide && (
+            <div className="absolute inset-0 top-[72px] bg-white z-40 flex flex-col p-5 overflow-y-auto animate-in fade-in duration-200">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">📖</span>
+                  <h4 className="font-bold text-slate-800 text-sm">Panduan Penggunaan Chatbot</h4>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowGuide(false)}
+                  className="text-slate-400 hover:text-slate-600 px-2 py-1 rounded-lg hover:bg-slate-100 transition-all text-xs font-bold"
+                >
+                  ✕ Tutup
+                </button>
+              </div>
+
+              <div className="py-3 space-y-3 text-xs text-slate-600">
+                <div className="bg-blue-50/80 p-3 rounded-2xl border border-blue-100">
+                  <p className="font-bold text-blue-900 mb-1.5 flex items-center gap-1.5">
+                    <span>🤖</span> Apa Saja yang Bisa Ditanyakan?
+                  </p>
+                  <ul className="list-disc pl-4 space-y-1 text-slate-700">
+                    <li><strong>Jadwal Kelas:</strong> <em>"Jadwal kelas 3A hari Senin"</em> atau <em>"Class 1B schedule"</em> (lengkap Homeroom & Spesialis).</li>
+                    <li><strong>Jadwal Piket (Duty):</strong> <em>"Siapa yang jaga backyard sekarang?"</em> atau <em>"Who is on duty in the backyard on Monday at 09.10?"</em></li>
+                    <li><strong>Pengumuman:</strong> <em>"Pengumuman hari ini"</em> atau <em>"What are today's school announcements?"</em></li>
+                    <li><strong>Jam Istirahat:</strong> <em>"Kapan saja jam break sekolah?"</em></li>
+                    <li><strong>Ulang Tahun:</strong> <em>"Siapa yang berulang tahun hari ini?"</em></li>
+                  </ul>
+                </div>
+
+                <div className="bg-emerald-50/80 p-3 rounded-2xl border border-emerald-100">
+                  <p className="font-bold text-emerald-900 mb-1 flex items-center gap-1.5">
+                    <span>🌐</span> Dukungan 3 Bahasa (Trilingual):
+                  </p>
+                  <p className="text-slate-700 leading-relaxed">
+                    Gunakan tab <strong>EN</strong> / <strong>中文</strong> / <strong>ID</strong> di atas kolom ketik untuk pertanyaan instan, atau ketik langsung dalam bahasa Anda. AI akan merespons dalam bahasa yang sama.
+                  </p>
+                </div>
+
+                <div className="bg-amber-50 p-3.5 rounded-2xl border border-amber-200">
+                  <p className="font-bold text-amber-900 mb-1 flex items-center gap-1.5">
+                    <span>⚠️</span> Kontak Koreksi / Kesalahan Jadwal:
+                  </p>
+                  <p className="text-amber-800 leading-relaxed font-medium">
+                    Jika rekan guru menemukan <strong>ketidaksesuaian, kesalahan jadwal, atau perubahan sesi mengajar/duty</strong>, silakan langsung menghubungi <strong>Mr. Kornel</strong> agar database jadwal segera disesuaikan.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowGuide(false)}
+                className="mt-auto w-full py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20"
+              >
+                Kembali ke Chat
+              </button>
+            </div>
+          )}
 
           {/* Multilingual Indicator Sub-bar */}
           <div className="bg-slate-50 border-b border-slate-100 px-4 py-1.5 flex items-center justify-between text-[11px] text-slate-500 font-semibold">

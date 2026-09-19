@@ -30,6 +30,7 @@ app.add_middleware(
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://10.0.20.75:5173",
+        "https://pengumuman.klprojects.online",
     ],
     allow_credentials=True,
     allow_methods=["*"],

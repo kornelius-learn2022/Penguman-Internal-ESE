@@ -39,13 +39,26 @@ class BirthdayCreate(BaseModel):
     name: str
     date: date
     gender: models.GenderType
-    admin_update: int
+    admin_update: Optional[int] = None
+
+
+class BirthdayUpdate(BaseModel):
+    name: Optional[str] = None
+    date: Optional[date] = None
+    gender: Optional[models.GenderType] = None
+    admin_update: Optional[int] = None
 
 
 class AdminCreate(BaseModel):
     name_admin: str
     password_admin: str
     level_admin: str
+
+
+class AdminUpdate(BaseModel):
+    name_admin: Optional[str] = None
+    password_admin: Optional[str] = None
+    level_admin: Optional[str] = None
 
 
 class AdminResponse(BaseModel):

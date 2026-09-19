@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
+import {
+  isTokenExpired,
+  clearAdminSession,
+  handleSessionExpired,
+  getSessionRemainingTime,
+} from "../utils/auth";
 
 export default function Admin() {
   // ==========================================
@@ -11,13 +17,36 @@ export default function Admin() {
   const [role, setRole] = useState(userRole);
   const id_admin = localStorage.getItem("id_admin") || "1";
   const [showPassword, setShowPassword] = useState(false);
+  const [sessionRemaining, setSessionRemaining] = useState("");
 
-  // Jika tidak ada token JWT, tendang kembali ke halaman login
   const navigate = useNavigate();
+
+  // Validasi ketat token JWT (Masa Aktif 12 Jam)
   useEffect(() => {
-    if (!tokenJWT) {
-      navigate("/login");
+    if (!tokenJWT || isTokenExpired(tokenJWT)) {
+      handleSessionExpired(
+        navigate,
+        "Sesi login Anda telah berakhir (12 jam). Silakan login kembali."
+      );
+      return;
     }
+
+    const checkAndSyncSession = () => {
+      if (isTokenExpired(tokenJWT)) {
+        handleSessionExpired(
+          navigate,
+          "Sesi login Anda telah berakhir (12 jam). Silakan login kembali."
+        );
+      } else {
+        const time = getSessionRemainingTime(tokenJWT);
+        setSessionRemaining(time.text);
+      }
+    };
+
+    checkAndSyncSession();
+    // Cek berkala setiap 15 detik apakah token 12 jam kedaluwarsa
+    const interval = setInterval(checkAndSyncSession, 15000);
+    return () => clearInterval(interval);
   }, [tokenJWT, navigate]);
 
   // Base URL dari file .env
@@ -28,6 +57,35 @@ export default function Admin() {
     Authorization: `Bearer ${tokenJWT}`,
     "Content-Type": "application/json",
   };
+
+  // Wrapper API aman: Memvalidasi JWT 12 jam sebelum & sesudah request ke backend
+  const apiFetch = useCallback(
+    async (url, options = {}) => {
+      // 1. Cek sebelum request: Jika token di browser sudah lewat 12 jam, tolak & redirect
+      if (!tokenJWT || isTokenExpired(tokenJWT)) {
+        handleSessionExpired(
+          navigate,
+          "Sesi login Anda telah berakhir (12 jam). Silakan login kembali."
+        );
+        throw new Error("Sesi token kedaluwarsa (12 jam).");
+      }
+
+      // 2. Kirim request ke backend
+      const res = await fetch(url, options);
+
+      // 3. Cek setelah request: Jika backend menolak dengan HTTP 401 Unauthorized
+      if (res.status === 401) {
+        handleSessionExpired(
+          navigate,
+          "Sesi login Anda telah berakhir (12 jam). Silakan login kembali."
+        );
+        throw new Error("Sesi login Anda telah kedaluwarsa (12 jam).");
+      }
+
+      return res;
+    },
+    [tokenJWT, navigate]
+  );
 
   // ==========================================
   // STATE UNTUK UPDATE & DELETE
@@ -151,22 +209,21 @@ export default function Admin() {
   // ==========================================
   const fetchSemuaData = useCallback(async () => {
     try {
-      // Fetch data dengan menyertakan token JWT untuk keamanan
+      // Fetch data dengan menyertakan token JWT untuk keamanan (validasi 12 jam)
       const [resAnn, resBday, resAdm, resSched, resDuties] = await Promise.all([
-        fetch(`${baseUrl}/announcements`, {
+        apiFetch(`${baseUrl}/announcements`, {
           headers: { Authorization: `Bearer ${tokenJWT}` },
         }),
-        fetch(`${baseUrl}/birthdays`, {
+        apiFetch(`${baseUrl}/birthdays`, {
           headers: { Authorization: `Bearer ${tokenJWT}` },
         }),
-        // Pastikan endpoint admin kamu sesuai, contoh: /admins atau /admin
-        fetch(`${baseUrl}/admin`, {
+        apiFetch(`${baseUrl}/admin`, {
           headers: { Authorization: `Bearer ${tokenJWT}` },
         }),
-        fetch(`${baseUrl}/schedules`, {
+        apiFetch(`${baseUrl}/schedules`, {
           headers: { Authorization: `Bearer ${tokenJWT}` },
         }),
-        fetch(`${baseUrl}/duties`, {
+        apiFetch(`${baseUrl}/duties`, {
           headers: { Authorization: `Bearer ${tokenJWT}` },
         }),
       ]);
@@ -179,7 +236,7 @@ export default function Admin() {
     } catch (error) {
       console.error("Gagal mengambil data dari server", error);
     }
-  }, [baseUrl, tokenJWT]);
+  }, [baseUrl, tokenJWT, apiFetch]);
 
   useEffect(() => {
     document.title = "Admin Panel - Cita Hati";
@@ -362,7 +419,7 @@ export default function Admin() {
       if (newAnnUrl) formData.append("url_announcemet", newAnnUrl);
       if (newAnnImage) formData.append("image", newAnnImage);
 
-      const res = await fetch(`${baseUrl}/announcements`, {
+      const res = await apiFetch(`${baseUrl}/announcements`, {
         method: "POST",
         headers: { Authorization: `Bearer ${tokenJWT}` }, // JANGAN tambahkan Content-Type untuk form-data
         body: formData,
@@ -396,7 +453,7 @@ export default function Admin() {
         gender: newBdayGender,
       };
 
-      const res = await fetch(`${baseUrl}/birthdays`, {
+      const res = await apiFetch(`${baseUrl}/birthdays`, {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify(payload),
@@ -429,7 +486,7 @@ export default function Admin() {
         level_admin: newAdminLevel,
       };
 
-      const res = await fetch(`${baseUrl}/admin`, {
+      const res = await apiFetch(`${baseUrl}/admin`, {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify(payload),
@@ -454,7 +511,7 @@ export default function Admin() {
       "Apakah Anda yakin ingin keluar dari halaman Admin?",
     );
     if (isConfirmed) {
-      localStorage.clear(); // Bersihkan semua token
+      clearAdminSession();
       window.location.href = "/AdminLogin";
     }
   };
@@ -482,7 +539,7 @@ export default function Admin() {
         note: newSchedNote.trim() || null,
       };
 
-      const res = await fetch(`${baseUrl}/schedules`, {
+      const res = await apiFetch(`${baseUrl}/schedules`, {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify(payload),
@@ -543,7 +600,7 @@ export default function Admin() {
         note: editSchedNote.trim() || null,
       };
 
-      const res = await fetch(`${baseUrl}/schedules/${editSchedModal}`, {
+      const res = await apiFetch(`${baseUrl}/schedules/${editSchedModal}`, {
         method: "PUT",
         headers: authHeaders,
         body: JSON.stringify(payload),
@@ -572,7 +629,7 @@ export default function Admin() {
     if (!isConfirmed) return;
 
     try {
-      const res = await fetch(`${baseUrl}/schedules/${id_schedule}`, {
+      const res = await apiFetch(`${baseUrl}/schedules/${id_schedule}`, {
         method: "DELETE",
         headers: authHeaders,
       });
@@ -598,7 +655,7 @@ export default function Admin() {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${baseUrl}/schedules/sync-master`, {
+      const res = await apiFetch(`${baseUrl}/schedules/sync-master`, {
         method: "POST",
         headers: authHeaders,
       });
@@ -646,7 +703,7 @@ export default function Admin() {
         task: newDutyTask.trim() || null,
       };
 
-      const res = await fetch(`${baseUrl}/duties`, {
+      const res = await apiFetch(`${baseUrl}/duties`, {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify(payload),
@@ -704,7 +761,7 @@ export default function Admin() {
         task: editDutyTask.trim() || null,
       };
 
-      const res = await fetch(`${baseUrl}/duties/${editDutyModal}`, {
+      const res = await apiFetch(`${baseUrl}/duties/${editDutyModal}`, {
         method: "PUT",
         headers: authHeaders,
         body: JSON.stringify(payload),
@@ -733,7 +790,7 @@ export default function Admin() {
     if (!isConfirmed) return;
 
     try {
-      const res = await fetch(`${baseUrl}/duties/${id_duty}`, {
+      const res = await apiFetch(`${baseUrl}/duties/${id_duty}`, {
         method: "DELETE",
         headers: authHeaders,
       });
@@ -759,7 +816,7 @@ export default function Admin() {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${baseUrl}/duties/sync-master`, {
+      const res = await apiFetch(`${baseUrl}/duties/sync-master`, {
         method: "POST",
         headers: authHeaders,
       });
@@ -847,7 +904,7 @@ export default function Admin() {
         formData.append("image", editAnnImage);
       }
 
-      const res = await fetch(`${baseUrl}/announcements/${editModalData}`, {
+      const res = await apiFetch(`${baseUrl}/announcements/${editModalData}`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${tokenJWT}` }, // Tanpa Content-Type
         body: formData,
@@ -884,7 +941,7 @@ export default function Admin() {
         gender: editBirtGender,
       };
 
-      const res = await fetch(`${baseUrl}/birthdays/${editModalBirth}`, {
+      const res = await apiFetch(`${baseUrl}/birthdays/${editModalBirth}`, {
         method: "PUT",
         headers: authHeaders,
         body: JSON.stringify(payload),
@@ -925,7 +982,7 @@ export default function Admin() {
         payload.password_admin = newAdminPasswordUpdate;
       }
 
-      const res = await fetch(`${baseUrl}/admin/${editModalAdm}`, {
+      const res = await apiFetch(`${baseUrl}/admin/${editModalAdm}`, {
         method: "PUT",
         headers: authHeaders,
         body: JSON.stringify(payload),
@@ -953,7 +1010,7 @@ export default function Admin() {
     if (!isConfirmed) return;
 
     try {
-      const res = await fetch(`${baseUrl}/announcements/${id_announcement}`, {
+      const res = await apiFetch(`${baseUrl}/announcements/${id_announcement}`, {
         method: "DELETE",
         headers: authHeaders,
       });
@@ -974,7 +1031,7 @@ export default function Admin() {
     if (!isConfirmed) return;
 
     try {
-      const res = await fetch(`${baseUrl}/birthdays/${id_birthday}`, {
+      const res = await apiFetch(`${baseUrl}/birthdays/${id_birthday}`, {
         method: "DELETE",
         headers: authHeaders,
       });
@@ -995,7 +1052,7 @@ export default function Admin() {
     if (!isConfirmed) return;
 
     try {
-      const res = await fetch(`${baseUrl}/admin/${id_admin}`, {
+      const res = await apiFetch(`${baseUrl}/admin/${id_admin}`, {
         method: "DELETE",
         headers: authHeaders,
       });
@@ -1938,6 +1995,10 @@ export default function Admin() {
           <p className="text-[10px] font-black mt-2 py-1.5 px-4 bg-amber-400 text-blue-900 rounded-full inline-block uppercase tracking-widest shadow-sm">
             {role} ADMIN
           </p>
+          <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-blue-200/90 bg-white/10 py-1.5 px-3 rounded-full border border-white/15">
+            <span className="text-xs">⏳</span>
+            <span className="font-semibold">Sesi: {sessionRemaining || "12 Jam"}</span>
+          </div>
         </div>
         <nav className="flex-1 p-6 space-y-2 overflow-y-auto">
           {visibleMenu.map((item) => (

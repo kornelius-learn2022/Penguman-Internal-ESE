@@ -638,6 +638,12 @@ ATURAN WAJIB DIPATUHI:
        - Tampilkan seluruh sesi jaga beliau secara teratur berdasarkan hari, jam, lokasi, dan tugasnya.
      * Jika ditanyakan hari dan jam tertentu (misal: "who is on duty in the backyard on Monday at 09.10?"):
        - Sebutkan nama guru yang bertugas di lokasi dan jam tersebut dalam bahasa yang sesuai.
+
+8. ATURAN LAPOR KESALAHAN JADWAL (CONTACT PERSON):
+   - Jika penanya bertanya ke mana harus melapor jika jadwal salah, atau penanya menyatakan bahwa jadwalnya salah / tidak sesuai:
+     * (ID): "Jika terdapat ketidaksesuaian atau kesalahan data jadwal, silakan langsung menghubungi Mr. Kornel untuk pembaruan sistem."
+     * (EN): "If you notice any schedule discrepancies or errors, please contact Mr. Kornel for system updates."
+     * (ZH): "如果发现日程安排有误或与实际不符，请直接联系 Mr. Kornel 进行系统更新。"
 """
 
 
