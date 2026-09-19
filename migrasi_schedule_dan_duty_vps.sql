@@ -6,6 +6,19 @@
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+CREATE TABLE IF NOT EXISTS `teacher_schedules` (
+  `id_schedule` int NOT NULL AUTO_INCREMENT,
+  `subject_grade` varchar(100) NOT NULL,
+  `teacher_name` varchar(100) NOT NULL,
+  `day_of_week` varchar(20) NOT NULL,
+  `time_slot` varchar(50) NOT NULL,
+  `class_name` varchar(50) NOT NULL,
+  `note` varchar(255) DEFAULT NULL,
+  `admin_update` int NOT NULL,
+  PRIMARY KEY (`id_schedule`),
+  KEY `ix_teacher_schedules_id_schedule` (`id_schedule`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `teacher_duties` (
   `id_duty` int NOT NULL AUTO_INCREMENT,
   `category` varchar(100) NOT NULL,
