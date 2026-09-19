@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey, Enum, DateTime
+from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey, Enum, DateTime, Boolean
 from sqlalchemy.orm import relationship
 import datetime
 import enum
@@ -48,6 +48,7 @@ class Announcements(Base):
     url_image = Column(String(500), nullable=True)
 
     date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=True)
 
     # FOREIGN KEY: Menghubungkan ke tabel Admin
     admin_update = Column(
@@ -127,4 +128,61 @@ class TeacherDuty(Base):
     )
 
     admin_pembuat = relationship("Admin", backref="teacher_duties")
+
+
+class VisitorLog(Base):
+    __tablename__ = "visitor_logs"
+
+    id_visit = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    ip_hash = Column(String(64), nullable=False, index=True)
+    user_agent = Column(String(255), nullable=True)
+    visit_date = Column(Date, nullable=False, index=True)
+    visited_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class DutyInval(Base):
+    __tablename__ = "duty_invals"
+
+    id_inval = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    id_duty = Column(
+        Integer,
+        ForeignKey("teacher_duties.id_duty", ondelete="SET NULL", onupdate="CASCADE"),
+        nullable=True,
+    )
+    date = Column(Date, nullable=False, index=True)
+    original_teacher = Column(String(100), nullable=False)
+    substitute_teacher = Column(String(100), nullable=False)
+    location = Column(String(100), nullable=False)
+    time_slot = Column(String(50), nullable=False)
+    reason = Column(String(255), nullable=True)
+    note = Column(Text, nullable=True)
+    admin_update = Column(
+        Integer,
+        ForeignKey("Admin.id_admin", ondelete="RESTRICT", onupdate="CASCADE"),
+        nullable=False,
+    )
+
+    duty = relationship("TeacherDuty", backref="invals")
+    admin_pembuat = relationship("Admin", backref="duty_invals")
+
+
+class EventSchedule(Base):
+    __tablename__ = "event_schedules"
+
+    id_event = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    event_name = Column(String(150), nullable=False)
+    target_scope = Column(String(100), nullable=False)  # "Schoolwide", "Grade 1-3", dll.
+    date = Column(Date, nullable=False, index=True)
+    end_date = Column(Date, nullable=True)
+    time_slot = Column(String(50), nullable=True)  # Misal: "08.00 - 10.45"
+    description = Column(Text, nullable=False)
+    affects_kbm = Column(Boolean, default=True, nullable=False)
+    admin_update = Column(
+        Integer,
+        ForeignKey("Admin.id_admin", ondelete="RESTRICT", onupdate="CASCADE"),
+        nullable=False,
+    )
+
+    admin_pembuat = relationship("Admin", backref="event_schedules")
+
 

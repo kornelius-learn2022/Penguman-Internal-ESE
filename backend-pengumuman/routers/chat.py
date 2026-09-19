@@ -4,7 +4,7 @@ import datetime
 import time
 from itertools import groupby
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 from sqlalchemy.orm import Session
 from typing import Optional
 from dotenv import load_dotenv
@@ -275,33 +275,129 @@ def build_school_context(user_message: str, db: Session) -> str:
         else:
             target_days.append(current_day)
 
-    # 4. Ambil Pengumuman Relevan
+    # 4. Ambil Pengumuman Relevan & Event Khusus Sekolah
+    effective_date = query_date if query_date else today
+
+    # Ambil Event Schedule khusus untuk tanggal tersebut
+    active_events = (
+        db.query(models.EventSchedule)
+        .filter(
+            models.EventSchedule.date <= effective_date,
+            or_(
+                models.EventSchedule.end_date == None,
+                models.EventSchedule.end_date >= effective_date,
+            ),
+        )
+        .all()
+    )
+    if active_events:
+        context_lines.append(
+            f"=== JADWAL EVENT / ACARA KHUSUS SEKOLAH (PADA TANGGAL {effective_date}) ==="
+        )
+        for ev in active_events:
+            range_str = f" s/d {ev.end_date}" if ev.end_date else ""
+            kbm_impact = (
+                "MEMPENGARUHI/MENGUBAH JADWAL KBM REGULER"
+                if ev.affects_kbm
+                else "Tidak mengubah jadwal KBM"
+            )
+            context_lines.append(
+                f"- Acara: {ev.event_name} [Scope: {ev.target_scope}]"
+            )
+            context_lines.append(
+                f"  * Tanggal: {ev.date}{range_str} | Waktu: {ev.time_slot or 'Sesuai agenda'}"
+            )
+            context_lines.append(f"  * Pengaruh KBM: {kbm_impact}")
+            context_lines.append(f"  * Keterangan: {ev.description}")
+        context_lines.append(
+            "[PANDUAN AI: Jika event mempengaruhi KBM ('affects_kbm'=True), jelaskan kepada pengguna bahwa terdapat acara/event khusus yang menyesuaikan atau menggantikan kegiatan belajar-mengajar normal pada grade/sekolah terkait.]\n"
+        )
+
     if query_date:
-        target_announcements = db.query(models.Announcements).filter(models.Announcements.date == query_date).all()
+        target_announcements = (
+            db.query(models.Announcements)
+            .filter(
+                or_(
+                    and_(
+                        models.Announcements.end_date == None,
+                        models.Announcements.date == query_date,
+                    ),
+                    and_(
+                        models.Announcements.end_date != None,
+                        models.Announcements.date <= query_date,
+                        models.Announcements.end_date >= query_date,
+                    ),
+                )
+            )
+            .all()
+        )
         if target_announcements:
-            context_lines.append(f"=== PENGUMUMAN PADA TANGGAL {query_date} ({query_day_name}) ===")
+            context_lines.append(
+                f"=== PENGUMUMAN PADA TANGGAL {query_date} ({query_day_name}) ==="
+            )
             for ann in target_announcements:
-                context_lines.append(f"- [TANGGAL {ann.date}]: {ann.announcement}")
+                range_str = f" s/d {ann.end_date}" if ann.end_date else ""
+                context_lines.append(
+                    f"- [TANGGAL {ann.date}{range_str}]: {ann.announcement}"
+                )
             context_lines.append("")
         else:
-            context_lines.append(f"=== PENGUMUMAN PADA TANGGAL {query_date} ({query_day_name}) ===")
-            context_lines.append(f"- Tidak ada pengumuman khusus yang tercatat pada tanggal {query_date}.")
+            context_lines.append(
+                f"=== PENGUMUMAN PADA TANGGAL {query_date} ({query_day_name}) ==="
+            )
+            context_lines.append(
+                f"- Tidak ada pengumuman khusus yang tercatat pada tanggal {query_date}."
+            )
             context_lines.append("")
 
     # Deteksi awal apakah ini murni pertanyaan duty/jadwal-guru (bukan pengumuman)
     # sehingga query pengumuman terbaru bisa di-skip untuk hemat DB round-trip
-    _duty_kw_early = ["duty", "jaga", "menjaga", "piket", "backyard", "kantin", "canteen", "lobby", "gerbang", "gate", "值班", "后院"]
-    _is_pure_schedule_query = any(kw in msg_lower for kw in _duty_kw_early) and not any(
-        w in msg_lower for w in ["pengumuman", "announcement", "info", "agenda", "kegiatan", "公告", "通知"]
+    _duty_kw_early = [
+        "duty",
+        "jaga",
+        "menjaga",
+        "piket",
+        "backyard",
+        "kantin",
+        "canteen",
+        "lobby",
+        "gerbang",
+        "gate",
+        "值班",
+        "后院",
+    ]
+    _is_pure_schedule_query = any(
+        kw in msg_lower for kw in _duty_kw_early
+    ) and not any(
+        w in msg_lower
+        for w in [
+            "pengumuman",
+            "announcement",
+            "info",
+            "agenda",
+            "kegiatan",
+            "event",
+            "acara",
+            "公告",
+            "通知",
+        ]
     )
 
     # Tampilkan pengumuman terbaru HANYA jika bukan murni pertanyaan duty/jadwal
     if not _is_pure_schedule_query:
-        recent_ann = db.query(models.Announcements).order_by(models.Announcements.date.desc()).limit(5).all()
+        recent_ann = (
+            db.query(models.Announcements)
+            .order_by(models.Announcements.date.desc())
+            .limit(5)
+            .all()
+        )
         if recent_ann:
             context_lines.append("=== DAFTAR PENGUMUMAN TERKINI LAINNYA ===")
             for ann in recent_ann:
-                context_lines.append(f"- Tanggal {ann.date}: {ann.announcement}")
+                range_str = f" s/d {ann.end_date}" if ann.end_date else ""
+                context_lines.append(
+                    f"- Tanggal {ann.date}{range_str}: {ann.announcement}"
+                )
             context_lines.append("")
 
 
@@ -504,6 +600,31 @@ def build_school_context(user_message: str, db: Session) -> str:
 
         duties = duty_q.all()
 
+        # Cek apakah ada pergantian tugas piket sementara (Inval Duty) pada tanggal ini
+        inval_records = (
+            db.query(models.DutyInval)
+            .filter(models.DutyInval.date == effective_date)
+            .all()
+        )
+        inval_map = {}
+        for inv in inval_records:
+            inval_map[(inv.original_teacher.strip().lower(), inv.time_slot.strip())] = inv
+            inval_map[(inv.location.strip().lower(), inv.time_slot.strip())] = inv
+
+        if inval_records:
+            context_lines.append(
+                f"=== PERGANTIAN PIKET SEMENTARA (INVAL DUTY) PADA TANGGAL {effective_date} ==="
+            )
+            for inv in inval_records:
+                r_desc = f" (Alasan: {inv.reason})" if inv.reason else ""
+                n_desc = f" [Catatan: {inv.note}]" if inv.note else ""
+                context_lines.append(
+                    f"- Lokasi: {inv.location} ({inv.time_slot}): Guru {inv.original_teacher} DIGANTIKAN OLEH {inv.substitute_teacher}{r_desc}{n_desc}"
+                )
+            context_lines.append(
+                "[PANDUAN AI: Pada tanggal ini, guru piket asli digantikan oleh guru pengganti (inval) di atas. Sebutkan secara jelas nama guru pengganti yang sedang bertugas!]\n"
+            )
+
         if duties:
             context_lines.append("=== INFORMASI JADWAL DUTY / PIKET GURU (TEACHER ON DUTY) ===")
             active_duties_now = []
@@ -517,13 +638,21 @@ def build_school_context(user_message: str, db: Session) -> str:
                 for d in day_group:
                     task_info = f" (Tugas: {d.task})" if d.task else ""
                     time_marker = ""
+                    matching_inval = inval_map.get((d.teacher_name.strip().lower(), d.time_slot.strip())) or inval_map.get((d.location.strip().lower(), d.time_slot.strip()))
+                    if matching_inval:
+                        teacher_display = f"{d.teacher_name} -> [DIGANTIKAN SEMENTARA OLEH {matching_inval.substitute_teacher}]"
+                        active_teacher = f"{matching_inval.substitute_teacher} (Inval pengganti {d.teacher_name})"
+                    else:
+                        teacher_display = d.teacher_name
+                        active_teacher = d.teacher_name
+
                     if query_time and is_time_in_slot(query_time, d.time_slot):
                         time_marker = f" <--- [SEDANG/TEPAT BERLANGSUNG PADA JAM {query_time_str}]"
                         active_duties_now.append(
-                            f"- Lokasi {d.location} ({d.category}): {d.teacher_name} (sesi {d.time_slot}){task_info}"
+                            f"- Lokasi {d.location} ({d.category}): {active_teacher} (sesi {d.time_slot}){task_info}"
                         )
                     context_lines.append(
-                        f"  * {d.time_slot} | Lokasi: {d.location} | Kategori: {d.category} | Guru: {d.teacher_name}{task_info}{time_marker}"
+                        f"  * {d.time_slot} | Lokasi: {d.location} | Kategori: {d.category} | Guru: {teacher_display}{task_info}{time_marker}"
                     )
 
             if query_time:

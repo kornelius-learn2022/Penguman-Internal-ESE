@@ -92,6 +92,7 @@ export default function Admin() {
   // ==========================================
   const [editModalData, setEditModalData] = useState(null);
   const [editAnnDate, setEditAnnDate] = useState("");
+  const [editAnnEndDate, setEditAnnEndDate] = useState("");
   const [editAnnouncementText, setEditAnnouncementText] = useState("");
   const [editModalBirth, setEditModalBirth] = useState(null);
   const [editModalAdm, seteditModalAdm] = useState(null);
@@ -125,6 +126,13 @@ export default function Admin() {
   const [admin, setAdmin] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [duties, setDuties] = useState([]);
+  const [dutyInvals, setDutyInvals] = useState([]);
+  const [eventSchedules, setEventSchedules] = useState([]);
+  const [visitorStats, setVisitorStats] = useState({
+    total_visits: 0,
+    today_visits: 0,
+    weekly_stats: [],
+  });
 
   // ==========================================
   // 3. SEARCH, FILTER TANGGAL, & PAGINATION STATE
@@ -149,12 +157,22 @@ export default function Admin() {
   const [filterDutyLocation, setFilterDutyLocation] = useState("");
   const [currentDutyPage, setCurrentDutyPage] = useState(1);
 
+  // Inval Duty Search & Pagination
+  const [searchInval, setSearchInval] = useState("");
+  const [filterInvalDate, setFilterInvalDate] = useState("");
+  const [currentInvalPage, setCurrentInvalPage] = useState(1);
+
+  // Event Schedules Search & Pagination
+  const [searchEvent, setSearchEvent] = useState("");
+  const [currentEventPage, setCurrentEventPage] = useState(1);
+
   const itemsPerPage = 10;
 
   // ==========================================
   // 4. FORM STATE (CREATE)
   // ==========================================
   const [newAnnDate, setNewAnnDate] = useState("");
+  const [newAnnEndDate, setNewAnnEndDate] = useState("");
   const [newAnnouncement, setNewAnnouncement] = useState("");
   const [newAnnUrl, setNewAnnUrl] = useState("");
   const [newAnnImage, setNewAnnImage] = useState(null);
@@ -201,6 +219,35 @@ export default function Admin() {
   const [editDutyTeacher, setEditDutyTeacher] = useState("");
   const [editDutyTask, setEditDutyTask] = useState("");
 
+  // Inval Duty Create Form
+  const [isCreateInvalOpen, setIsCreateInvalOpen] = useState(false);
+  const [newInvalDate, setNewInvalDate] = useState(today);
+  const [newInvalOriginalTeacher, setNewInvalOriginalTeacher] = useState("");
+  const [newInvalSubstituteTeacher, setNewInvalSubstituteTeacher] = useState("");
+  const [newInvalLocation, setNewInvalLocation] = useState("ESE Backyard");
+  const [newInvalTime, setNewInvalTime] = useState("07.15-07.45");
+  const [newInvalReason, setNewInvalReason] = useState("");
+  const [newInvalNote, setNewInvalNote] = useState("");
+
+  // Event Schedule Create & Edit Form
+  const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
+  const [newEventName, setNewEventName] = useState("");
+  const [newEventScope, setNewEventScope] = useState("Schoolwide");
+  const [newEventDate, setNewEventDate] = useState(today);
+  const [newEventEndDate, setNewEventEndDate] = useState("");
+  const [newEventTime, setNewEventTime] = useState("");
+  const [newEventDesc, setNewEventDesc] = useState("");
+  const [newEventAffectsKbm, setNewEventAffectsKbm] = useState(true);
+
+  const [editEventModal, setEditEventModal] = useState(null);
+  const [editEventName, setEditEventName] = useState("");
+  const [editEventScope, setEditEventScope] = useState("Schoolwide");
+  const [editEventDate, setEditEventDate] = useState("");
+  const [editEventEndDate, setEditEventEndDate] = useState("");
+  const [editEventTime, setEditEventTime] = useState("");
+  const [editEventDesc, setEditEventDesc] = useState("");
+  const [editEventAffectsKbm, setEditEventAffectsKbm] = useState(true);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [popupData, setPopupData] = useState(null);
 
@@ -210,7 +257,16 @@ export default function Admin() {
   const fetchSemuaData = useCallback(async () => {
     try {
       // Fetch data dengan menyertakan token JWT untuk keamanan (validasi 12 jam)
-      const [resAnn, resBday, resAdm, resSched, resDuties] = await Promise.all([
+      const [
+        resAnn,
+        resBday,
+        resAdm,
+        resSched,
+        resDuties,
+        resStats,
+        resInvals,
+        resEvents,
+      ] = await Promise.all([
         apiFetch(`${baseUrl}/announcements`, {
           headers: { Authorization: `Bearer ${tokenJWT}` },
         }),
@@ -226,6 +282,15 @@ export default function Admin() {
         apiFetch(`${baseUrl}/duties`, {
           headers: { Authorization: `Bearer ${tokenJWT}` },
         }),
+        apiFetch(`${baseUrl}/admin/visitor-stats`, {
+          headers: { Authorization: `Bearer ${tokenJWT}` },
+        }),
+        apiFetch(`${baseUrl}/duties/inval`, {
+          headers: { Authorization: `Bearer ${tokenJWT}` },
+        }),
+        apiFetch(`${baseUrl}/events/schedule`, {
+          headers: { Authorization: `Bearer ${tokenJWT}` },
+        }),
       ]);
 
       if (resAnn.ok) setAnnouncements(await resAnn.json());
@@ -233,6 +298,9 @@ export default function Admin() {
       if (resAdm.ok) setAdmin(await resAdm.json());
       if (resSched.ok) setSchedules(await resSched.json());
       if (resDuties.ok) setDuties(await resDuties.json());
+      if (resStats.ok) setVisitorStats(await resStats.json());
+      if (resInvals.ok) setDutyInvals(await resInvals.json());
+      if (resEvents.ok) setEventSchedules(await resEvents.json());
     } catch (error) {
       console.error("Gagal mengambil data dari server", error);
     }
@@ -390,6 +458,49 @@ export default function Admin() {
     currentDutyPage * itemsPerPage,
   );
 
+  // FILTER TABEL INVAL DUTY
+  const filteredInvals = Array.isArray(dutyInvals)
+    ? dutyInvals.filter((item) => {
+        const safeOrig = item.original_teacher || "";
+        const safeSub = item.substitute_teacher || "";
+        const safeLoc = item.location || "";
+        const safeReason = item.reason || "";
+        const query = searchInval.toLowerCase();
+        const matchesSearch =
+          safeOrig.toLowerCase().includes(query) ||
+          safeSub.toLowerCase().includes(query) ||
+          safeLoc.toLowerCase().includes(query) ||
+          safeReason.toLowerCase().includes(query);
+        const matchesDate = !filterInvalDate || item.date === filterInvalDate;
+        return matchesSearch && matchesDate;
+      })
+    : [];
+  const totalInvalPages = Math.ceil(filteredInvals.length / itemsPerPage);
+  const currentInvalData = filteredInvals.slice(
+    (currentInvalPage - 1) * itemsPerPage,
+    currentInvalPage * itemsPerPage,
+  );
+
+  // FILTER TABEL EVENT SCHEDULES
+  const filteredEvents = Array.isArray(eventSchedules)
+    ? eventSchedules.filter((item) => {
+        const safeName = item.event_name || "";
+        const safeScope = item.target_scope || "";
+        const safeDesc = item.description || "";
+        const query = searchEvent.toLowerCase();
+        return (
+          safeName.toLowerCase().includes(query) ||
+          safeScope.toLowerCase().includes(query) ||
+          safeDesc.toLowerCase().includes(query)
+        );
+      })
+    : [];
+  const totalEventPages = Math.ceil(filteredEvents.length / itemsPerPage);
+  const currentEventData = filteredEvents.slice(
+    (currentEventPage - 1) * itemsPerPage,
+    currentEventPage * itemsPerPage,
+  );
+
   // Reset pagination saat pencarian atau filter diubah
   useEffect(() => setCurrentAnnPage(1), [searchAnnouncements, filterAnnDate]);
   useEffect(() => setCurrentBdayPage(1), [searchBirthdays, filterBdayDate]);
@@ -401,6 +512,8 @@ export default function Admin() {
     () => setCurrentDutyPage(1),
     [searchDuty, filterDutyDay, filterDutyLocation],
   );
+  useEffect(() => setCurrentInvalPage(1), [searchInval, filterInvalDate]);
+  useEffect(() => setCurrentEventPage(1), [searchEvent]);
 
   // ==========================================
   // 8. FUNGSI POST (SUBMIT DATA) KE API
@@ -414,6 +527,7 @@ export default function Admin() {
       // Karena ada upload gambar, gunakan FormData, BUKAN application/json
       const formData = new FormData();
       formData.append("tanggal_masuk", newAnnDate);
+      if (newAnnEndDate) formData.append("end_date", newAnnEndDate);
       formData.append("announcement", newAnnouncement);
       formData.append("admin_update", id_admin);
       if (newAnnUrl) formData.append("url_announcemet", newAnnUrl);
@@ -430,6 +544,7 @@ export default function Admin() {
       await fetchSemuaData(); // Refresh tabel setelah sukses
       setPopupData({ title: "Announcement Posted!" });
       setNewAnnDate("");
+      setNewAnnEndDate("");
       setNewAnnouncement("");
       setNewAnnUrl("");
       setNewAnnImage(null);
@@ -839,6 +954,184 @@ export default function Admin() {
   };
 
   // ==========================================
+  // INVAL DUTY CRUD
+  // ==========================================
+  const handlePostInval = async () => {
+    if (
+      !newInvalDate ||
+      !newInvalOriginalTeacher.trim() ||
+      !newInvalSubstituteTeacher.trim() ||
+      !newInvalLocation.trim() ||
+      !newInvalTime.trim()
+    ) {
+      return alert("Lengkapi semua field wajib untuk inval duty!");
+    }
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        date: newInvalDate,
+        original_teacher: newInvalOriginalTeacher.trim(),
+        substitute_teacher: newInvalSubstituteTeacher.trim(),
+        location: newInvalLocation.trim(),
+        time_slot: newInvalTime.trim(),
+        reason: newInvalReason.trim() || null,
+        note: newInvalNote.trim() || null,
+      };
+
+      const res = await apiFetch(`${baseUrl}/duties/inval`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("Gagal menambahkan data inval duty.");
+
+      await fetchSemuaData();
+      setPopupData({ title: "Inval Duty Added!" });
+      setIsCreateInvalOpen(false);
+      setNewInvalOriginalTeacher("");
+      setNewInvalSubstituteTeacher("");
+      setNewInvalReason("");
+      setNewInvalNote("");
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteInval = async (id_inval) => {
+    const isConfirmed = window.confirm(
+      "Apakah Anda yakin ingin menghapus data pergantian piket (inval) ini?",
+    );
+    if (!isConfirmed) return;
+
+    try {
+      const res = await apiFetch(`${baseUrl}/duties/inval/${id_inval}`, {
+        method: "DELETE",
+        headers: authHeaders,
+      });
+
+      if (!res.ok) throw new Error("Gagal menghapus data inval duty.");
+
+      await fetchSemuaData();
+      setPopupData({ title: "Inval Duty Deleted!" });
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
+  // ==========================================
+  // EVENT SCHEDULE CRUD
+  // ==========================================
+  const handlePostEvent = async () => {
+    if (!newEventName.trim() || !newEventDate || !newEventDesc.trim()) {
+      return alert("Nama acara, tanggal mulai, dan deskripsi wajib diisi!");
+    }
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        event_name: newEventName.trim(),
+        target_scope: newEventScope.trim() || "Schoolwide",
+        date: newEventDate,
+        end_date: newEventEndDate || null,
+        time_slot: newEventTime.trim() || null,
+        description: newEventDesc.trim(),
+        affects_kbm: newEventAffectsKbm,
+      };
+
+      const res = await apiFetch(`${baseUrl}/events/schedule`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("Gagal membuat jadwal event khusus.");
+
+      await fetchSemuaData();
+      setPopupData({ title: "Event Schedule Created!" });
+      setIsCreateEventOpen(false);
+      setNewEventName("");
+      setNewEventEndDate("");
+      setNewEventTime("");
+      setNewEventDesc("");
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditClickEvent = (item) => {
+    setEditEventModal(item.id_event);
+    setEditEventName(item.event_name);
+    setEditEventScope(item.target_scope);
+    setEditEventDate(item.date);
+    setEditEventEndDate(item.end_date || "");
+    setEditEventTime(item.time_slot || "");
+    setEditEventDesc(item.description);
+    setEditEventAffectsKbm(item.affects_kbm);
+  };
+
+  const handleUpdateEvent = async () => {
+    if (!editEventName.trim() || !editEventDate || !editEventDesc.trim()) {
+      return alert("Nama acara, tanggal mulai, dan deskripsi wajib diisi!");
+    }
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        event_name: editEventName.trim(),
+        target_scope: editEventScope.trim() || "Schoolwide",
+        date: editEventDate,
+        end_date: editEventEndDate || null,
+        time_slot: editEventTime.trim() || null,
+        description: editEventDesc.trim(),
+        affects_kbm: editEventAffectsKbm,
+      };
+
+      const res = await apiFetch(
+        `${baseUrl}/events/schedule/${editEventModal}`,
+        {
+          method: "PUT",
+          headers: authHeaders,
+          body: JSON.stringify(payload),
+        },
+      );
+
+      if (!res.ok) throw new Error("Gagal mengupdate jadwal event.");
+
+      await fetchSemuaData();
+      setPopupData({ title: "Event Schedule Updated!" });
+      setEditEventModal(null);
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteEvent = async (id_event) => {
+    const isConfirmed = window.confirm(
+      "Apakah Anda yakin ingin menghapus jadwal event khusus ini?",
+    );
+    if (!isConfirmed) return;
+
+    try {
+      const res = await apiFetch(`${baseUrl}/events/schedule/${id_event}`, {
+        method: "DELETE",
+        headers: authHeaders,
+      });
+
+      if (!res.ok) throw new Error("Gagal menghapus event schedule.");
+
+      await fetchSemuaData();
+      setPopupData({ title: "Event Schedule Deleted!" });
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
+  // ==========================================
   // 9. MENU SIDEBAR
   // ==========================================
   const menuItems = [
@@ -862,6 +1155,18 @@ export default function Admin() {
       allowed: ["Super"],
     },
     {
+      id: "Inval Duties",
+      label: "Inval Duty (Sementara)",
+      icon: "🔄",
+      allowed: ["Normal", "Super"],
+    },
+    {
+      id: "Event Schedules",
+      label: "Event Schedules",
+      icon: "⭐",
+      allowed: ["Normal", "Super"],
+    },
+    {
       id: "Manage Admin",
       label: "Manage Admin",
       icon: "👥",
@@ -882,6 +1187,7 @@ export default function Admin() {
   const handleEditClick = (item) => {
     setEditModalData(item.id_announcement);
     setEditAnnDate(item.date);
+    setEditAnnEndDate(item.end_date || "");
     setEditAnnouncementText(item.announcement);
     setEditAnnImage(item.url_image); // URL string dari backend
     setEditAnnUrl(item.url_announcemet);
@@ -895,6 +1201,7 @@ export default function Admin() {
     try {
       const formData = new FormData();
       formData.append("tanggal_masuk", editAnnDate);
+      if (editAnnEndDate) formData.append("end_date", editAnnEndDate);
       formData.append("announcement", editAnnouncementText);
       formData.append("admin_update", id_admin);
       if (editAnnUrl) formData.append("url_announcemet", editAnnUrl);
@@ -1108,16 +1415,31 @@ export default function Admin() {
 
             <div className="space-y-4 pl-2 max-h-[70vh] overflow-y-auto pr-2">
               {/* Input Tanggal */}
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                  Date
-                </label>
-                <input
-                  type="date"
-                  value={editAnnDate}
-                  onChange={(e) => setEditAnnDate(e.target.value)}
-                  className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-[#1e3a8a] bg-slate-50 transition-all font-medium text-slate-700"
-                />
+              {/* Input Tanggal Mulai & Tanggal Selesai */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={editAnnDate}
+                    onChange={(e) => setEditAnnDate(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-[#1e3a8a] bg-slate-50 transition-all font-medium text-slate-700 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    End Date (Opt)
+                  </label>
+                  <input
+                    type="date"
+                    value={editAnnEndDate}
+                    min={editAnnDate}
+                    onChange={(e) => setEditAnnEndDate(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-[#1e3a8a] bg-slate-50 transition-all font-medium text-slate-700 text-sm"
+                  />
+                </div>
               </div>
 
               {/* Input Link/URL */}
@@ -1981,6 +2303,433 @@ export default function Admin() {
         </div>
       )}
 
+      {/* Modal Create Inval Duty */}
+      {isCreateInvalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-lg w-full relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-2 h-full bg-indigo-600"></div>
+            <div className="flex justify-between items-center mb-6 pl-2">
+              <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                🔄 Tambah Inval Duty (Pergantian Sementara)
+              </h3>
+              <button
+                onClick={() => setIsCreateInvalOpen(false)}
+                className="text-slate-400 hover:text-red-500 text-xl font-bold transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-4 pl-2">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                  Tanggal Tugas Inval *
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={newInvalDate}
+                  onChange={(e) => setNewInvalDate(e.target.value)}
+                  className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 text-sm font-medium text-slate-700"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Guru Asli *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Nama guru yang digantikan"
+                    value={newInvalOriginalTeacher}
+                    onChange={(e) => setNewInvalOriginalTeacher(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Guru Pengganti (Inval) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Nama guru pengganti"
+                    value={newInvalSubstituteTeacher}
+                    onChange={(e) => setNewInvalSubstituteTeacher(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Lokasi Piket *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Misal: ESE Backyard / Canteen"
+                    value={newInvalLocation}
+                    onChange={(e) => setNewInvalLocation(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Waktu / Jam Sesi *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Misal: 07.15-07.45"
+                    value={newInvalTime}
+                    onChange={(e) => setNewInvalTime(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                  Alasan Inval (Opsional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Misal: Sakit, Dinas luar, Izin"
+                  value={newInvalReason}
+                  onChange={(e) => setNewInvalReason(e.target.value)}
+                  className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 text-sm font-medium text-slate-700"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                  Catatan Tambahan (Opsional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Catatan khusus untuk tugas ini"
+                  value={newInvalNote}
+                  onChange={(e) => setNewInvalNote(e.target.value)}
+                  className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 text-sm font-medium text-slate-700"
+                />
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateInvalOpen(false)}
+                  disabled={isSubmitting}
+                  className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl hover:bg-slate-200 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePostInval}
+                  disabled={isSubmitting}
+                  className="flex-1 bg-indigo-600 text-white font-bold py-3.5 rounded-2xl hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg disabled:bg-slate-400"
+                >
+                  {isSubmitting ? "Menyimpan..." : "Simpan Inval"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Create Event Schedule */}
+      {isCreateEventOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-lg w-full relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-2 h-full bg-amber-500"></div>
+            <div className="flex justify-between items-center mb-6 pl-2">
+              <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                ⭐ Buat Jadwal Event Khusus
+              </h3>
+              <button
+                onClick={() => setIsCreateEventOpen(false)}
+                className="text-slate-400 hover:text-red-500 text-xl font-bold transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-4 pl-2 max-h-[75vh] overflow-y-auto pr-2">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                  Nama Event / Acara *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Misal: Assembly Paskah, Retreat Grade 6, PTS Genap"
+                  value={newEventName}
+                  onChange={(e) => setNewEventName(e.target.value)}
+                  className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 text-sm font-medium text-slate-700"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Target Scope / Tingkat *
+                  </label>
+                  <select
+                    value={newEventScope}
+                    onChange={(e) => setNewEventScope(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 text-sm font-semibold text-slate-700"
+                  >
+                    <option value="Schoolwide">Schoolwide (Seluruh Sekolah)</option>
+                    <option value="Grade 1-3">Grade 1-3 (Lower Primary)</option>
+                    <option value="Grade 4-6">Grade 4-6 (Upper Primary)</option>
+                    <option value="Grade 1">Grade 1</option>
+                    <option value="Grade 2">Grade 2</option>
+                    <option value="Grade 3">Grade 3</option>
+                    <option value="Grade 4">Grade 4</option>
+                    <option value="Grade 5">Grade 5</option>
+                    <option value="Grade 6">Grade 6</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Waktu / Jam (Opsional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Misal: 08.00 - 11.00"
+                    value={newEventTime}
+                    onChange={(e) => setNewEventTime(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Tanggal Mulai *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={newEventDate}
+                    onChange={(e) => setNewEventDate(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Tanggal Selesai (Opsional)
+                  </label>
+                  <input
+                    type="date"
+                    value={newEventEndDate}
+                    min={newEventDate}
+                    onChange={(e) => setNewEventEndDate(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                  Deskripsi / Keterangan Acara *
+                </label>
+                <textarea
+                  rows="3"
+                  required
+                  placeholder="Jelaskan agenda acara dan apa yang perlu diketahui guru/murid..."
+                  value={newEventDesc}
+                  onChange={(e) => setNewEventDesc(e.target.value)}
+                  className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 text-sm font-medium text-slate-700 resize-y"
+                ></textarea>
+              </div>
+
+              <div className="flex items-center gap-3 p-3.5 bg-amber-50/60 rounded-2xl border border-amber-200">
+                <input
+                  type="checkbox"
+                  id="createAffectsKbm"
+                  checked={newEventAffectsKbm}
+                  onChange={(e) => setNewEventAffectsKbm(e.target.checked)}
+                  className="w-5 h-5 accent-amber-600 rounded cursor-pointer"
+                />
+                <label
+                  htmlFor="createAffectsKbm"
+                  className="text-xs font-bold text-slate-700 cursor-pointer select-none"
+                >
+                  Event ini mengubah/menyesuaikan jadwal KBM normal
+                </label>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateEventOpen(false)}
+                  disabled={isSubmitting}
+                  className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl hover:bg-slate-200 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePostEvent}
+                  disabled={isSubmitting}
+                  className="flex-1 bg-amber-500 text-white font-bold py-3.5 rounded-2xl hover:bg-amber-600 transition-all shadow-md hover:shadow-lg disabled:bg-slate-400"
+                >
+                  {isSubmitting ? "Menyimpan..." : "Simpan Event"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edit Event Schedule */}
+      {editEventModal !== null && (
+        <div className="fixed inset-0 bg-slate-900/40 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-lg w-full relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-2 h-full bg-amber-500"></div>
+            <div className="flex justify-between items-center mb-6 pl-2">
+              <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                ✏️ Edit Jadwal Event Khusus
+              </h3>
+              <button
+                onClick={() => setEditEventModal(null)}
+                className="text-slate-400 hover:text-red-500 text-xl font-bold transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-4 pl-2 max-h-[75vh] overflow-y-auto pr-2">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                  Nama Event / Acara *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editEventName}
+                  onChange={(e) => setEditEventName(e.target.value)}
+                  className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 text-sm font-medium text-slate-700"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Target Scope / Tingkat *
+                  </label>
+                  <select
+                    value={editEventScope}
+                    onChange={(e) => setEditEventScope(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 text-sm font-semibold text-slate-700"
+                  >
+                    <option value="Schoolwide">Schoolwide (Seluruh Sekolah)</option>
+                    <option value="Grade 1-3">Grade 1-3 (Lower Primary)</option>
+                    <option value="Grade 4-6">Grade 4-6 (Upper Primary)</option>
+                    <option value="Grade 1">Grade 1</option>
+                    <option value="Grade 2">Grade 2</option>
+                    <option value="Grade 3">Grade 3</option>
+                    <option value="Grade 4">Grade 4</option>
+                    <option value="Grade 5">Grade 5</option>
+                    <option value="Grade 6">Grade 6</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Waktu / Jam (Opsional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Misal: 08.00 - 11.00"
+                    value={editEventTime}
+                    onChange={(e) => setEditEventTime(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Tanggal Mulai *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={editEventDate}
+                    onChange={(e) => setEditEventDate(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Tanggal Selesai (Opsional)
+                  </label>
+                  <input
+                    type="date"
+                    value={editEventEndDate}
+                    min={editEventDate}
+                    onChange={(e) => setEditEventEndDate(e.target.value)}
+                    className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 text-sm font-medium text-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                  Deskripsi / Keterangan Acara *
+                </label>
+                <textarea
+                  rows="3"
+                  required
+                  value={editEventDesc}
+                  onChange={(e) => setEditEventDesc(e.target.value)}
+                  className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 text-sm font-medium text-slate-700 resize-y"
+                ></textarea>
+              </div>
+
+              <div className="flex items-center gap-3 p-3.5 bg-amber-50/60 rounded-2xl border border-amber-200">
+                <input
+                  type="checkbox"
+                  id="editAffectsKbm"
+                  checked={editEventAffectsKbm}
+                  onChange={(e) => setEditEventAffectsKbm(e.target.checked)}
+                  className="w-5 h-5 accent-amber-600 rounded cursor-pointer"
+                />
+                <label
+                  htmlFor="editAffectsKbm"
+                  className="text-xs font-bold text-slate-700 cursor-pointer select-none"
+                >
+                  Event ini mengubah/menyesuaikan jadwal KBM normal
+                </label>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setEditEventModal(null)}
+                  disabled={isSubmitting}
+                  className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl hover:bg-slate-200 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUpdateEvent}
+                  disabled={isSubmitting}
+                  className="flex-1 bg-amber-500 text-white font-bold py-3.5 rounded-2xl hover:bg-amber-600 transition-all shadow-md hover:shadow-lg disabled:bg-slate-400"
+                >
+                  {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ======================= SIDEBAR ======================= */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-72 bg-gradient-to-b from-[#1e3a8a] to-[#152865] text-white flex flex-col shadow-2xl transition-all duration-300 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
@@ -2070,6 +2819,95 @@ export default function Admin() {
         <div className="p-4 md:p-8 flex-1 overflow-y-auto">
           <div className="max-w-6xl mx-auto space-y-8">
             {/* ========================================================= */}
+            {/* VISITOR METRICS / ANALYTICS (ADMIN ONLY) */}
+            {/* ========================================================= */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-gradient-to-br from-blue-900 to-indigo-950 rounded-[2rem] p-6 text-white shadow-xl shadow-blue-950/20 relative overflow-hidden flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-[11px] font-black uppercase tracking-widest text-blue-300">
+                    Total Visitors (Lifetime)
+                  </span>
+                  <h3 className="text-3xl font-black tracking-tight">
+                    {visitorStats.total_visits}{" "}
+                    <span className="text-sm font-semibold text-blue-200">
+                      visits
+                    </span>
+                  </h3>
+                  <p className="text-xs text-blue-300/80">
+                    Unique daily visitors counted
+                  </p>
+                </div>
+                <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-2xl backdrop-blur-sm border border-white/10">
+                  👥
+                </div>
+              </div>
+
+              <div className="bg-white rounded-[2rem] p-6 border border-slate-200 shadow-sm relative overflow-hidden flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-[11px] font-black uppercase tracking-widest text-emerald-600">
+                    Today's Visitors
+                  </span>
+                  <h3 className="text-3xl font-black text-slate-800 tracking-tight">
+                    {visitorStats.today_visits}{" "}
+                    <span className="text-sm font-semibold text-slate-500">
+                      visits
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Active visitors today
+                  </p>
+                </div>
+                <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl border border-emerald-100">
+                  📊
+                </div>
+              </div>
+
+              <div className="bg-white rounded-[2rem] p-6 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                    Last 7 Days Trend
+                  </span>
+                  <span className="text-xs font-bold text-blue-600">Weekly</span>
+                </div>
+                <div className="flex items-end justify-between gap-1.5 h-12 pt-2">
+                  {visitorStats.weekly_stats &&
+                  visitorStats.weekly_stats.length > 0 ? (
+                    visitorStats.weekly_stats.map((stat, idx) => {
+                      const counts = visitorStats.weekly_stats.map(
+                        (s) => s.count,
+                      );
+                      const maxVal = Math.max(...counts, 1);
+                      const heightPct = Math.max(
+                        (stat.count / maxVal) * 100,
+                        15,
+                      );
+                      const dayLabel = stat.date ? stat.date.substring(8) : "";
+                      return (
+                        <div
+                          key={idx}
+                          className="flex-1 flex flex-col items-center gap-1"
+                        >
+                          <div
+                            style={{ height: `${heightPct}%` }}
+                            className="w-full bg-blue-500 hover:bg-blue-600 rounded-t transition-all"
+                            title={`${stat.date}: ${stat.count} visits`}
+                          />
+                          <span className="text-[9px] font-bold text-slate-400">
+                            {dayLabel}
+                          </span>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <span className="text-xs text-slate-400 italic">
+                      Belum ada data mingguan
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* ========================================================= */}
             {/* TAB: ANNOUNCEMENTS */}
             {/* ========================================================= */}
             {activeTab === "Announcements" && (
@@ -2084,16 +2922,28 @@ export default function Admin() {
                     New Announcement
                   </h3>
 
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {/* BARIS 1: Tanggal & URL */}
+                  <div className="grid md:grid-cols-3 gap-6">
+                    {/* BARIS 1: Tanggal Mulai, Tanggal Selesai, URL */}
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                        Publish Date
+                        Start Date / Tanggal Mulai *
                       </label>
                       <input
                         type="date"
                         value={newAnnDate}
                         onChange={(e) => setNewAnnDate(e.target.value)}
+                        className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#1e3a8a] transition-all font-medium text-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        End Date / Selesai (Opsional)
+                      </label>
+                      <input
+                        type="date"
+                        value={newAnnEndDate}
+                        min={newAnnDate}
+                        onChange={(e) => setNewAnnEndDate(e.target.value)}
                         className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#1e3a8a] transition-all font-medium text-slate-700"
                       />
                     </div>
@@ -2197,8 +3047,16 @@ export default function Admin() {
                               key={item.id_announcement}
                               className="hover:bg-slate-50/80 transition-colors group"
                             >
-                              <td className="px-8 py-5 font-bold text-slate-700">
-                                {item.date}
+                              <td className="px-8 py-5 font-bold text-slate-700 whitespace-nowrap">
+                                {item.end_date && item.end_date !== item.date ? (
+                                  <div>
+                                    <span className="text-[#1e3a8a]">{item.date}</span>
+                                    <span className="text-[10px] text-slate-400 block font-semibold">s/d</span>
+                                    <span className="text-indigo-700">{item.end_date}</span>
+                                  </div>
+                                ) : (
+                                  item.date
+                                )}
                               </td>
 
                               <td className="px-8 py-5">
@@ -3270,6 +4128,361 @@ export default function Admin() {
                           onClick={() =>
                             setCurrentDutyPage((p) =>
                               Math.min(totalDutyPages, p + 1),
+                            )
+                          }
+                          className="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          Next ▶
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================= */}
+            {/* TAB: INVAL DUTIES (PERGANTIAN PIKET SEMENTARA) */}
+            {/* ========================================================= */}
+            {activeTab === "Inval Duties" && (
+              <div className="space-y-8 animate-in fade-in duration-300">
+                {/* Header Actions */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm">
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                      <span className="p-2 bg-indigo-50 text-indigo-600 rounded-xl text-lg">
+                        🔄
+                      </span>
+                      Jadwal Inval Duty (Pergantian Sementara)
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Catat pergantian guru piket harian sementara yang terhubung dengan AI Chatbot.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setIsCreateInvalOpen(true)}
+                    className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-6 py-3.5 rounded-2xl transition-all shadow-md shadow-indigo-600/20 active:scale-95"
+                  >
+                    <span>➕</span> Tambah Inval Guru
+                  </button>
+                </div>
+
+                {/* Table Card */}
+                <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                  <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
+                    <h3 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                      <span className="text-xl">📋</span> Daftar Pergantian Piket
+                    </h3>
+                    <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
+                      <input
+                        type="date"
+                        value={filterInvalDate}
+                        onChange={(e) => setFilterInvalDate(e.target.value)}
+                        className="w-full md:w-auto px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-indigo-600 outline-none shadow-sm transition-all text-slate-600"
+                        title="Filter tanggal spesifik"
+                      />
+                      {filterInvalDate && (
+                        <button
+                          onClick={() => setFilterInvalDate("")}
+                          className="text-xs text-indigo-600 font-bold hover:underline px-2"
+                        >
+                          Reset
+                        </button>
+                      )}
+                      <div className="relative w-full md:w-80">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                          🔍
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Cari guru asli, pengganti, lokasi..."
+                          value={searchInval}
+                          onChange={(e) => setSearchInval(e.target.value)}
+                          className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-indigo-600 outline-none shadow-sm transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-white text-slate-400 font-bold text-[10px] uppercase tracking-widest border-b border-slate-100">
+                        <tr>
+                          <th className="px-6 py-5">Tanggal</th>
+                          <th className="px-6 py-5">Guru Asli</th>
+                          <th className="px-6 py-5">Guru Pengganti (Inval)</th>
+                          <th className="px-6 py-5">Lokasi</th>
+                          <th className="px-6 py-5">Jam / Sesi</th>
+                          <th className="px-6 py-5">Alasan / Catatan</th>
+                          <th className="px-6 py-5 text-center">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 text-sm">
+                        {currentInvalData.length > 0 ? (
+                          currentInvalData.map((item) => (
+                            <tr
+                              key={item.id_inval}
+                              className="hover:bg-slate-50/80 transition-colors group"
+                            >
+                              <td className="px-6 py-5 font-bold text-slate-800 whitespace-nowrap">
+                                📅 {item.date}
+                              </td>
+                              <td className="px-6 py-5 font-semibold text-rose-700">
+                                {item.original_teacher}
+                              </td>
+                              <td className="px-6 py-5 font-bold text-emerald-700">
+                                👤 {item.substitute_teacher}
+                              </td>
+                              <td className="px-6 py-5 text-slate-600 font-medium">
+                                <span className="inline-block px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200">
+                                  {item.location}
+                                </span>
+                              </td>
+                              <td className="px-6 py-5 font-mono text-xs font-bold text-slate-600">
+                                🕒 {item.time_slot}
+                              </td>
+                              <td className="px-6 py-5 text-xs text-slate-500 max-w-xs">
+                                {item.reason && (
+                                  <div className="font-semibold text-slate-700">
+                                    Alasan: {item.reason}
+                                  </div>
+                                )}
+                                {item.note && (
+                                  <div className="text-slate-400 italic">
+                                    Catatan: {item.note}
+                                  </div>
+                                )}
+                                {!item.reason && !item.note && (
+                                  <span className="text-slate-400">-</span>
+                                )}
+                              </td>
+                              <td className="px-6 py-5 text-center">
+                                <button
+                                  onClick={() => handleDeleteInval(item.id_inval)}
+                                  className="p-2 text-rose-500 hover:text-white hover:bg-rose-500 rounded-xl transition-colors shadow-sm"
+                                  title="Hapus Inval"
+                                >
+                                  🗑️
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan="7"
+                              className="p-12 text-center text-slate-400 font-medium italic"
+                            >
+                              Belum ada data pergantian piket (inval) tercatat.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination */}
+                  {totalInvalPages > 1 && (
+                    <div className="p-6 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <p className="text-xs text-slate-500 font-medium">
+                        Halaman{" "}
+                        <span className="font-bold text-slate-800">
+                          {currentInvalPage}
+                        </span>{" "}
+                        dari{" "}
+                        <span className="font-bold text-slate-800">
+                          {totalInvalPages}
+                        </span>{" "}
+                        ({filteredInvals.length} hasil)
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          disabled={currentInvalPage === 1}
+                          onClick={() =>
+                            setCurrentInvalPage((p) => Math.max(1, p - 1))
+                          }
+                          className="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          ◀ Prev
+                        </button>
+                        <button
+                          disabled={currentInvalPage === totalInvalPages}
+                          onClick={() =>
+                            setCurrentInvalPage((p) =>
+                              Math.min(totalInvalPages, p + 1),
+                            )
+                          }
+                          className="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          Next ▶
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================= */}
+            {/* TAB: EVENT SCHEDULES (JADWAL ACARA KHUSUS) */}
+            {/* ========================================================= */}
+            {activeTab === "Event Schedules" && (
+              <div className="space-y-8 animate-in fade-in duration-300">
+                {/* Header Actions */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm">
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                      <span className="p-2 bg-amber-50 text-amber-600 rounded-xl text-lg">
+                        ⭐
+                      </span>
+                      Jadwal Event & Agenda Khusus
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Kelola jadwal acara khusus (Assembly, Retreat, Ujian) yang menyesuaikan KBM dan dikenali oleh AI Chatbot.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setIsCreateEventOpen(true)}
+                    className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold px-6 py-3.5 rounded-2xl transition-all shadow-md shadow-amber-500/20 active:scale-95"
+                  >
+                    <span>➕</span> Buat Event Baru
+                  </button>
+                </div>
+
+                {/* Table Card */}
+                <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                  <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
+                    <h3 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                      <span className="text-xl">📋</span> Daftar Acara Khusus
+                    </h3>
+                    <div className="relative w-full md:w-80">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                        🔍
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Cari nama event, scope, deskripsi..."
+                        value={searchEvent}
+                        onChange={(e) => setSearchEvent(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-amber-500 outline-none shadow-sm transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-white text-slate-400 font-bold text-[10px] uppercase tracking-widest border-b border-slate-100">
+                        <tr>
+                          <th className="px-6 py-5">Periode Tanggal</th>
+                          <th className="px-6 py-5">Nama Event</th>
+                          <th className="px-6 py-5">Target Scope</th>
+                          <th className="px-6 py-5">Jam</th>
+                          <th className="px-6 py-5">Pengaruh KBM</th>
+                          <th className="px-6 py-5">Deskripsi</th>
+                          <th className="px-6 py-5 text-center">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 text-sm">
+                        {currentEventData.length > 0 ? (
+                          currentEventData.map((item) => (
+                            <tr
+                              key={item.id_event}
+                              className="hover:bg-slate-50/80 transition-colors group"
+                            >
+                              <td className="px-6 py-5 font-bold text-slate-800 whitespace-nowrap">
+                                📅 {item.date}
+                                {item.end_date && item.end_date !== item.date && (
+                                  <span className="block text-xs font-medium text-amber-700">
+                                    s/d {item.end_date}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-6 py-5 font-bold text-slate-900">
+                                {item.event_name}
+                              </td>
+                              <td className="px-6 py-5">
+                                <span className="inline-block px-3 py-1 bg-amber-100 text-amber-900 text-xs font-bold rounded-lg border border-amber-200">
+                                  {item.target_scope}
+                                </span>
+                              </td>
+                              <td className="px-6 py-5 font-mono text-xs font-bold text-slate-600">
+                                {item.time_slot ? `🕒 ${item.time_slot}` : "-"}
+                              </td>
+                              <td className="px-6 py-5">
+                                {item.affects_kbm ? (
+                                  <span className="inline-block px-2.5 py-1 bg-rose-100 text-rose-700 text-[10px] font-black uppercase tracking-wider rounded-md border border-rose-200">
+                                    Mengubah KBM
+                                  </span>
+                                ) : (
+                                  <span className="inline-block px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-md border border-emerald-200">
+                                    KBM Normal
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-6 py-5 text-xs text-slate-600 max-w-xs leading-relaxed">
+                                {item.description}
+                              </td>
+                              <td className="px-6 py-5 text-center whitespace-nowrap">
+                                <button
+                                  onClick={() => handleEditClickEvent(item)}
+                                  className="p-2 text-amber-600 hover:text-white hover:bg-amber-500 rounded-xl transition-colors shadow-sm mr-2"
+                                  title="Edit Event"
+                                >
+                                  ✏️
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteEvent(item.id_event)}
+                                  className="p-2 text-rose-500 hover:text-white hover:bg-rose-500 rounded-xl transition-colors shadow-sm"
+                                  title="Hapus Event"
+                                >
+                                  🗑️
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan="7"
+                              className="p-12 text-center text-slate-400 font-medium italic"
+                            >
+                              Belum ada jadwal event khusus tercatat.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination */}
+                  {totalEventPages > 1 && (
+                    <div className="p-6 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <p className="text-xs text-slate-500 font-medium">
+                        Halaman{" "}
+                        <span className="font-bold text-slate-800">
+                          {currentEventPage}
+                        </span>{" "}
+                        dari{" "}
+                        <span className="font-bold text-slate-800">
+                          {totalEventPages}
+                        </span>{" "}
+                        ({filteredEvents.length} hasil)
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          disabled={currentEventPage === 1}
+                          onClick={() =>
+                            setCurrentEventPage((p) => Math.max(1, p - 1))
+                          }
+                          className="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          ◀ Prev
+                        </button>
+                        <button
+                          disabled={currentEventPage === totalEventPages}
+                          onClick={() =>
+                            setCurrentEventPage((p) =>
+                              Math.min(totalEventPages, p + 1),
                             )
                           }
                           className="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"

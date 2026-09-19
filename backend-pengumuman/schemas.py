@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import date
 import models
 
@@ -16,6 +16,7 @@ class AnnouncementCombinedResponse(BaseModel):
     url_announcemet: Optional[str] = None
     url_image: Optional[str] = None
     date: date
+    end_date: Optional[date] = None
     admin_pembuat: Optional[AdminResponse]
 
     class Config:
@@ -30,6 +31,7 @@ class LoginRequest(BaseModel):
 class AnnouncementCreate(BaseModel):
     announcement: str
     date: date
+    end_date: Optional[date] = None
     url_announcemet: Optional[str] = None
     url_image: Optional[str] = None
     admin_update: int
@@ -150,4 +152,86 @@ class ChatResponse(BaseModel):
     reply: str
     provider_used: str
     status: str = "success"
+
+
+# ==========================================
+# SKEMA STATISTIK PENGUNJUNG (ADMIN ONLY)
+# ==========================================
+class TrackVisitRequest(BaseModel):
+    path: Optional[str] = "/announcements"
+
+
+class DailyVisitStat(BaseModel):
+    date: str
+    count: int
+
+
+class VisitorStatsResponse(BaseModel):
+    total_visits: int
+    today_visits: int
+    weekly_stats: List[DailyVisitStat]
+
+
+# ==========================================
+# SKEMA INVAL DUTY (SEMENTARA)
+# ==========================================
+class DutyInvalBase(BaseModel):
+    id_duty: Optional[int] = None
+    date: date
+    original_teacher: str
+    substitute_teacher: str
+    location: str
+    time_slot: str
+    reason: Optional[str] = None
+    note: Optional[str] = None
+
+
+class DutyInvalCreate(DutyInvalBase):
+    pass
+
+
+class DutyInvalResponse(DutyInvalBase):
+    id_inval: int
+    admin_update: int
+    admin_pembuat: Optional[AdminResponse] = None
+
+    class Config:
+        from_attributes = True
+
+
+# ==========================================
+# SKEMA EVENT SCHEDULE (JADWAL KHUSUS EVENT)
+# ==========================================
+class EventScheduleBase(BaseModel):
+    event_name: str
+    target_scope: str  # "Schoolwide", "Grade 1-3", dll.
+    date: date
+    end_date: Optional[date] = None
+    time_slot: Optional[str] = None
+    description: str
+    affects_kbm: bool = True
+
+
+class EventScheduleCreate(EventScheduleBase):
+    pass
+
+
+class EventScheduleUpdate(BaseModel):
+    event_name: Optional[str] = None
+    target_scope: Optional[str] = None
+    date: Optional[date] = None
+    end_date: Optional[date] = None
+    time_slot: Optional[str] = None
+    description: Optional[str] = None
+    affects_kbm: Optional[bool] = None
+
+
+class EventScheduleResponse(EventScheduleBase):
+    id_event: int
+    admin_update: int
+    admin_pembuat: Optional[AdminResponse] = None
+
+    class Config:
+        from_attributes = True
+
 

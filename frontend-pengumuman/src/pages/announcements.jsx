@@ -22,20 +22,37 @@ function Announcements() {
   const [isLoading, setIsLoading] = useState(true);
   const [announcements, setAnnouncements] = useState([]);
   const [birthdays, setBirthdays] = useState([]);
+  const [activeEvents, setActiveEvents] = useState([]);
 
   // State untuk Image Modal
   const [selectedImage, setSelectedImage] = useState(null);
+
+  // Anonymously track website visit once per session (Admin analytics only)
+  useEffect(() => {
+    try {
+      const hasTracked = sessionStorage.getItem("visit_tracked");
+      if (!hasTracked) {
+        const baseUrl = import.meta.env.VITE_API_BASE_URL;
+        fetch(`${baseUrl}/track-visit`, { method: "POST" })
+          .then(() => sessionStorage.setItem("visit_tracked", "true"))
+          .catch(() => {});
+      }
+    } catch (e) {
+      // Ignore error for tracking
+    }
+  }, []);
 
   // --- API Functions (REAL DATA MODE) ---
   const fetchData = useCallback(async () => {
     try {
       const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
-      const [announcementsResponse, birthdaysResponse] = await Promise.all([
-        fetch(`${baseUrl}/announcements?tanggal=${selectedDate}`),
-        // Request ke backend (meskipun backend mereturn semua data, tidak masalah)
-        fetch(`${baseUrl}/birthdays`),
-      ]);
+      const [announcementsResponse, birthdaysResponse, eventsResponse] =
+        await Promise.all([
+          fetch(`${baseUrl}/announcements?tanggal=${selectedDate}`),
+          fetch(`${baseUrl}/birthdays`),
+          fetch(`${baseUrl}/events/schedule?date=${selectedDate}`),
+        ]);
 
       // Handle Data Announcements
       if (announcementsResponse.ok) {
@@ -57,15 +74,9 @@ function Announcements() {
 
         // 2. Filter data dari backend
         const filteredBirthdays = birthData.filter((item) => {
-          // CATATAN: Ganti 'item.date' jika nama kolom dari backend-mu berbeda (misal: item.tanggal_lahir)
           const tanggalLahir = item.date;
-
           if (!tanggalLahir) return false;
-
-          // Pecah tanggal lahir dari database untuk ambil bulan dan hari saja
           const [, itemMonth, itemDay] = tanggalLahir.split("T")[0].split("-");
-
-          // Cocokkan bulan dan hari
           return itemMonth === selectedMonth && itemDay === selectedDay;
         });
 
@@ -76,10 +87,19 @@ function Announcements() {
         );
         setBirthdays([]);
       }
+
+      // Handle Data Special Events Schedule
+      if (eventsResponse.ok) {
+        const evData = await eventsResponse.json();
+        setActiveEvents(evData);
+      } else {
+        setActiveEvents([]);
+      }
     } catch (error) {
       console.error("Gagal menghubungi server:", error);
       setAnnouncements([]);
       setBirthdays([]);
+      setActiveEvents([]);
     } finally {
       setIsLoading(false);
     }
@@ -175,6 +195,51 @@ function Announcements() {
         </div>
 
 
+        {/* --- Special Active Events Banner --- */}
+        {activeEvents.length > 0 && (
+          <div className="mb-8 space-y-4">
+            {activeEvents.map((ev) => (
+              <div
+                key={ev.id_event}
+                className="p-6 rounded-[2rem] bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-2 border-amber-200 shadow-lg shadow-amber-500/5 relative overflow-hidden"
+              >
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-amber-500 text-white rounded-2xl text-xl shadow-md shadow-amber-500/20 flex-shrink-0">
+                      ⭐
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-amber-200/80 text-amber-900 border border-amber-300">
+                          Special Event: {ev.target_scope}
+                        </span>
+                        {ev.affects_kbm && (
+                          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
+                            Penyesuaian Jam KBM
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="text-xl font-black text-slate-900 mt-1.5 tracking-tight">
+                        {ev.event_name}
+                      </h3>
+                      <p className="text-sm text-slate-600 mt-1 leading-relaxed font-medium">
+                        {ev.description}
+                      </p>
+                    </div>
+                  </div>
+                  {ev.time_slot && (
+                    <div className="flex-shrink-0 md:text-right">
+                      <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-amber-200 text-xs font-bold text-amber-900 shadow-sm">
+                        🕒 {ev.time_slot}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* --- Events Section --- */}
           <section className="bg-white rounded-[2rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100 hover:scale-[1.01] transition-transform duration-300">
@@ -205,8 +270,10 @@ function Announcements() {
                     key={item.id_announcement}
                     className="group p-5 rounded-2xl bg-slate-50 hover:bg-blue-50 transition-all border border-transparent hover:border-blue-100 flex flex-col items-start"
                   >
-                    <span className="text-[10px] font-bold px-2 py-1 bg-white border border-slate-200 rounded-md text-slate-500 group-hover:text-blue-600 group-hover:border-blue-200 transition-colors uppercase tracking-wider">
-                      {item.date}
+                    <span className="text-[10px] font-bold px-2.5 py-1 bg-white border border-slate-200 rounded-md text-slate-600 group-hover:text-blue-600 group-hover:border-blue-200 transition-colors uppercase tracking-wider">
+                      {item.end_date && item.end_date !== item.date
+                        ? `📅 ${item.date} s/d ${item.end_date}`
+                        : item.date}
                     </span>
                     <p className="mt-3 text-slate-700 font-semibold leading-relaxed whitespace-pre-line w-full break-words">
                       {item.announcement}

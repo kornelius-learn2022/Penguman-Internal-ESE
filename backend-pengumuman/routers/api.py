@@ -1,9 +1,11 @@
 import os
-from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
+import hashlib
+import datetime
+from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile, Request
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
-from sqlalchemy import extract
+from sqlalchemy import extract, or_, and_, desc, func
 import models
 import schemas
 from database import get_db
@@ -62,8 +64,17 @@ async def login_admin(data: schemas.LoginRequest, db: Session = Depends(get_db))
 def get_announcements(tanggal: Optional[date] = None, db: Session = Depends(get_db)):
     query = db.query(models.Announcements)
     if tanggal:
-        query = query.filter(models.Announcements.date == tanggal)
-    return query.order_by(models.Announcements.date.desc()).all()
+        query = query.filter(
+            or_(
+                and_(models.Announcements.end_date == None, models.Announcements.date == tanggal),
+                and_(
+                    models.Announcements.end_date != None,
+                    models.Announcements.date <= tanggal,
+                    models.Announcements.end_date >= tanggal,
+                ),
+            )
+        )
+    return query.order_by(models.Announcements.date.desc(), models.Announcements.id_announcement.desc()).all()
 
 
 @router.post("/announcements")
@@ -71,6 +82,7 @@ async def create_announcement(
     announcement: str = Form(...),
     tanggal_masuk: date = Form(...),
     admin_update: int = Form(...),
+    end_date: Optional[date] = Form(None),
     url_announcemet: Optional[str] = Form(None),
     image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
@@ -86,6 +98,7 @@ async def create_announcement(
     new_entry = models.Announcements(
         announcement=announcement,
         date=tanggal_masuk,
+        end_date=end_date,
         admin_update=admin_update,
         url_announcemet=url_announcemet,
         url_image=img_url,
@@ -102,6 +115,7 @@ async def update_announcement(
     announcement: str = Form(...),
     tanggal_masuk: date = Form(...),
     admin_update: int = Form(...),
+    end_date: Optional[date] = Form(None),
     url_announcemet: Optional[str] = Form(None),
     image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
@@ -119,6 +133,7 @@ async def update_announcement(
 
     pengumuman_lama.announcement = announcement
     pengumuman_lama.date = tanggal_masuk
+    pengumuman_lama.end_date = end_date
     pengumuman_lama.admin_update = admin_update
     pengumuman_lama.url_announcemet = url_announcemet
     if image:
@@ -741,3 +756,277 @@ def sync_master_duties(
         "message": f"Berhasil sinkronisasi {len(records)} jadwal duty dari master CSV.",
         "total_records": len(records),
     }
+
+
+# ==========================================
+# ENDPOINT STATISTIK PENGUNJUNG (ADMIN ONLY)
+# ==========================================
+@router.post("/track-visit")
+async def track_visit(request: Request, db: Session = Depends(get_db)):
+    """
+    Mencatat kunjungan anonim ke website untuk statistik admin (Unique daily visitor).
+    """
+    try:
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            client_ip = forwarded.split(",")[0].strip()
+        else:
+            client_ip = request.client.host if request.client else "unknown"
+
+        user_agent = request.headers.get("User-Agent", "")[:250]
+        ip_hash = hashlib.sha256(client_ip.encode("utf-8")).hexdigest()
+        today = datetime.date.today()
+
+        exists = (
+            db.query(models.VisitorLog)
+            .filter(
+                models.VisitorLog.ip_hash == ip_hash,
+                models.VisitorLog.visit_date == today,
+            )
+            .first()
+        )
+
+        if not exists:
+            log = models.VisitorLog(
+                ip_hash=ip_hash,
+                user_agent=user_agent,
+                visit_date=today,
+                visited_at=datetime.datetime.utcnow(),
+            )
+            db.add(log)
+            db.commit()
+
+        return {"status": "ok"}
+    except Exception as e:
+        db.rollback()
+        return {"status": "error", "detail": str(e)}
+
+
+@router.get("/admin/visitor-stats", response_model=schemas.VisitorStatsResponse)
+def get_visitor_stats(
+    db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
+):
+    """
+    Mengambil ringkasan statistik kunjungan website khusus untuk Admin dashboard.
+    """
+    today = datetime.date.today()
+    total_visits = db.query(models.VisitorLog).count()
+    today_visits = (
+        db.query(models.VisitorLog)
+        .filter(models.VisitorLog.visit_date == today)
+        .count()
+    )
+
+    # 7 hari terakhir
+    start_date = today - datetime.timedelta(days=6)
+    weekly_records = (
+        db.query(models.VisitorLog.visit_date, func.count(models.VisitorLog.id_visit))
+        .filter(models.VisitorLog.visit_date >= start_date)
+        .group_by(models.VisitorLog.visit_date)
+        .order_by(models.VisitorLog.visit_date.asc())
+        .all()
+    )
+    records_dict = {row[0]: row[1] for row in weekly_records}
+
+    weekly_stats = []
+    for i in range(7):
+        d = start_date + datetime.timedelta(days=i)
+        weekly_stats.append(
+            schemas.DailyVisitStat(
+                date=d.isoformat(), count=records_dict.get(d, 0)
+            )
+        )
+
+    return schemas.VisitorStatsResponse(
+        total_visits=total_visits,
+        today_visits=today_visits,
+        weekly_stats=weekly_stats,
+    )
+
+
+# ==========================================
+# ENDPOINT INVAL DUTY (SEMENTARA)
+# ==========================================
+@router.get("/duties/inval", response_model=List[schemas.DutyInvalResponse])
+def get_duty_invals(
+    date: Optional[date] = None,
+    db: Session = Depends(get_db),
+):
+    """
+    Mendapatkan daftar inval duty / pergantian piket sementara.
+    Bisa difilter berdasarkan tanggal tertentu.
+    """
+    query = db.query(models.DutyInval)
+    if date:
+        query = query.filter(models.DutyInval.date == date)
+    return query.order_by(
+        models.DutyInval.date.desc(), models.DutyInval.id_inval.desc()
+    ).all()
+
+
+@router.post("/duties/inval", response_model=schemas.DutyInvalResponse)
+def create_duty_inval(
+    data: schemas.DutyInvalCreate,
+    db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
+):
+    """
+    Menambahkan pergantian guru piket (inval) sementara untuk tanggal tertentu.
+    """
+    new_inval = models.DutyInval(
+        id_duty=data.id_duty,
+        date=data.date,
+        original_teacher=data.original_teacher,
+        substitute_teacher=data.substitute_teacher,
+        location=data.location,
+        time_slot=data.time_slot,
+        reason=data.reason,
+        note=data.note,
+        admin_update=user_aktif.get("id_admin", 1),
+    )
+    db.add(new_inval)
+    db.commit()
+    db.refresh(new_inval)
+    return new_inval
+
+
+@router.delete("/duties/inval/{id_inval}")
+def delete_duty_inval(
+    id_inval: int,
+    db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
+):
+    """
+    Menghapus data pergantian guru piket (inval).
+    """
+    inval = (
+        db.query(models.DutyInval)
+        .filter(models.DutyInval.id_inval == id_inval)
+        .first()
+    )
+    if not inval:
+        raise HTTPException(
+            status_code=404, detail="Data inval duty tidak ditemukan."
+        )
+    db.delete(inval)
+    db.commit()
+    return {"message": "Data pergantian piket (inval) berhasil dihapus."}
+
+
+# ==========================================
+# ENDPOINT EVENT SCHEDULE (JADWAL KHUSUS EVENT)
+# ==========================================
+@router.get("/events/schedule", response_model=List[schemas.EventScheduleResponse])
+def get_event_schedules(
+    date: Optional[date] = None,
+    scope: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    """
+    Mendapatkan daftar event schedule khusus (Assembly, Retreat, Exam, dsb).
+    Bisa difilter berdasarkan tanggal aktif atau scope.
+    """
+    query = db.query(models.EventSchedule)
+    if date:
+        query = query.filter(
+            models.EventSchedule.date <= date,
+            or_(
+                models.EventSchedule.end_date == None,
+                models.EventSchedule.end_date >= date,
+            ),
+        )
+    if scope:
+        query = query.filter(models.EventSchedule.target_scope.ilike(f"%{scope}%"))
+    return query.order_by(
+        models.EventSchedule.date.desc(), models.EventSchedule.id_event.desc()
+    ).all()
+
+
+@router.post("/events/schedule", response_model=schemas.EventScheduleResponse)
+def create_event_schedule(
+    data: schemas.EventScheduleCreate,
+    db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
+):
+    """
+    Membuat jadwal event khusus baru (Schoolwide / Grade-specific).
+    """
+    new_event = models.EventSchedule(
+        event_name=data.event_name,
+        target_scope=data.target_scope,
+        date=data.date,
+        end_date=data.end_date,
+        time_slot=data.time_slot,
+        description=data.description,
+        affects_kbm=data.affects_kbm,
+        admin_update=user_aktif.get("id_admin", 1),
+    )
+    db.add(new_event)
+    db.commit()
+    db.refresh(new_event)
+    return new_event
+
+
+@router.put("/events/schedule/{id_event}", response_model=schemas.EventScheduleResponse)
+def update_event_schedule(
+    id_event: int,
+    data: schemas.EventScheduleUpdate,
+    db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
+):
+    """
+    Mengupdate jadwal event khusus.
+    """
+    event = (
+        db.query(models.EventSchedule)
+        .filter(models.EventSchedule.id_event == id_event)
+        .first()
+    )
+    if not event:
+        raise HTTPException(
+            status_code=404, detail="Jadwal event tidak ditemukan."
+        )
+
+    if data.event_name is not None:
+        event.event_name = data.event_name
+    if data.target_scope is not None:
+        event.target_scope = data.target_scope
+    if data.date is not None:
+        event.date = data.date
+    if data.end_date is not None:
+        event.end_date = data.end_date
+    if data.time_slot is not None:
+        event.time_slot = data.time_slot
+    if data.description is not None:
+        event.description = data.description
+    if data.affects_kbm is not None:
+        event.affects_kbm = data.affects_kbm
+
+    event.admin_update = user_aktif.get("id_admin", 1)
+    db.commit()
+    db.refresh(event)
+    return event
+
+
+@router.delete("/events/schedule/{id_event}")
+def delete_event_schedule(
+    id_event: int,
+    db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
+):
+    """
+    Menghapus jadwal event khusus.
+    """
+    event = (
+        db.query(models.EventSchedule)
+        .filter(models.EventSchedule.id_event == id_event)
+        .first()
+    )
+    if not event:
+        raise HTTPException(
+            status_code=404, detail="Jadwal event tidak ditemukan."
+        )
+    db.delete(event)
+    db.commit()
+    return {"message": "Jadwal event berhasil dihapus."}
