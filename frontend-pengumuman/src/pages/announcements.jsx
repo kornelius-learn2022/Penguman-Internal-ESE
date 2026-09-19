@@ -174,30 +174,6 @@ function Announcements() {
           </p>
         </div>
 
-        {/* --- AI Chatbot Info Banner for Teachers & Staff --- */}
-        <div className="mb-8 p-4 sm:p-5 bg-gradient-to-r from-blue-50 via-indigo-50/60 to-slate-50 rounded-2xl border border-blue-100/80 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xl shrink-0 shadow-md shadow-blue-500/20">
-              🤖
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-sm font-bold text-slate-800">
-                  Asisten AI Cita Hati Siap Membantu Rekan Guru
-                </h3>
-                <span className="text-[10px] bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-full">
-                  Trilingual 🇮🇩 🇬🇧 🇨🇳
-                </span>
-              </div>
-              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                Tanyakan jadwal kelas (Homeroom & Spesialis), tugas piket/duty (Backyard, Kantin, Lobby, Gate), jam istirahat, atau pengumuman via widget chat di pojok kanan bawah.
-              </p>
-              <p className="text-[11px] text-amber-700 font-semibold mt-1.5 flex items-center gap-1.5">
-                <span>⚠️</span> <em>Jika terdapat ketidaksesuaian atau kesalahan jadwal, silakan hubungi <strong>Mr. Kornel</strong>.</em>
-              </p>
-            </div>
-          </div>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* --- Events Section --- */}
