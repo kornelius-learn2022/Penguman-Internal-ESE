@@ -4,7 +4,6 @@ import {
   isTokenExpired,
   clearAdminSession,
   handleSessionExpired,
-  getSessionRemainingTime,
 } from "../utils/auth";
 
 export default function Admin() {
@@ -17,7 +16,6 @@ export default function Admin() {
   const [role, setRole] = useState(userRole);
   const id_admin = localStorage.getItem("id_admin") || "1";
   const [showPassword, setShowPassword] = useState(false);
-  const [sessionRemaining, setSessionRemaining] = useState("");
 
   const navigate = useNavigate();
 
@@ -37,15 +35,12 @@ export default function Admin() {
           navigate,
           "Sesi login Anda telah berakhir (12 jam). Silakan login kembali."
         );
-      } else {
-        const time = getSessionRemainingTime(tokenJWT);
-        setSessionRemaining(time.text);
       }
     };
 
     checkAndSyncSession();
-    // Cek berkala setiap 15 detik apakah token 12 jam kedaluwarsa
-    const interval = setInterval(checkAndSyncSession, 15000);
+    // Cek berkala setiap 30 detik apakah token 12 jam kedaluwarsa
+    const interval = setInterval(checkAndSyncSession, 30000);
     return () => clearInterval(interval);
   }, [tokenJWT, navigate]);
 
@@ -160,6 +155,7 @@ export default function Admin() {
   // Inval Duty Search & Pagination
   const [searchInval, setSearchInval] = useState("");
   const [filterInvalDate, setFilterInvalDate] = useState("");
+  const [filterInvalStatus, setFilterInvalStatus] = useState("all"); // "all" | "active" | "history"
   const [currentInvalPage, setCurrentInvalPage] = useState(1);
 
   // Event Schedules Search & Pagination
@@ -459,6 +455,13 @@ export default function Admin() {
   );
 
   // FILTER TABEL INVAL DUTY
+  const activeInvalCount = Array.isArray(dutyInvals)
+    ? dutyInvals.filter((item) => item.date >= today).length
+    : 0;
+  const historyInvalCount = Array.isArray(dutyInvals)
+    ? dutyInvals.filter((item) => item.date < today).length
+    : 0;
+
   const filteredInvals = Array.isArray(dutyInvals)
     ? dutyInvals.filter((item) => {
         const safeOrig = item.original_teacher || "";
@@ -472,7 +475,14 @@ export default function Admin() {
           safeLoc.toLowerCase().includes(query) ||
           safeReason.toLowerCase().includes(query);
         const matchesDate = !filterInvalDate || item.date === filterInvalDate;
-        return matchesSearch && matchesDate;
+        
+        const isUpcomingOrToday = item.date >= today;
+        const matchesStatus =
+          filterInvalStatus === "all" ||
+          (filterInvalStatus === "active" && isUpcomingOrToday) ||
+          (filterInvalStatus === "history" && !isUpcomingOrToday);
+
+        return matchesSearch && matchesDate && matchesStatus;
       })
     : [];
   const totalInvalPages = Math.ceil(filteredInvals.length / itemsPerPage);
@@ -2744,10 +2754,6 @@ export default function Admin() {
           <p className="text-[10px] font-black mt-2 py-1.5 px-4 bg-amber-400 text-blue-900 rounded-full inline-block uppercase tracking-widest shadow-sm">
             {role} ADMIN
           </p>
-          <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-blue-200/90 bg-white/10 py-1.5 px-3 rounded-full border border-white/15">
-            <span className="text-xs">⏳</span>
-            <span className="font-semibold">Sesi: {sessionRemaining || "12 Jam"}</span>
-          </div>
         </div>
         <nav className="flex-1 p-6 space-y-2 overflow-y-auto">
           {visibleMenu.map((item) => (
@@ -4169,21 +4175,75 @@ export default function Admin() {
 
                 {/* Table Card */}
                 <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                  <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
-                    <h3 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
-                      <span className="text-xl">📋</span> Daftar Pergantian Piket
-                    </h3>
+                  <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50/50">
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                        <span className="text-xl">📋</span> Daftar Pergantian Piket
+                      </h3>
+                      <div className="flex flex-wrap items-center gap-2 mt-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFilterInvalStatus("all");
+                            setCurrentInvalPage(1);
+                          }}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                            filterInvalStatus === "all"
+                              ? "bg-indigo-600 text-white shadow-sm"
+                              : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
+                          }`}
+                        >
+                          Semua ({dutyInvals.length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFilterInvalStatus("active");
+                            setCurrentInvalPage(1);
+                          }}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                            filterInvalStatus === "active"
+                              ? "bg-emerald-600 text-white shadow-sm"
+                              : "bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50"
+                          }`}
+                        >
+                          <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                          Aktif / Mendatang ({activeInvalCount})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFilterInvalStatus("history");
+                            setCurrentInvalPage(1);
+                          }}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                            filterInvalStatus === "history"
+                              ? "bg-slate-700 text-white shadow-sm"
+                              : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
+                          }`}
+                        >
+                          <span>📁</span>
+                          Riwayat Selesai ({historyInvalCount})
+                        </button>
+                      </div>
+                    </div>
                     <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
                       <input
                         type="date"
                         value={filterInvalDate}
-                        onChange={(e) => setFilterInvalDate(e.target.value)}
+                        onChange={(e) => {
+                          setFilterInvalDate(e.target.value);
+                          setCurrentInvalPage(1);
+                        }}
                         className="w-full md:w-auto px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-indigo-600 outline-none shadow-sm transition-all text-slate-600"
                         title="Filter tanggal spesifik"
                       />
                       {filterInvalDate && (
                         <button
-                          onClick={() => setFilterInvalDate("")}
+                          onClick={() => {
+                            setFilterInvalDate("");
+                            setCurrentInvalPage(1);
+                          }}
                           className="text-xs text-indigo-600 font-bold hover:underline px-2"
                         >
                           Reset
@@ -4197,7 +4257,10 @@ export default function Admin() {
                           type="text"
                           placeholder="Cari guru asli, pengganti, lokasi..."
                           value={searchInval}
-                          onChange={(e) => setSearchInval(e.target.value)}
+                          onChange={(e) => {
+                            setSearchInval(e.target.value);
+                            setCurrentInvalPage(1);
+                          }}
                           className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-indigo-600 outline-none shadow-sm transition-all"
                         />
                       </div>
@@ -4208,6 +4271,7 @@ export default function Admin() {
                     <table className="w-full text-left border-collapse">
                       <thead className="bg-white text-slate-400 font-bold text-[10px] uppercase tracking-widest border-b border-slate-100">
                         <tr>
+                          <th className="px-6 py-5">Status</th>
                           <th className="px-6 py-5">Tanggal</th>
                           <th className="px-6 py-5">Guru Asli</th>
                           <th className="px-6 py-5">Guru Pengganti (Inval)</th>
@@ -4224,6 +4288,18 @@ export default function Admin() {
                               key={item.id_inval}
                               className="hover:bg-slate-50/80 transition-colors group"
                             >
+                              <td className="px-6 py-5 whitespace-nowrap">
+                                {item.date >= today ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-lg border border-emerald-200">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Aktif
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-500 text-xs font-semibold rounded-lg border border-slate-200">
+                                    ✓ Selesai
+                                  </span>
+                                )}
+                              </td>
                               <td className="px-6 py-5 font-bold text-slate-800 whitespace-nowrap">
                                 📅 {item.date}
                               </td>
@@ -4270,7 +4346,7 @@ export default function Admin() {
                         ) : (
                           <tr>
                             <td
-                              colSpan="7"
+                              colSpan="8"
                               className="p-12 text-center text-slate-400 font-medium italic"
                             >
                               Belum ada data pergantian piket (inval) tercatat.
