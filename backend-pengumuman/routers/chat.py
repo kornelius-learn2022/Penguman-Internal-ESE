@@ -625,8 +625,20 @@ def build_school_context(user_message: str, db: Session) -> str:
                 "[PANDUAN AI: Pada tanggal ini, guru piket asli digantikan oleh guru pengganti (inval) di atas. Sebutkan secara jelas nama guru pengganti yang sedang bertugas!]\n"
             )
 
+        # Ambil riwayat absensi duty untuk tanggal target
+        duty_attendances = (
+            db.query(models.DutyAttendance)
+            .filter(models.DutyAttendance.date == effective_date)
+            .all()
+        )
+        duty_att_map = {
+            (att.location.strip().lower(), att.time_slot.strip().lower(), att.teacher_name.strip().lower()): att
+            for att in duty_attendances
+        }
+
         if duties:
             context_lines.append("=== INFORMASI JADWAL DUTY / PIKET GURU (TEACHER ON DUTY) ===")
+            context_lines.append("[PANDUAN STATUS KEHADIRAN GURU: ⚪ Belum Duty | 🟢 Lagi Duty | 🔵 Sudah Duty | 🟠 Tidak Duty]")
             active_duties_now = []
             
             day_order = {d: i for i, d in enumerate(DAYS_NAME)}
@@ -642,17 +654,61 @@ def build_school_context(user_message: str, db: Session) -> str:
                     if matching_inval:
                         teacher_display = f"{d.teacher_name} -> [DIGANTIKAN SEMENTARA OLEH {matching_inval.substitute_teacher}]"
                         active_teacher = f"{matching_inval.substitute_teacher} (Inval pengganti {d.teacher_name})"
+                        check_name = matching_inval.substitute_teacher.strip().lower()
                     else:
                         teacher_display = d.teacher_name
                         active_teacher = d.teacher_name
+                        check_name = d.teacher_name.strip().lower()
+
+                    # Evaluasi status lingkaran warna: ⚪ Grey, 🟢 Hijau, 🔵 Biru, 🟠 Orange
+                    att_hit = duty_att_map.get((d.location.strip().lower(), d.time_slot.strip().lower(), check_name))
+                    
+                    slot_start, slot_end = None, None
+                    try:
+                        cln = d.time_slot.replace(" ", "").replace("–", "-")
+                        pts = cln.split("-")
+                        if len(pts) == 2:
+                            s_h, s_m = [int(x) for x in pts[0].replace(":", ".").split(".")]
+                            e_h, e_m = [int(x) for x in pts[1].replace(":", ".").split(".")]
+                            slot_start = datetime.time(s_h, s_m)
+                            slot_end = datetime.time(e_h, e_m)
+                    except Exception:
+                        pass
+
+                    if att_hit:
+                        if effective_date < today:
+                            duty_status_tag = f"🔵 Sudah Duty (Hadir jam {att_hit.check_in_time.strftime('%H:%M')})"
+                        elif effective_date > today:
+                            duty_status_tag = f"🔵 Sudah Duty (Hadir jam {att_hit.check_in_time.strftime('%H:%M')})"
+                        else:
+                            if slot_start and slot_end:
+                                if now_time > slot_end:
+                                    duty_status_tag = f"🔵 Sudah Duty (Selesai piket, absen jam {att_hit.check_in_time.strftime('%H:%M')})"
+                                else:
+                                    duty_status_tag = f"🟢 Lagi Duty (Sedang bertugas, absen jam {att_hit.check_in_time.strftime('%H:%M')})"
+                            else:
+                                duty_status_tag = f"🔵 Sudah Duty (Absen jam {att_hit.check_in_time.strftime('%H:%M')})"
+                    else:
+                        if effective_date < today:
+                            duty_status_tag = "🟠 Tidak Duty (Waktu selesai & tidak absen)"
+                        elif effective_date > today:
+                            duty_status_tag = "⚪ Belum Duty"
+                        else:
+                            if slot_start and slot_end:
+                                if now_time > slot_end:
+                                    duty_status_tag = "🟠 Tidak Duty (Waktu lewat, tidak absen)"
+                                else:
+                                    duty_status_tag = "⚪ Belum Duty"
+                            else:
+                                duty_status_tag = "⚪ Belum Duty"
 
                     if query_time and is_time_in_slot(query_time, d.time_slot):
                         time_marker = f" <--- [SEDANG/TEPAT BERLANGSUNG PADA JAM {query_time_str}]"
                         active_duties_now.append(
-                            f"- Lokasi {d.location} ({d.category}): {active_teacher} (sesi {d.time_slot}){task_info}"
+                            f"- Lokasi {d.location} ({d.category}): {active_teacher} [{duty_status_tag}] (sesi {d.time_slot}){task_info}"
                         )
                     context_lines.append(
-                        f"  * {d.time_slot} | Lokasi: {d.location} | Kategori: {d.category} | Guru: {teacher_display}{task_info}{time_marker}"
+                        f"  * {d.time_slot} | Lokasi: {d.location} | Kategori: {d.category} | Guru: {teacher_display} [{duty_status_tag}]{task_info}{time_marker}"
                     )
 
             if query_time:
@@ -760,13 +816,19 @@ ATURAN WAJIB DIPATUHI:
 7. ATURAN JADWAL DUTY / JAGA PIKET (TEACHER ON DUTY):
    - Jika penanya bertanya tentang jadwal duty / jaga / piket (misal: duty di backyard, canteen, lobby/corridor, gate, atau duty guru):
      * Rujuk data pada bagian 'INFORMASI JADWAL DUTY / PIKET GURU (TEACHER ON DUTY)'.
+     * TAMPILKAN STATUS LINGKARAN WARNA:
+       WAJIB sertakan simbol lingkaran status kehadiran sesuai data konteks:
+       - ⚪ Belum Duty (Grey) -> belum mulai waktu tugas piket
+       - 🟢 Lagi Duty (Hijau) -> saat ini sedang berlangsung waktu piket
+       - 🔵 Sudah Duty (Biru) -> guru sudah melakukan absensi duty
+       - 🟠 Tidak Duty (Orange) -> waktu tugas sudah selesai/lewat tapi tidak absen
      * Jika ditanyakan waktu "sekarang" atau jam tertentu (misal: "who is on duty now?", "siapa duty jam 09.10"):
-       - Rujuk bagian 'ANALISIS DUTY TEPAT PADA JAM'. Jika ada guru yang bertugas pada jam tersebut, sebutkan nama guru, lokasi, dan kategori sesinya dengan jelas dan ramah.
-       - Jika saat ini berada di luar jam operasional duty / malam hari atau di luar sesi istirahat: jelaskan secara sopan bahwa saat ini bukan jam duty / di luar jam sekolah, lalu sertakan jadwal lengkap duty di lokasi tersebut untuk hari terkait.
+       - Rujuk bagian 'ANALISIS DUTY TEPAT PADA JAM'. Jika ada guru yang bertugas pada jam tersebut, sebutkan nama guru, status lingkaran kehadiran (⚪/🟢/🔵/🟠), lokasi, dan kategori sesinya dengan jelas dan ramah.
+       - Jika saat ini berada di luar jam operasional duty / malam hari atau di luar sesi istirahat: jelaskan secara sopan bahwa saat ini bukan jam duty / di luar jam sekolah, lalu sertakan jadwal lengkap duty di lokasi tersebut untuk hari terkait lengkap dengan status lingkarannya.
      * Jika ditanyakan jadwal duty seorang guru (misal: "jadwal duty Mr. Kornelius"):
-       - Tampilkan seluruh sesi jaga beliau secara teratur berdasarkan hari, jam, lokasi, dan tugasnya.
+       - Tampilkan seluruh sesi jaga beliau secara teratur berdasarkan hari, jam, lokasi, tugas, dan status lingkarannya.
      * Jika ditanyakan hari dan jam tertentu (misal: "who is on duty in the backyard on Monday at 09.10?"):
-       - Sebutkan nama guru yang bertugas di lokasi dan jam tersebut dalam bahasa yang sesuai.
+       - Sebutkan nama guru yang bertugas di lokasi dan jam tersebut dalam bahasa yang sesuai beserta status lingkarannya.
 
 8. ATURAN LAPOR KESALAHAN JADWAL (CONTACT PERSON):
    - Jika penanya bertanya ke mana harus melapor jika jadwal salah, atau penanya menyatakan bahwa jadwalnya salah / tidak sesuai:

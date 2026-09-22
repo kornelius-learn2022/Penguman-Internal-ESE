@@ -7,6 +7,7 @@ import ProtectedRoute from "./pages/ProtectedRoute";
 import Announcements from "./pages/announcements";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
+import DutyAttendance from "./pages/DutyAttendance";
 
 const generateRandomHash = () => {
   return (
@@ -31,6 +32,10 @@ function App() {
           apapun teks acak di belakang "/announcements/", tetap buka halaman Announcements.
         */}
         <Route path="/announcements/:id" element={<Announcements />} />
+
+        {/* RUTE KHUSUS ABSENSI DUTY GURU */}
+        <Route path="/duty-attendance" element={<DutyAttendance />} />
+        <Route path="/absen-duty" element={<DutyAttendance />} />
 
         <Route
           path="/admin"

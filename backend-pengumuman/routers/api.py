@@ -74,7 +74,7 @@ def get_announcements(tanggal: Optional[date] = None, db: Session = Depends(get_
                 ),
             )
         )
-    return query.order_by(models.Announcements.date.desc(), models.Announcements.id_announcement.desc()).all()
+    return query.order_by(models.Announcements.is_pinned.desc(), models.Announcements.date.desc(), models.Announcements.id_announcement.desc()).all()
 
 
 @router.post("/announcements")
@@ -83,6 +83,7 @@ async def create_announcement(
     tanggal_masuk: date = Form(...),
     admin_update: int = Form(...),
     end_date: Optional[date] = Form(None),
+    is_pinned: bool = Form(False),
     url_announcemet: Optional[str] = Form(None),
     image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
@@ -99,6 +100,7 @@ async def create_announcement(
         announcement=announcement,
         date=tanggal_masuk,
         end_date=end_date,
+        is_pinned=is_pinned,
         admin_update=admin_update,
         url_announcemet=url_announcemet,
         url_image=img_url,
@@ -116,6 +118,7 @@ async def update_announcement(
     tanggal_masuk: date = Form(...),
     admin_update: int = Form(...),
     end_date: Optional[date] = Form(None),
+    is_pinned: Optional[bool] = Form(None),
     url_announcemet: Optional[str] = Form(None),
     image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
@@ -136,6 +139,8 @@ async def update_announcement(
     pengumuman_lama.end_date = end_date
     pengumuman_lama.admin_update = admin_update
     pengumuman_lama.url_announcemet = url_announcemet
+    if is_pinned is not None:
+        pengumuman_lama.is_pinned = is_pinned
     if image:
         pengumuman_lama.url_image = save_image_locally(image)
 
@@ -143,6 +148,31 @@ async def update_announcement(
     db.refresh(pengumuman_lama)
 
     return {"message": "Pengumuman berhasil diupdate!", "data": pengumuman_lama}
+
+
+@router.patch("/announcements/{id_announcement}/toggle-pin")
+async def toggle_pin_announcement(
+    id_announcement: int,
+    db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
+):
+    pengumuman = (
+        db.query(models.Announcements)
+        .filter(models.Announcements.id_announcement == id_announcement)
+        .first()
+    )
+    if not pengumuman:
+        raise HTTPException(status_code=404, detail="Pengumuman tidak ditemukan.")
+
+    pengumuman.is_pinned = not bool(pengumuman.is_pinned)
+    pengumuman.admin_update = user_aktif.get("id_admin", 1)
+    db.commit()
+    db.refresh(pengumuman)
+
+    return {
+        "message": f"Pengumuman berhasil {'disematkan (pin)' if pengumuman.is_pinned else 'dilepas pin'}.",
+        "is_pinned": pengumuman.is_pinned,
+    }
 
 
 @router.delete("/announcements/{id_announcement}")
@@ -1030,3 +1060,458 @@ def delete_event_schedule(
     db.delete(event)
     db.commit()
     return {"message": "Jadwal event berhasil dihapus."}
+
+
+# ==========================================
+# ENDPOINT ABSENSI DUTY GURU (TEACHER DUTY ATTENDANCE)
+# ==========================================
+def get_now_wib():
+    utc_now = datetime.datetime.now(datetime.timezone.utc)
+    wib_now = utc_now + datetime.timedelta(hours=7)
+    return wib_now
+
+
+def parse_time_slot_range(time_slot: str):
+    try:
+        clean = time_slot.replace(" ", "").replace("–", "-")
+        parts = clean.split("-")
+        if len(parts) == 2:
+            s_hour, s_min = [int(x) for x in parts[0].replace(":", ".").split(".")]
+            e_hour, e_min = [int(x) for x in parts[1].replace(":", ".").split(".")]
+            return datetime.time(s_hour, s_min), datetime.time(e_hour, e_min)
+    except Exception:
+        pass
+    return None, None
+
+
+@router.get("/duty-attendance/locations", response_model=List[str])
+def get_duty_locations(db: Session = Depends(get_db)):
+    """
+    Mengambil seluruh daftar lokasi tempat duty dari master teacher_duties.
+    """
+    results = (
+        db.query(models.TeacherDuty.location)
+        .distinct()
+        .order_by(models.TeacherDuty.location.asc())
+        .all()
+    )
+    return [r[0] for r in results if r[0]]
+
+
+@router.get("/duty-attendance/teachers", response_model=List[str])
+def get_all_duty_teachers(db: Session = Depends(get_db)):
+    """
+    Mengambil daftar seluruh guru untuk dropdown pemilihan guru.
+    """
+    duty_teachers = (
+        db.query(models.TeacherDuty.teacher_name).distinct().all()
+    )
+    schedule_teachers = (
+        db.query(models.TeacherSchedule.teacher_name).distinct().all()
+    )
+    all_names = set(
+        [r[0].strip() for r in duty_teachers if r[0] and r[0].strip()]
+        + [r[0].strip() for r in schedule_teachers if r[0] and r[0].strip()]
+    )
+    return sorted(list(all_names))
+
+
+@router.get("/duty-attendance/sessions", response_model=List[schemas.DutySessionDetail])
+def get_duty_sessions(
+    tanggal: Optional[date] = None,
+    location: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    """
+    Mengambil seluruh sesi duty per tempat dan waktu pada tanggal tertentu,
+    menghitung status kehadiran guru (⚪ Belum Duty, 🟢 Lagi Duty, 🔵 Sudah Duty, 🟠 Tidak Duty)
+    berdasarkan waktu saat ini dan riwayat absensi.
+    """
+    wib_now = get_now_wib()
+    today_wib = wib_now.date()
+    target_date = tanggal if tanggal else today_wib
+    day_of_week = target_date.strftime("%A")  # Monday, Tuesday, ...
+
+    # Query master duties for this day
+    query = db.query(models.TeacherDuty).filter(
+        models.TeacherDuty.day_of_week.ilike(day_of_week)
+    )
+    if location:
+        query = query.filter(models.TeacherDuty.location == location)
+
+    duties = query.order_by(
+        models.TeacherDuty.time_slot.asc(),
+        models.TeacherDuty.location.asc(),
+        models.TeacherDuty.id_duty.asc(),
+    ).all()
+
+    # Query invals for this date
+    invals = (
+        db.query(models.DutyInval)
+        .filter(models.DutyInval.date == target_date)
+        .all()
+    )
+    # Map invals: (location, time_slot, original_teacher) -> substitute_teacher
+    inval_map = {}
+    for inv in invals:
+        key = (inv.location.strip().lower(), inv.time_slot.strip().lower(), inv.original_teacher.strip().lower())
+        inval_map[key] = inv.substitute_teacher.strip()
+
+    # Query attendances for this date
+    attendances = (
+        db.query(models.DutyAttendance)
+        .filter(models.DutyAttendance.date == target_date)
+        .order_by(models.DutyAttendance.check_in_time.asc())
+        .all()
+    )
+    # Map attendance: (location, time_slot, teacher_name) -> attendance_record
+    attendance_map = {}
+    attendance_by_session = {}
+    for att in attendances:
+        sess_key = f"{att.location}_{att.time_slot}"
+        attendance_by_session.setdefault(sess_key, []).append(att)
+        t_key = (att.location.strip().lower(), att.time_slot.strip().lower(), att.teacher_name.strip().lower())
+        attendance_map[t_key] = att
+
+    # Group duties by (location, time_slot)
+    grouped_sessions = {}
+    for duty in duties:
+        sess_key = f"{duty.location}_{duty.time_slot}"
+        if sess_key not in grouped_sessions:
+            grouped_sessions[sess_key] = {
+                "session_key": sess_key,
+                "location": duty.location,
+                "time_slot": duty.time_slot,
+                "duty_category": duty.category,
+                "grade_scope": duty.grade_scope,
+                "passcode": "citahati",
+                "raw_teachers": [],
+            }
+        grouped_sessions[sess_key]["raw_teachers"].append(duty)
+
+    # Build response list
+    results = []
+    current_time_wib = wib_now.time()
+
+    for sess_key, sess_info in grouped_sessions.items():
+        loc_clean = sess_info["location"].strip().lower()
+        slot_clean = sess_info["time_slot"].strip().lower()
+        start_t, end_t = parse_time_slot_range(sess_info["time_slot"])
+
+        scheduled_teacher_statuses = []
+        for d in sess_info["raw_teachers"]:
+            orig_teacher = d.teacher_name.strip()
+            inv_key = (loc_clean, slot_clean, orig_teacher.lower())
+            is_inval = inv_key in inval_map
+            effective_teacher = inval_map[inv_key] if is_inval else orig_teacher
+
+            att_key = (loc_clean, slot_clean, effective_teacher.lower())
+            att_record = attendance_map.get(att_key)
+
+            if att_record:
+                is_attended = True
+                check_in_str = att_record.check_in_time.strftime("%H:%M:%S")
+                if target_date < today_wib:
+                    status = "Sudah Duty"
+                    color = "blue"
+                    icon = "🔵"
+                elif target_date > today_wib:
+                    status = "Sudah Duty"
+                    color = "blue"
+                    icon = "🔵"
+                else:
+                    if start_t and end_t:
+                        if current_time_wib > end_t:
+                            status = "Sudah Duty"
+                            color = "blue"
+                            icon = "🔵"
+                        else:
+                            status = "Lagi Duty"
+                            color = "green"
+                            icon = "🟢"
+                    else:
+                        status = "Sudah Duty"
+                        color = "blue"
+                        icon = "🔵"
+            else:
+                is_attended = False
+                check_in_str = None
+                if target_date < today_wib:
+                    status = "Tidak Duty"
+                    color = "orange"
+                    icon = "🟠"
+                elif target_date > today_wib:
+                    status = "Belum Duty"
+                    color = "grey"
+                    icon = "⚪"
+                else:
+                    if start_t and end_t:
+                        if current_time_wib > end_t:
+                            status = "Tidak Duty"
+                            color = "orange"
+                            icon = "🟠"
+                        else:
+                            # Jika belum absen (baik jam piket belum mulai atau sedang berlangsung)
+                            status = "Belum Duty"
+                            color = "grey"
+                            icon = "⚪"
+                    else:
+                        status = "Belum Duty"
+                        color = "grey"
+                        icon = "⚪"
+
+            task_info = d.task
+            if is_inval:
+                task_info = f"Inval pengganti dari {orig_teacher}. {task_info or ''}".strip()
+
+            scheduled_teacher_statuses.append(
+                schemas.DutyTeacherStatus(
+                    teacher_name=effective_teacher,
+                    status=status,
+                    color=color,
+                    icon=icon,
+                    is_attended=is_attended,
+                    check_in_time=check_in_str,
+                    is_scheduled=True,
+                    task=task_info,
+                )
+            )
+
+        attended_list = attendance_by_session.get(sess_key, [])
+        total_scheduled = len(scheduled_teacher_statuses)
+        total_attended = len([s for s in scheduled_teacher_statuses if s.is_attended])
+
+        results.append(
+            schemas.DutySessionDetail(
+                session_key=sess_key,
+                location=sess_info["location"],
+                time_slot=sess_info["time_slot"],
+                duty_category=sess_info["duty_category"],
+                grade_scope=sess_info["grade_scope"],
+                passcode="citahati",
+                scheduled_teachers=scheduled_teacher_statuses,
+                attended_list=attended_list,
+                total_scheduled=total_scheduled,
+                total_attended=total_attended,
+            )
+        )
+
+    return results
+
+
+@router.post("/duty-attendance/check-in", response_model=schemas.DutyAttendanceResponse)
+def submit_duty_attendance(
+    data: schemas.DutyAttendanceCreate,
+    db: Session = Depends(get_db),
+):
+    """
+    Melakukan absensi guru pada sesi duty tertentu dengan password 'citahati'.
+    Sistem otomatis memeriksa apakah guru terjadwal duty (atau pengganti inval)
+    dan menandainya di database.
+    """
+    # 1. Validasi Password Tetap "citahati"
+    if data.password.strip().lower() != "citahati":
+        raise HTTPException(
+            status_code=400,
+            detail="Password salah! Password absensi duty adalah 'citahati'.",
+        )
+
+    teacher_clean = data.teacher_name.strip()
+    loc_clean = data.location.strip()
+    slot_clean = data.time_slot.strip()
+
+    # 2. Cek apakah guru sudah absen di sesi dan lokasi ini
+    already_attended = (
+        db.query(models.DutyAttendance)
+        .filter(
+            models.DutyAttendance.date == data.date,
+            models.DutyAttendance.location == loc_clean,
+            models.DutyAttendance.time_slot == slot_clean,
+            models.DutyAttendance.teacher_name.ilike(teacher_clean),
+        )
+        .first()
+    )
+    if already_attended:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{teacher_clean} sudah tercatat absen untuk duty di {loc_clean} ({slot_clean}).",
+        )
+
+    # 3. Cek apakah guru terjadwal duty pada hari, tempat, dan jam tersebut
+    day_of_week = data.date.strftime("%A")
+    scheduled_duty = (
+        db.query(models.TeacherDuty)
+        .filter(
+            models.TeacherDuty.day_of_week.ilike(day_of_week),
+            models.TeacherDuty.location.ilike(loc_clean),
+            models.TeacherDuty.time_slot.ilike(slot_clean),
+            models.TeacherDuty.teacher_name.ilike(f"%{teacher_clean}%"),
+        )
+        .first()
+    )
+
+    # Cek juga di duty invals (guru pengganti sah)
+    inval_record = (
+        db.query(models.DutyInval)
+        .filter(
+            models.DutyInval.date == data.date,
+            models.DutyInval.location.ilike(loc_clean),
+            models.DutyInval.time_slot.ilike(slot_clean),
+            models.DutyInval.substitute_teacher.ilike(f"%{teacher_clean}%"),
+        )
+        .first()
+    )
+
+    if scheduled_duty or inval_record:
+        is_scheduled = True
+        status_label = "Terjadwal Duty"
+    else:
+        is_scheduled = False
+        status_label = "Bukan Jadwal Duty / Pengganti"
+
+    now_wib = get_now_wib()
+
+    new_attendance = models.DutyAttendance(
+        date=data.date,
+        location=loc_clean,
+        time_slot=slot_clean,
+        duty_category=data.duty_category,
+        teacher_name=teacher_clean,
+        check_in_time=now_wib,
+        is_scheduled_duty=is_scheduled,
+        status_label=status_label,
+        verified_code="citahati",
+        notes=data.notes,
+        created_at=now_wib,
+    )
+
+    db.add(new_attendance)
+    db.commit()
+    db.refresh(new_attendance)
+    return new_attendance
+
+
+@router.get("/duty-attendance/records", response_model=List[schemas.DutyAttendanceResponse])
+def get_duty_attendance_records(
+    tanggal: Optional[date] = None,
+    location: Optional[str] = None,
+    is_scheduled_duty: Optional[bool] = None,
+    db: Session = Depends(get_db),
+):
+    """
+    Mengambil riwayat log absensi guru lengkap.
+    """
+    query = db.query(models.DutyAttendance)
+    if tanggal:
+        query = query.filter(models.DutyAttendance.date == tanggal)
+    if location:
+        query = query.filter(models.DutyAttendance.location == location)
+    if is_scheduled_duty is not None:
+        query = query.filter(models.DutyAttendance.is_scheduled_duty == is_scheduled_duty)
+
+    return query.order_by(
+        models.DutyAttendance.date.desc(),
+        models.DutyAttendance.check_in_time.desc(),
+        models.DutyAttendance.id_attendance.desc(),
+    ).all()
+
+
+@router.delete("/duty-attendance/records/{id_attendance}")
+def delete_duty_attendance_record(
+    id_attendance: int,
+    db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
+):
+    """
+    Menghapus data absensi duty (Admin only).
+    """
+    record = (
+        db.query(models.DutyAttendance)
+        .filter(models.DutyAttendance.id_attendance == id_attendance)
+        .first()
+    )
+    if not record:
+        raise HTTPException(
+            status_code=404, detail="Data absensi tidak ditemukan."
+        )
+    db.delete(record)
+    db.commit()
+    return {"message": "Data absensi berhasil dihapus."}
+
+
+@router.post("/duty-attendance/seed-dummy")
+def seed_dummy_duty_attendance(
+    db: Session = Depends(get_db),
+):
+    """
+    Membuat 1 set data dummy absensi untuk hari ini agar dapat memverifikasi
+    status (Sudah Duty, Bukan Jadwal Duty) langsung di tampilan.
+    """
+    wib_now = get_now_wib()
+    today_date = wib_now.date()
+    day_of_week = today_date.strftime("%A")
+
+    # Cari 1 duty yang ada hari ini
+    sample_duty = (
+        db.query(models.TeacherDuty)
+        .filter(models.TeacherDuty.day_of_week.ilike(day_of_week))
+        .first()
+    )
+
+    if not sample_duty:
+        # Jika hari ini weekend (Sabtu/Minggu), ambil sampel Senin
+        sample_duty = db.query(models.TeacherDuty).first()
+
+    if not sample_duty:
+        raise HTTPException(status_code=404, detail="Data master duty kosong.")
+
+    # 1. Hapus jika sudah ada dummy sebelumnya di slot ini agar tidak dobel
+    db.query(models.DutyAttendance).filter(
+        models.DutyAttendance.date == today_date,
+        models.DutyAttendance.location == sample_duty.location,
+        models.DutyAttendance.time_slot == sample_duty.time_slot,
+    ).delete()
+
+    # 2. Buat absensi untuk guru yang memang terjadwal (Terjadwal Duty -> 🔵 Sudah Duty)
+    dummy_scheduled = models.DutyAttendance(
+        date=today_date,
+        location=sample_duty.location,
+        time_slot=sample_duty.time_slot,
+        duty_category=sample_duty.category,
+        teacher_name=sample_duty.teacher_name,
+        check_in_time=wib_now,
+        is_scheduled_duty=True,
+        status_label="Terjadwal Duty",
+        verified_code="citahati",
+        notes="Absensi dummy uji coba - Terjadwal Duty",
+        created_at=wib_now,
+    )
+    db.add(dummy_scheduled)
+
+    # 3. Buat absensi untuk guru yang TIDAK terjadwal (Bukan Jadwal Duty / Pengganti)
+    dummy_unscheduled = models.DutyAttendance(
+        date=today_date,
+        location=sample_duty.location,
+        time_slot=sample_duty.time_slot,
+        duty_category=sample_duty.category,
+        teacher_name="Mr. Dummy Pengganti",
+        check_in_time=wib_now,
+        is_scheduled_duty=False,
+        status_label="Bukan Jadwal Duty / Pengganti",
+        verified_code="citahati",
+        notes="Absensi dummy uji coba - Guru Pengganti / Luar Jadwal",
+        created_at=wib_now,
+    )
+    db.add(dummy_unscheduled)
+
+    db.commit()
+
+    return {
+        "message": "Data dummy absensi duty berhasil dibuat untuk pengujian!",
+        "date": today_date.isoformat(),
+        "location": sample_duty.location,
+        "time_slot": sample_duty.time_slot,
+        "scheduled_teacher": sample_duty.teacher_name,
+        "unscheduled_teacher": "Mr. Dummy Pengganti",
+    }
+

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List
-from datetime import date
+from datetime import date, datetime
 import models
 
 
@@ -17,6 +17,7 @@ class AnnouncementCombinedResponse(BaseModel):
     url_image: Optional[str] = None
     date: date
     end_date: Optional[date] = None
+    is_pinned: bool = False
     admin_pembuat: Optional[AdminResponse]
 
     class Config:
@@ -32,6 +33,7 @@ class AnnouncementCreate(BaseModel):
     announcement: str
     date: date
     end_date: Optional[date] = None
+    is_pinned: bool = False
     url_announcemet: Optional[str] = None
     url_image: Optional[str] = None
     admin_update: int
@@ -233,5 +235,61 @@ class EventScheduleResponse(EventScheduleBase):
 
     class Config:
         from_attributes = True
+
+
+# ==========================================
+# SKEMA ABSENSI DUTY GURU (TEACHER DUTY ATTENDANCE)
+# ==========================================
+class DutyAttendanceCreate(BaseModel):
+    date: date
+    location: str
+    time_slot: str
+    duty_category: Optional[str] = None
+    teacher_name: str
+    password: str
+    notes: Optional[str] = None
+
+
+class DutyAttendanceResponse(BaseModel):
+    id_attendance: int
+    date: date
+    location: str
+    time_slot: str
+    duty_category: Optional[str] = None
+    teacher_name: str
+    check_in_time: datetime
+    is_scheduled_duty: bool
+    status_label: str
+    verified_code: str
+    notes: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class DutyTeacherStatus(BaseModel):
+    teacher_name: str
+    status: str  # "Belum Duty" | "Lagi Duty" | "Sudah Duty" | "Tidak Duty"
+    color: str  # "grey" | "green" | "blue" | "orange"
+    icon: str  # "⚪" | "🟢" | "🔵" | "🟠"
+    is_attended: bool = False
+    check_in_time: Optional[str] = None
+    is_scheduled: bool = True
+    task: Optional[str] = None
+
+
+class DutySessionDetail(BaseModel):
+    session_key: str
+    location: str
+    time_slot: str
+    duty_category: Optional[str] = None
+    grade_scope: Optional[str] = None
+    passcode: str = "citahati"
+    scheduled_teachers: List[DutyTeacherStatus] = []
+    attended_list: List[DutyAttendanceResponse] = []
+    total_scheduled: int = 0
+    total_attended: int = 0
+
 
 

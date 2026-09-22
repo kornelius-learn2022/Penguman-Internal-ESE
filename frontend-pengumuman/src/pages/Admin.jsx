@@ -113,6 +113,9 @@ export default function Admin() {
   const today = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(today);
 
+  const [newAnnIsPinned, setNewAnnIsPinned] = useState(false);
+  const [editAnnIsPinned, setEditAnnIsPinned] = useState(false);
+
   // ==========================================
   // 2. DATA STATE (DIKOSONGKAN UNTUK API)
   // ==========================================
@@ -123,6 +126,15 @@ export default function Admin() {
   const [duties, setDuties] = useState([]);
   const [dutyInvals, setDutyInvals] = useState([]);
   const [eventSchedules, setEventSchedules] = useState([]);
+  const [dutyAttendanceRecords, setDutyAttendanceRecords] = useState([]);
+  const [dutyAttendanceSessions, setDutyAttendanceSessions] = useState([]);
+  const [dutyAttendanceLocations, setDutyAttendanceLocations] = useState([]);
+  const [filterAttDate, setFilterAttDate] = useState(today);
+  const [filterAttLoc, setFilterAttLoc] = useState("");
+  const [filterAttScheduled, setFilterAttScheduled] = useState("all");
+  const [searchAttTeacher, setSearchAttTeacher] = useState("");
+  const [currentAttPage, setCurrentAttPage] = useState(1);
+  const [isSeedingAttDummy, setIsSeedingAttDummy] = useState(false);
   const [visitorStats, setVisitorStats] = useState({
     total_visits: 0,
     today_visits: 0,
@@ -511,6 +523,30 @@ export default function Admin() {
     currentEventPage * itemsPerPage,
   );
 
+  // FILTER TABEL DUTY ATTENDANCE (ABSENSI GURU PIKET)
+  const filteredAttendanceRecords = Array.isArray(dutyAttendanceRecords)
+    ? dutyAttendanceRecords.filter((rec) => {
+        const matchTeacher = searchAttTeacher
+          ? (rec.teacher_name || "")
+              .toLowerCase()
+              .includes(searchAttTeacher.toLowerCase())
+          : true;
+        const matchScheduled =
+          filterAttScheduled === "all"
+            ? true
+            : filterAttScheduled === "scheduled"
+              ? rec.is_scheduled_duty === true
+              : rec.is_scheduled_duty === false;
+        return matchTeacher && matchScheduled;
+      })
+    : [];
+  const totalAttPages =
+    Math.ceil(filteredAttendanceRecords.length / itemsPerPage) || 1;
+  const currentAttData = filteredAttendanceRecords.slice(
+    (currentAttPage - 1) * itemsPerPage,
+    currentAttPage * itemsPerPage,
+  );
+
   // Reset pagination saat pencarian atau filter diubah
   useEffect(() => setCurrentAnnPage(1), [searchAnnouncements, filterAnnDate]);
   useEffect(() => setCurrentBdayPage(1), [searchBirthdays, filterBdayDate]);
@@ -524,6 +560,10 @@ export default function Admin() {
   );
   useEffect(() => setCurrentInvalPage(1), [searchInval, filterInvalDate]);
   useEffect(() => setCurrentEventPage(1), [searchEvent]);
+  useEffect(
+    () => setCurrentAttPage(1),
+    [searchAttTeacher, filterAttDate, filterAttLoc, filterAttScheduled],
+  );
 
   // ==========================================
   // 8. FUNGSI POST (SUBMIT DATA) KE API
@@ -542,6 +582,7 @@ export default function Admin() {
       formData.append("admin_update", id_admin);
       if (newAnnUrl) formData.append("url_announcemet", newAnnUrl);
       if (newAnnImage) formData.append("image", newAnnImage);
+      formData.append("is_pinned", newAnnIsPinned);
 
       const res = await apiFetch(`${baseUrl}/announcements`, {
         method: "POST",
@@ -558,6 +599,7 @@ export default function Admin() {
       setNewAnnouncement("");
       setNewAnnUrl("");
       setNewAnnImage(null);
+      setNewAnnIsPinned(false);
     } catch (error) {
       alert(error.message);
     } finally {
@@ -1142,6 +1184,115 @@ export default function Admin() {
   };
 
   // ==========================================
+  // HANDLERS ABSENSI DUTY GURU
+  // ==========================================
+  const fetchDutyAttendanceData = useCallback(async () => {
+    try {
+      let recUrl = `${baseUrl}/duty-attendance/records?tanggal=${filterAttDate}`;
+      if (filterAttLoc) recUrl += `&location=${encodeURIComponent(filterAttLoc)}`;
+      let sessUrl = `${baseUrl}/duty-attendance/sessions?tanggal=${filterAttDate}`;
+      if (filterAttLoc) sessUrl += `&location=${encodeURIComponent(filterAttLoc)}`;
+
+      const [resRec, resSess, resLoc] = await Promise.all([
+        apiFetch(recUrl, { headers: { Authorization: `Bearer ${tokenJWT}` } }),
+        apiFetch(sessUrl, { headers: { Authorization: `Bearer ${tokenJWT}` } }),
+        apiFetch(`${baseUrl}/duty-attendance/locations`, { headers: { Authorization: `Bearer ${tokenJWT}` } }),
+      ]);
+
+      if (resRec.ok) setDutyAttendanceRecords(await resRec.json());
+      if (resSess.ok) setDutyAttendanceSessions(await resSess.json());
+      if (resLoc.ok) setDutyAttendanceLocations(await resLoc.json());
+    } catch (e) {
+      console.error("Gagal mengambil data absensi duty:", e);
+    }
+  }, [baseUrl, tokenJWT, filterAttDate, filterAttLoc, apiFetch]);
+
+  useEffect(() => {
+    if (activeTab === "Duty Attendance") {
+      fetchDutyAttendanceData();
+    }
+  }, [activeTab, filterAttDate, filterAttLoc, fetchDutyAttendanceData]);
+
+  const handleDeleteAttendanceRecord = async (id_attendance) => {
+    if (!window.confirm("Apakah Anda yakin ingin menghapus data absensi ini?")) return;
+    try {
+      const res = await apiFetch(`${baseUrl}/duty-attendance/records/${id_attendance}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${tokenJWT}` },
+      });
+      if (!res.ok) throw new Error("Gagal menghapus absensi");
+      setPopupData({ title: "Data Absensi Berhasil Dihapus!" });
+      fetchDutyAttendanceData();
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  const handleAdminSeedDummy = async () => {
+    setIsSeedingAttDummy(true);
+    try {
+      const res = await apiFetch(`${baseUrl}/duty-attendance/seed-dummy`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${tokenJWT}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Gagal seed dummy");
+      setPopupData({ title: "Data Dummy Absensi Berhasil Dibuat!" });
+      setFilterAttDate(data.date);
+      fetchDutyAttendanceData();
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setIsSeedingAttDummy(false);
+    }
+  };
+
+  const handleExportAttendanceCSV = () => {
+    if (!dutyAttendanceRecords.length) {
+      alert("Tidak ada data absensi untuk diekspor!");
+      return;
+    }
+    const headers = [
+      "ID",
+      "Tanggal",
+      "Jam Absen",
+      "Nama Guru",
+      "Tempat/Lokasi",
+      "Sesi Waktu",
+      "Kategori",
+      "Status Jadwal",
+      "Password",
+      "Catatan",
+    ];
+    const rows = dutyAttendanceRecords.map((r) => [
+      r.id_attendance,
+      r.date,
+      new Date(r.check_in_time).toLocaleTimeString("id-ID"),
+      `"${r.teacher_name.replace(/"/g, '""')}"`,
+      `"${r.location.replace(/"/g, '""')}"`,
+      `"${r.time_slot}"`,
+      `"${r.duty_category || ""}"`,
+      r.is_scheduled_duty ? "Terjadwal Duty" : "Bukan Jadwal Duty / Pengganti",
+      r.verified_code,
+      `"${(r.notes || "").replace(/"/g, '""')}"`,
+    ]);
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `Rekap_Absensi_Duty_${filterAttDate || "All"}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // ==========================================
   // 9. MENU SIDEBAR
   // ==========================================
   const menuItems = [
@@ -1168,6 +1319,12 @@ export default function Admin() {
       id: "Inval Duties",
       label: "Inval Duty (Sementara)",
       icon: "🔄",
+      allowed: ["Normal", "Super"],
+    },
+    {
+      id: "Duty Attendance",
+      label: "Absensi Duty",
+      icon: "📋",
       allowed: ["Normal", "Super"],
     },
     {
@@ -1201,6 +1358,7 @@ export default function Admin() {
     setEditAnnouncementText(item.announcement);
     setEditAnnImage(item.url_image); // URL string dari backend
     setEditAnnUrl(item.url_announcemet);
+    setEditAnnIsPinned(Boolean(item.is_pinned));
   };
 
   const handleUpdateAnnouncement = async () => {
@@ -1214,6 +1372,7 @@ export default function Admin() {
       if (editAnnEndDate) formData.append("end_date", editAnnEndDate);
       formData.append("announcement", editAnnouncementText);
       formData.append("admin_update", id_admin);
+      formData.append("is_pinned", editAnnIsPinned);
       if (editAnnUrl) formData.append("url_announcemet", editAnnUrl);
 
       // Kirim image hanya jika user benar-benar memilih file baru (tipe Object/File)
@@ -1236,6 +1395,22 @@ export default function Admin() {
       alert(error.message);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleTogglePin = async (id_announcement) => {
+    try {
+      const res = await apiFetch(
+        `${baseUrl}/announcements/${id_announcement}/toggle-pin`,
+        {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${tokenJWT}` },
+        }
+      );
+      if (!res.ok) throw new Error("Gagal mengubah status pin");
+      await fetchSemuaData();
+    } catch (err) {
+      alert(err.message);
     }
   };
 
@@ -1514,6 +1689,23 @@ export default function Admin() {
                 <p className="text-[10px] text-slate-400 mt-1 italic">
                   Kosongkan jika tidak ingin mengubah gambar.
                 </p>
+              </div>
+
+              {/* Checkbox Sematkan (Pin) */}
+              <div className="flex items-center gap-3 p-3 bg-amber-50/70 border border-amber-200 rounded-2xl">
+                <input
+                  type="checkbox"
+                  id="editAnnIsPinned"
+                  checked={editAnnIsPinned}
+                  onChange={(e) => setEditAnnIsPinned(e.target.checked)}
+                  className="w-4 h-4 accent-amber-600 rounded cursor-pointer"
+                />
+                <label
+                  htmlFor="editAnnIsPinned"
+                  className="text-xs font-bold text-slate-700 cursor-pointer select-none"
+                >
+                  📌 Sematkan Pengumuman Ini di Paling Atas (Sticky Pin)
+                </label>
               </div>
 
               {/* Tombol Aksi */}
@@ -2992,6 +3184,23 @@ export default function Admin() {
                         className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#1e3a8a] transition-all text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 text-slate-600 cursor-pointer"
                       />
                     </div>
+
+                    <div className="flex items-center gap-3 p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl md:col-span-2">
+                      <input
+                        type="checkbox"
+                        id="newAnnIsPinned"
+                        checked={newAnnIsPinned}
+                        onChange={(e) => setNewAnnIsPinned(e.target.checked)}
+                        className="w-4 h-4 accent-amber-600 rounded cursor-pointer"
+                      />
+                      <label
+                        htmlFor="newAnnIsPinned"
+                        className="text-xs font-bold text-slate-700 cursor-pointer select-none"
+                      >
+                        📌 Sematkan Pengumuman Ini di Paling Atas (Sticky Pin)
+                      </label>
+                    </div>
+
                     <div className="flex items-end">
                       <button
                         onClick={handlePostAnnouncement}
@@ -3054,6 +3263,11 @@ export default function Admin() {
                               className="hover:bg-slate-50/80 transition-colors group"
                             >
                               <td className="px-8 py-5 font-bold text-slate-700 whitespace-nowrap">
+                                {item.is_pinned && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-md uppercase tracking-wider mb-1 block w-fit">
+                                    📌 Pinned
+                                  </span>
+                                )}
                                 {item.end_date && item.end_date !== item.date ? (
                                   <div>
                                     <span className="text-[#1e3a8a]">{item.date}</span>
@@ -3109,6 +3323,17 @@ export default function Admin() {
                               </td>
                               <td className="px-8 py-5">
                                 <div className="flex justify-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    onClick={() => handleTogglePin(item.id_announcement)}
+                                    title={item.is_pinned ? "Lepas Sematan (Unpin)" : "Sematkan di Atas (Pin)"}
+                                    className={`px-3 py-2 text-xs font-bold rounded-xl transition-colors ${
+                                      item.is_pinned
+                                        ? "bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200"
+                                        : "bg-slate-100 text-slate-600 hover:bg-amber-50 hover:text-amber-700"
+                                    }`}
+                                  >
+                                    {item.is_pinned ? "📌 Unpin" : "📌 Pin"}
+                                  </button>
                                   <button
                                     onClick={() => handleEditClick(item)}
                                     className="px-4 py-2 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
@@ -4561,6 +4786,438 @@ export default function Admin() {
                               Math.min(totalEventPages, p + 1),
                             )
                           }
+                          className="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          Next ▶
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB: DUTY ATTENDANCE (ABSENSI GURU PIKET) */}
+            {activeTab === "Duty Attendance" && (
+              <div className="space-y-8 animate-in fade-in duration-300">
+                {/* Header Actions */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm">
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                      <span className="p-2 bg-indigo-50 text-indigo-600 rounded-xl text-lg">
+                        📋
+                      </span>
+                      Rekap & Pemantauan Absensi Guru Piket
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Data absensi guru piket harian berdasarkan slot waktu & lokasi. Dievaluasi otomatis sejak pukul 06:00 WIB dengan password tetap{" "}
+                      <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
+                        citahati
+                      </span>
+                      .
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <button
+                      onClick={handleAdminSeedDummy}
+                      disabled={isSeedingAttDummy}
+                      className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-4 py-3 rounded-2xl transition-all shadow-md shadow-amber-500/20 active:scale-95 disabled:opacity-50"
+                      title="Generate 1 data uji coba untuk hari ini"
+                    >
+                      <span>🧪</span> {isSeedingAttDummy ? "Membuat Dummy..." : "Uji Coba Data Dummy"}
+                    </button>
+                    <button
+                      onClick={handleExportAttendanceCSV}
+                      className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-3 rounded-2xl transition-all shadow-md shadow-emerald-600/20 active:scale-95"
+                    >
+                      <span>📥</span> Ekspor CSV
+                    </button>
+                    <a
+                      href="/duty-attendance"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-3 rounded-2xl transition-all shadow-md shadow-indigo-600/20 active:scale-95"
+                    >
+                      <span>🔗</span> Buka Halaman Absen Duty ↗
+                    </a>
+                  </div>
+                </div>
+
+                {/* KPI Status Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {/* Belum Duty */}
+                  <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-slate-400 text-base">⚪</span>
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Belum Duty</span>
+                      </div>
+                      <div className="text-2xl font-black text-slate-700">
+                        {dutyAttendanceSessions.reduce(
+                          (acc, sess) => acc + (sess.teachers || []).filter((t) => t.status === "Belum Duty").length,
+                          0
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-1">Jadwal belum mulai</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-bold">
+                      ⚪
+                    </div>
+                  </div>
+
+                  {/* Lagi Duty */}
+                  <div className="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100 shadow-sm flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-emerald-500 text-base">🟢</span>
+                        <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Lagi Duty</span>
+                      </div>
+                      <div className="text-2xl font-black text-emerald-700">
+                        {dutyAttendanceSessions.reduce(
+                          (acc, sess) => acc + (sess.teachers || []).filter((t) => t.status === "Lagi Duty").length,
+                          0
+                        )}
+                      </div>
+                      <p className="text-[11px] text-emerald-600 mt-1">Sedang jam piket aktif</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold animate-pulse">
+                      🟢
+                    </div>
+                  </div>
+
+                  {/* Sudah Duty */}
+                  <div className="bg-blue-50/50 p-5 rounded-2xl border border-blue-100 shadow-sm flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-blue-500 text-base">🔵</span>
+                        <span className="text-xs font-semibold text-blue-700 uppercase tracking-wider">Sudah Duty</span>
+                      </div>
+                      <div className="text-2xl font-black text-blue-700">
+                        {dutyAttendanceRecords.length}
+                      </div>
+                      <p className="text-[11px] text-blue-600 mt-1">Absensi terverifikasi</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                      🔵
+                    </div>
+                  </div>
+
+                  {/* Tidak Duty */}
+                  <div className="bg-amber-50/50 p-5 rounded-2xl border border-amber-100 shadow-sm flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-amber-500 text-base">🟠</span>
+                        <span className="text-xs font-semibold text-amber-700 uppercase tracking-wider">Tidak Duty</span>
+                      </div>
+                      <div className="text-2xl font-black text-amber-700">
+                        {dutyAttendanceSessions.reduce(
+                          (acc, sess) => acc + (sess.teachers || []).filter((t) => t.status === "Tidak Duty").length,
+                          0
+                        )}
+                      </div>
+                      <p className="text-[11px] text-amber-600 mt-1">Waktu lewat tanpa absen</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-bold">
+                      🟠
+                    </div>
+                  </div>
+                </div>
+
+                {/* Filter & Search Bar */}
+                <div className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm space-y-4">
+                  <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                    {/* Tanggal & Hari Ini */}
+                    <div className="flex items-center gap-2 w-full md:w-auto">
+                      <label className="text-xs font-bold text-slate-500 whitespace-nowrap">Tanggal:</label>
+                      <input
+                        type="date"
+                        value={filterAttDate}
+                        onChange={(e) => setFilterAttDate(e.target.value)}
+                        className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <button
+                        onClick={() => setFilterAttDate(today)}
+                        className="px-3 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl text-xs font-bold transition-all"
+                      >
+                        Hari Ini
+                      </button>
+                    </div>
+
+                    {/* Lokasi Dropdown */}
+                    <div className="flex items-center gap-2 w-full md:w-auto">
+                      <label className="text-xs font-bold text-slate-500 whitespace-nowrap">Lokasi:</label>
+                      <select
+                        value={filterAttLoc}
+                        onChange={(e) => setFilterAttLoc(e.target.value)}
+                        className="w-full md:w-56 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        <option value="">Semua Lokasi Duty</option>
+                        {dutyAttendanceLocations.map((loc) => (
+                          <option key={loc} value={loc}>
+                            {loc}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Status Terjadwal */}
+                    <div className="flex items-center gap-2 w-full md:w-auto">
+                      <label className="text-xs font-bold text-slate-500 whitespace-nowrap">Kategori:</label>
+                      <select
+                        value={filterAttScheduled}
+                        onChange={(e) => setFilterAttScheduled(e.target.value)}
+                        className="w-full md:w-48 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        <option value="all">Semua Status Guru</option>
+                        <option value="scheduled">🛡️ Terjadwal Duty</option>
+                        <option value="unscheduled">⚠️ Pengganti / Luar Jadwal</option>
+                      </select>
+                    </div>
+
+                    {/* Search Teacher */}
+                    <div className="relative w-full md:w-64">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
+                        🔍
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Cari nama guru..."
+                        value={searchAttTeacher}
+                        onChange={(e) => setSearchAttTeacher(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sesi Duty Hari Ini Overview Cards */}
+                {dutyAttendanceSessions.length > 0 && (
+                  <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <span>🕒</span> Status Slot Sesi Hari Ini ({dutyAttendanceSessions.length} Sesi Terjadwal)
+                      </h4>
+                      <span className="text-xs text-slate-400 font-medium">
+                        WIB Real-time
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {dutyAttendanceSessions.map((sess, idx) => (
+                        <div
+                          key={`${sess.location}-${sess.time_slot}-${idx}`}
+                          className={`p-4 rounded-2xl border transition-all ${
+                            sess.is_current_slot
+                              ? "bg-emerald-50/60 border-emerald-300 ring-2 ring-emerald-500/20"
+                              : sess.is_passed_slot
+                              ? "bg-slate-50/80 border-slate-200"
+                              : "bg-white border-slate-200"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div>
+                              <span className="inline-block px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[11px] font-bold rounded-lg mb-1">
+                                {sess.location}
+                              </span>
+                              <div className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                                <span>⏰</span> {sess.time_slot}
+                              </div>
+                            </div>
+                            {sess.is_current_slot ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500 text-white text-[10px] font-extrabold rounded-full animate-pulse">
+                                🟢 Sedang Aktif
+                              </span>
+                            ) : sess.is_passed_slot ? (
+                              <span className="px-2 py-0.5 bg-slate-200 text-slate-600 text-[10px] font-semibold rounded-full">
+                                Selesai
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-semibold rounded-full">
+                                Menunggu
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="space-y-1.5 mt-3 pt-3 border-t border-slate-100">
+                            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                              Guru Terjadwal:
+                            </div>
+                            {sess.teachers.map((t, tIdx) => {
+                              const icon =
+                                t.status === "Sudah Duty"
+                                  ? "🔵"
+                                  : t.status === "Lagi Duty"
+                                  ? "🟢"
+                                  : t.status === "Tidak Duty"
+                                  ? "🟠"
+                                  : "⚪";
+                              const badgeClass =
+                                t.status === "Sudah Duty"
+                                  ? "bg-blue-100 text-blue-700 border-blue-200"
+                                  : t.status === "Lagi Duty"
+                                  ? "bg-emerald-100 text-emerald-800 border-emerald-300 font-bold"
+                                  : t.status === "Tidak Duty"
+                                  ? "bg-amber-100 text-amber-800 border-amber-300"
+                                  : "bg-slate-100 text-slate-600 border-slate-200";
+
+                              return (
+                                <div
+                                  key={tIdx}
+                                  className="flex items-center justify-between text-xs py-1 px-2 rounded-lg hover:bg-white/60 transition-all"
+                                >
+                                  <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+                                    <span>{icon}</span> {t.teacher_name}
+                                  </span>
+                                  <span className={`text-[10px] px-2 py-0.5 rounded-full border ${badgeClass}`}>
+                                    {t.status_label}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Table Log Absensi Card */}
+                <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                  <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
+                    <h3 className="text-base font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                      <span className="text-lg">📜</span> Log Data Absensi Terverifikasi ({filteredAttendanceRecords.length})
+                    </h3>
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <span>Password:</span>
+                      <span className="font-mono font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
+                        citahati
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-100 bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                          <th className="py-4 px-6 text-center w-12">#</th>
+                          <th className="py-4 px-6">Waktu Absen</th>
+                          <th className="py-4 px-6">Nama Guru</th>
+                          <th className="py-4 px-6">Tempat / Lokasi</th>
+                          <th className="py-4 px-6">Sesi Waktu</th>
+                          <th className="py-4 px-6">Kategori</th>
+                          <th className="py-4 px-6">Status Terjadwal</th>
+                          <th className="py-4 px-6">Kode Valid</th>
+                          <th className="py-4 px-6">Catatan</th>
+                          <th className="py-4 px-6 text-center">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-xs">
+                        {currentAttData.length === 0 ? (
+                          <tr>
+                            <td colSpan={10} className="py-12 text-center text-slate-400">
+                              <div className="flex flex-col items-center justify-center gap-2">
+                                <span className="text-3xl">📋</span>
+                                <p className="font-medium text-sm">
+                                  Belum ada catatan absensi duty untuk filter ini.
+                                </p>
+                                <p className="text-xs text-slate-400">
+                                  Klik tombol <strong className="text-amber-600 font-bold">"Uji Coba Data Dummy"</strong> di atas untuk membuat data tes hari ini.
+                                </p>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : (
+                          currentAttData.map((rec, index) => (
+                            <tr
+                              key={rec.id_attendance}
+                              className="hover:bg-slate-50/70 transition-colors"
+                            >
+                              <td className="py-4 px-6 text-center text-slate-400 font-mono">
+                                {(currentAttPage - 1) * itemsPerPage + index + 1}
+                              </td>
+                              <td className="py-4 px-6">
+                                <div className="font-bold text-slate-800">
+                                  {new Date(rec.check_in_time).toLocaleTimeString("id-ID", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    second: "2-digit",
+                                  })}{" "}
+                                  WIB
+                                </div>
+                                <div className="text-[11px] text-slate-400 font-mono">
+                                  {rec.date}
+                                </div>
+                              </td>
+                              <td className="py-4 px-6 font-bold text-slate-800">
+                                {rec.teacher_name}
+                              </td>
+                              <td className="py-4 px-6">
+                                <span className="px-2.5 py-1 bg-indigo-50 border border-indigo-100 text-indigo-700 font-semibold rounded-lg">
+                                  {rec.location}
+                                </span>
+                              </td>
+                              <td className="py-4 px-6 font-mono text-slate-600 font-semibold">
+                                {rec.time_slot}
+                              </td>
+                              <td className="py-4 px-6 text-slate-600">
+                                {rec.duty_category || "-"}
+                              </td>
+                              <td className="py-4 px-6">
+                                {rec.is_scheduled_duty ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                    🛡️ Terjadwal Duty
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                    ⚠️ Bukan Jadwal / Pengganti
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-4 px-6 font-mono font-bold text-slate-700">
+                                <span className="px-2 py-0.5 bg-slate-100 rounded text-[11px]">
+                                  {rec.verified_code}
+                                </span>
+                              </td>
+                              <td className="py-4 px-6 text-slate-500 max-w-xs truncate" title={rec.notes}>
+                                {rec.notes || "-"}
+                              </td>
+                              <td className="py-4 px-6 text-center">
+                                <button
+                                  onClick={() => handleDeleteAttendanceRecord(rec.id_attendance)}
+                                  className="px-2.5 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl text-xs font-bold transition-all"
+                                  title="Hapus rekaman absensi ini"
+                                >
+                                  🗑️ Hapus
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination */}
+                  {totalAttPages > 1 && (
+                    <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+                      <p className="text-xs font-semibold text-slate-500">
+                        Menampilkan {(currentAttPage - 1) * itemsPerPage + 1} -{" "}
+                        {Math.min(currentAttPage * itemsPerPage, filteredAttendanceRecords.length)}{" "}
+                        dari {filteredAttendanceRecords.length} catatan
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          disabled={currentAttPage === 1}
+                          onClick={() => setCurrentAttPage((p) => Math.max(1, p - 1))}
+                          className="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          ◀ Prev
+                        </button>
+                        <span className="text-xs font-bold text-slate-700 px-2">
+                          Hal {currentAttPage} / {totalAttPages}
+                        </span>
+                        <button
+                          disabled={currentAttPage === totalAttPages}
+                          onClick={() => setCurrentAttPage((p) => Math.min(totalAttPages, p + 1))}
                           className="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                         >
                           Next ▶

@@ -49,6 +49,7 @@ class Announcements(Base):
 
     date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=True)
+    is_pinned = Column(Boolean, default=False, nullable=False)
 
     # FOREIGN KEY: Menghubungkan ke tabel Admin
     admin_update = Column(
@@ -184,5 +185,23 @@ class EventSchedule(Base):
     )
 
     admin_pembuat = relationship("Admin", backref="event_schedules")
+
+
+class DutyAttendance(Base):
+    __tablename__ = "duty_attendances"
+
+    id_attendance = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    date = Column(Date, nullable=False, index=True)
+    location = Column(String(100), nullable=False, index=True)
+    time_slot = Column(String(50), nullable=False)
+    duty_category = Column(String(100), nullable=True)
+    teacher_name = Column(String(100), nullable=False, index=True)
+    check_in_time = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    is_scheduled_duty = Column(Boolean, default=True, nullable=False)
+    status_label = Column(String(50), nullable=False)  # "Terjadwal Duty" / "Bukan Jadwal Duty"
+    verified_code = Column(String(50), default="citahati", nullable=False)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
 
 
