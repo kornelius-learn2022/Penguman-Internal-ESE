@@ -4854,7 +4854,7 @@ export default function Admin() {
                       </div>
                       <div className="text-2xl font-black text-slate-700">
                         {dutyAttendanceSessions.reduce(
-                          (acc, sess) => acc + (sess.teachers || []).filter((t) => t.status === "Belum Duty").length,
+                          (acc, sess) => acc + (sess.scheduled_teachers || []).filter((t) => t.status === "Belum Duty").length,
                           0
                         )}
                       </div>
@@ -4874,7 +4874,7 @@ export default function Admin() {
                       </div>
                       <div className="text-2xl font-black text-emerald-700">
                         {dutyAttendanceSessions.reduce(
-                          (acc, sess) => acc + (sess.teachers || []).filter((t) => t.status === "Lagi Duty").length,
+                          (acc, sess) => acc + (sess.scheduled_teachers || []).filter((t) => t.status === "Lagi Duty").length,
                           0
                         )}
                       </div>
@@ -4911,7 +4911,7 @@ export default function Admin() {
                       </div>
                       <div className="text-2xl font-black text-amber-700">
                         {dutyAttendanceSessions.reduce(
-                          (acc, sess) => acc + (sess.teachers || []).filter((t) => t.status === "Tidak Duty").length,
+                          (acc, sess) => acc + (sess.scheduled_teachers || []).filter((t) => t.status === "Tidak Duty").length,
                           0
                         )}
                       </div>
@@ -5041,7 +5041,7 @@ export default function Admin() {
                             <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                               Guru Terjadwal:
                             </div>
-                            {sess.teachers.map((t, tIdx) => {
+                            {sess.scheduled_teachers.map((t, tIdx) => {
                               const icon =
                                 t.status === "Sudah Duty"
                                   ? "🔵"
