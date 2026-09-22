@@ -13,6 +13,7 @@ export default function DutyAttendance() {
   // Forms state keyed by session_key
   const [forms, setForms] = useState({});
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+  const [submittedSessions, setSubmittedSessions] = useState({});
 
   useEffect(() => {
     // Real-time clock update
@@ -92,7 +93,7 @@ export default function DutyAttendance() {
       const data = await res.json();
       if (res.ok) {
         showToast("Attendance successfully recorded in system!", "success");
-        // Reset form
+        setSubmittedSessions(prev => ({ ...prev, [session.session_key]: true }));
         setSessionFormField(session.session_key, "teacherName", "");
         setSessionFormField(session.session_key, "password", "");
         fetchData();
@@ -288,113 +289,126 @@ export default function DutyAttendance() {
                   </div>
 
                   {/* Card Body */}
-                  <div className="p-6 space-y-6">
-                    {/* SECTION: FORM ABSENSI */}
-                    <div>
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-3">
-                        ✍️ Duty Check-In Form
-                      </span>
+                  <div className="p-6 space-y-5">
+                    {(() => {
+                      const isAlreadyAttended =
+                        Boolean(submittedSessions[session.session_key]) ||
+                        (session.attended_list && session.attended_list.length > 0 && (
+                          (session.scheduled_teachers && session.scheduled_teachers.length > 0 && session.scheduled_teachers.every(t => t.is_attended)) ||
+                          (session.attended_list.length >= (session.total_scheduled || 1))
+                        ));
 
-                      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5">
-                        <div className="space-y-3">
-                          {/* Input Nama Guru */}
-                          <div>
-                            <label className="block text-[10px] font-bold text-slate-500 mb-1">
-                              Select Teacher Name *
-                            </label>
-                            <div className="grid grid-cols-1 gap-2">
-                              {/* Pilihan Cepat dari Guru Terjadwal */}
-                              <select
-                                value={currentForm.teacherName}
-                                onChange={(e) =>
-                                  setSessionFormField(session.session_key, "teacherName", e.target.value)
-                                }
-                                className="w-full bg-white border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
-                              >
-                                <option value="">-- Select Scheduled Teacher --</option>
-                                {session.scheduled_teachers.map((st, idx) => (
-                                  <option key={idx} value={st.teacher_name}>
-                                    {st.teacher_name} {st.is_attended ? "🔵" : ""}
-                                  </option>
-                                ))}
-                              </select>
+                      const availableScheduled = (session.scheduled_teachers || []).filter(st => !st.is_attended);
 
-                              {/* Dropdown Inval / Substitute */}
-                              <select
-                                onChange={(e) => {
-                                  if (e.target.value) {
-                                    setSessionFormField(session.session_key, "teacherName", e.target.value);
-                                  }
-                                }}
-                                className="w-full bg-white border border-slate-200 text-xs font-medium text-slate-600 px-3 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
-                              >
-                                <option value="">Or Select Other Teacher / Substitute...</option>
-                                {allTeachers.map((teach, idx) => (
-                                  <option key={idx} value={teach}>
-                                    {teach}
-                                  </option>
-                                ))}
-                              </select>
+                      return (
+                        <>
+                          {/* JIKA SUDAH ABSEN: Sembunyikan Form Dropdown & Password, Hanya Tampilkan Nama Guru + Logo */}
+                          {session.attended_list && session.attended_list.length > 0 && (
+                            <div className="space-y-3">
+                              {session.attended_list.map((att) => (
+                                <div
+                                  key={att.id_attendance}
+                                  className="flex items-center gap-3 p-4 bg-emerald-50/90 border border-emerald-200 rounded-2xl shadow-sm"
+                                >
+                                  <img
+                                    src="/252-SMA_CITA_HATI_EAST_SURABAYA.png"
+                                    alt="Cita Hati Logo"
+                                    className="h-10 w-auto object-contain flex-shrink-0"
+                                  />
+                                  <div className="text-sm font-bold text-emerald-950">
+                                    <span className="font-extrabold text-[#1e3a8a] text-base">{att.teacher_name}</span> has been recorded in the system
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          </div>
+                          )}
 
-                          {/* Input Password */}
-                          <div>
-                            <label className="block text-[10px] font-bold text-slate-500 mb-1">
-                              Attendance Password *
-                            </label>
-                            <input
-                              type="password"
-                              value={currentForm.password}
-                              onChange={(e) =>
-                                setSessionFormField(session.session_key, "password", e.target.value)
-                              }
-                              placeholder="Enter password"
-                              className="w-full bg-white border border-slate-200 font-mono text-xs font-bold text-slate-800 px-3 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                          </div>
+                          {/* JIKA BELUM SELESAI ABSEN: Tampilkan Form */}
+                          {!isAlreadyAttended && (
+                            <div>
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-3">
+                                ✍️ Duty Check-In Form
+                              </span>
 
-                          <button
-                            type="button"
-                            disabled={currentForm.isSubmitting}
-                            onClick={() => handleCheckIn(session)}
-                            className="w-full mt-2 bg-[#1e3a8a] hover:bg-blue-800 text-white text-xs font-bold py-3 rounded-xl shadow-md transition-all active:scale-[0.99] disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                          >
-                            <span>✅</span>
-                            <span>
-                              {currentForm.isSubmitting
-                                ? "Processing Attendance..."
-                                : `Confirm Attendance ${
-                                    currentForm.teacherName ? `(${currentForm.teacherName})` : ""
-                                  }`}
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5">
+                                <div className="space-y-3">
+                                  {/* Input Nama Guru */}
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 mb-1">
+                                      Select Teacher Name *
+                                    </label>
+                                    <div className="grid grid-cols-1 gap-2">
+                                      <select
+                                        value={currentForm.teacherName}
+                                        onChange={(e) =>
+                                          setSessionFormField(session.session_key, "teacherName", e.target.value)
+                                        }
+                                        className="w-full bg-white border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                                      >
+                                        <option value="">-- Select Scheduled Teacher --</option>
+                                        {availableScheduled.map((st, idx) => (
+                                          <option key={idx} value={st.teacher_name}>
+                                            {st.teacher_name}
+                                          </option>
+                                        ))}
+                                      </select>
 
-                    {/* SECTION: TERCATAT DI SISTEM (RECORDED IN SYSTEM) */}
-                    {session.attended_list && session.attended_list.length > 0 && (
-                      <div className="pt-3 border-t border-slate-100">
-                        <div className="space-y-2">
-                          {session.attended_list.map((att) => (
-                            <div
-                              key={att.id_attendance}
-                              className="flex items-center gap-3 p-3 bg-emerald-50/90 border border-emerald-200 rounded-2xl shadow-sm"
-                            >
-                              <img
-                                src="/252-SMA_CITA_HATI_EAST_SURABAYA.png"
-                                alt="Cita Hati Logo"
-                                className="h-9 w-auto object-contain flex-shrink-0"
-                              />
-                              <div className="text-xs font-bold text-emerald-950">
-                                <span className="font-extrabold text-[#1e3a8a]">{att.teacher_name}</span> telah tercatat dalam sistem
+                                      <select
+                                        onChange={(e) => {
+                                          if (e.target.value) {
+                                            setSessionFormField(session.session_key, "teacherName", e.target.value);
+                                          }
+                                        }}
+                                        className="w-full bg-white border border-slate-200 text-xs font-medium text-slate-600 px-3 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                                      >
+                                        <option value="">Or Select Other Teacher / Substitute...</option>
+                                        {allTeachers.map((teach, idx) => (
+                                          <option key={idx} value={teach}>
+                                            {teach}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                  </div>
+
+                                  {/* Input Password */}
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 mb-1">
+                                      Attendance Password *
+                                    </label>
+                                    <input
+                                      type="password"
+                                      value={currentForm.password}
+                                      onChange={(e) =>
+                                        setSessionFormField(session.session_key, "password", e.target.value)
+                                      }
+                                      placeholder="Enter password"
+                                      className="w-full bg-white border border-slate-200 font-mono text-xs font-bold text-slate-800 px-3 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    disabled={currentForm.isSubmitting}
+                                    onClick={() => handleCheckIn(session)}
+                                    className="w-full mt-2 bg-[#1e3a8a] hover:bg-blue-800 text-white text-xs font-bold py-3 rounded-xl shadow-md transition-all active:scale-[0.99] disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                  >
+                                    <span>✅</span>
+                                    <span>
+                                      {currentForm.isSubmitting
+                                        ? "Processing Attendance..."
+                                        : `Confirm Attendance ${
+                                            currentForm.teacherName ? `(${currentForm.teacherName})` : ""
+                                          }`}
+                                    </span>
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               );

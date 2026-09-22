@@ -1387,13 +1387,13 @@ export default function Admin() {
       "ID",
       "Tanggal",
       "Jam Absen",
-      "Nama Guru",
+      "Teacher Name",
       "Tempat/Lokasi",
-      "Sesi Waktu",
+      "Time Slot",
       "Kategori",
       "Status Jadwal",
       "Password",
-      "Catatan",
+      "Notes",
     ];
     const rows = dutyAttendanceRecords.map((r) => [
       r.id_attendance,
@@ -1839,7 +1839,7 @@ export default function Admin() {
                 </label>
               </div>
 
-              {/* Tombol Aksi */}
+              {/* Tombol Action */}
               <div className="flex gap-3 pt-3">
                 <button
                   onClick={() => setEditModalData(null)}
@@ -2086,7 +2086,7 @@ export default function Admin() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                    Nama Guru
+                    Teacher Name
                   </label>
                   <input
                     type="text"
@@ -2160,7 +2160,7 @@ export default function Admin() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                    Catatan / Time Block (Opsional)
+                    Notes / Time Block (Opsional)
                   </label>
                   <input
                     type="text"
@@ -2214,7 +2214,7 @@ export default function Admin() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                    Nama Guru
+                    Teacher Name
                   </label>
                   <input
                     type="text"
@@ -2284,7 +2284,7 @@ export default function Admin() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                    Catatan / Time Block (Opsional)
+                    Notes / Time Block (Opsional)
                   </label>
                   <input
                     type="text"
@@ -2337,7 +2337,7 @@ export default function Admin() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                    Nama Guru
+                    Teacher Name
                   </label>
                   <input
                     type="text"
@@ -2498,7 +2498,7 @@ export default function Admin() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                    Nama Guru
+                    Teacher Name
                   </label>
                   <input
                     type="text"
@@ -2739,11 +2739,11 @@ export default function Admin() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                  Catatan Tambahan (Opsional)
+                  Notes Tambahan (Opsional)
                 </label>
                 <input
                   type="text"
-                  placeholder="Catatan khusus untuk tugas ini"
+                  placeholder="Notes khusus untuk tugas ini"
                   value={newInvalNote}
                   onChange={(e) => setNewInvalNote(e.target.value)}
                   className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 text-sm font-medium text-slate-700"
@@ -3990,7 +3990,7 @@ export default function Admin() {
                           <th className="px-6 py-4 text-center">
                             Kelas / Sesi
                           </th>
-                          <th className="px-6 py-4 text-center">Catatan</th>
+                          <th className="px-6 py-4 text-center">Notes</th>
                           <th className="px-6 py-4 text-center">Action</th>
                         </tr>
                       </thead>
@@ -4633,8 +4633,8 @@ export default function Admin() {
                           <th className="px-6 py-5">Guru Pengganti (Inval)</th>
                           <th className="px-6 py-5">Lokasi</th>
                           <th className="px-6 py-5">Jam / Sesi</th>
-                          <th className="px-6 py-5">Alasan / Catatan</th>
-                          <th className="px-6 py-5 text-center">Aksi</th>
+                          <th className="px-6 py-5">Alasan / Notes</th>
+                          <th className="px-6 py-5 text-center">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50 text-sm">
@@ -4681,7 +4681,7 @@ export default function Admin() {
                                 )}
                                 {item.note && (
                                   <div className="text-slate-400 italic">
-                                    Catatan: {item.note}
+                                    Notes: {item.note}
                                   </div>
                                 )}
                                 {!item.reason && !item.note && (
@@ -4811,7 +4811,7 @@ export default function Admin() {
                           <th className="px-6 py-5">Jam</th>
                           <th className="px-6 py-5">Pengaruh KBM</th>
                           <th className="px-6 py-5">Deskripsi</th>
-                          <th className="px-6 py-5 text-center">Aksi</th>
+                          <th className="px-6 py-5 text-center">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50 text-sm">
@@ -4938,10 +4938,10 @@ export default function Admin() {
                       <span className="p-2 bg-indigo-50 text-indigo-600 rounded-xl text-lg">
                         📋
                       </span>
-                      Rekap & Pemantauan Absensi Guru Piket
+                      Duty Attendance Monitoring & Summary
                     </h3>
                     <p className="text-xs text-slate-500 mt-1">
-                      Data absensi guru piket harian berdasarkan slot waktu & lokasi. Dievaluasi otomatis sejak pukul 06:00 WIB dengan password tetap{" "}
+                      Daily teacher duty attendance records by time slot & location. Evaluated automatically from 06:00 WIB with fixed passcode{" "}
                       <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
                         citahati
                       </span>
@@ -4955,13 +4955,13 @@ export default function Admin() {
                       className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-4 py-3 rounded-2xl transition-all shadow-md shadow-amber-500/20 active:scale-95 disabled:opacity-50"
                       title="Generate 1 data uji coba untuk hari ini"
                     >
-                      <span>🧪</span> {isSeedingAttDummy ? "Membuat Dummy..." : "Uji Coba Data Dummy"}
+                      <span>🧪</span> {isSeedingAttDummy ? "Generating Dummy..." : "Test Dummy Data"}
                     </button>
                     <button
                       onClick={handleExportAttendanceCSV}
                       className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-3 rounded-2xl transition-all shadow-md shadow-emerald-600/20 active:scale-95"
                     >
-                      <span>📥</span> Ekspor CSV
+                      <span>📥</span> Export CSV
                     </button>
                     <a
                       href="/duty-attendance"
@@ -4969,7 +4969,7 @@ export default function Admin() {
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-3 rounded-2xl transition-all shadow-md shadow-indigo-600/20 active:scale-95"
                     >
-                      <span>🔗</span> Buka Halaman Absen Duty ↗
+                      <span>🔗</span> Open Duty Attendance Page ↗
                     </a>
                   </div>
                 </div>
@@ -4989,7 +4989,7 @@ export default function Admin() {
                           0
                         )}
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-1">Jadwal belum mulai</p>
+                      <p className="text-[11px] text-slate-400 mt-1">Schedule not started</p>
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-bold">
                       ⚪
@@ -5009,7 +5009,7 @@ export default function Admin() {
                           0
                         )}
                       </div>
-                      <p className="text-[11px] text-emerald-600 mt-1">Sedang jam piket aktif</p>
+                      <p className="text-[11px] text-emerald-600 mt-1">Active duty session</p>
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold animate-pulse">
                       🟢
@@ -5026,7 +5026,7 @@ export default function Admin() {
                       <div className="text-2xl font-black text-blue-700">
                         {dutyAttendanceRecords.length}
                       </div>
-                      <p className="text-[11px] text-blue-600 mt-1">Absensi terverifikasi</p>
+                      <p className="text-[11px] text-blue-600 mt-1">Verified attendances</p>
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
                       🔵
@@ -5046,7 +5046,7 @@ export default function Admin() {
                           0
                         )}
                       </div>
-                      <p className="text-[11px] text-amber-600 mt-1">Waktu lewat tanpa absen</p>
+                      <p className="text-[11px] text-amber-600 mt-1">Ended without check-in</p>
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-bold">
                       🟠
@@ -5082,7 +5082,7 @@ export default function Admin() {
                         onChange={(e) => setFilterAttLoc(e.target.value)}
                         className="w-full md:w-56 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
                       >
-                        <option value="">Semua Lokasi Duty</option>
+                        <option value="">All Duty Locations</option>
                         {dutyAttendanceLocations.map((loc) => (
                           <option key={loc} value={loc}>
                             {loc}
@@ -5091,7 +5091,7 @@ export default function Admin() {
                       </select>
                     </div>
 
-                    {/* Status Terjadwal */}
+                    {/* Schedule Status */}
                     <div className="flex items-center gap-2 w-full md:w-auto">
                       <label className="text-xs font-bold text-slate-500 whitespace-nowrap">Kategori:</label>
                       <select
@@ -5099,9 +5099,9 @@ export default function Admin() {
                         onChange={(e) => setFilterAttScheduled(e.target.value)}
                         className="w-full md:w-48 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
                       >
-                        <option value="all">Semua Status Guru</option>
+                        <option value="all">All Teacher Statuses</option>
                         <option value="scheduled">🛡️ Terjadwal Duty</option>
-                        <option value="unscheduled">⚠️ Pengganti / Luar Jadwal</option>
+                        <option value="unscheduled">⚠️ Substitute / Unscheduled</option>
                       </select>
                     </div>
 
@@ -5112,7 +5112,7 @@ export default function Admin() {
                       </span>
                       <input
                         type="text"
-                        placeholder="Cari nama guru..."
+                        placeholder="Search teacher name..."
                         value={searchAttTeacher}
                         onChange={(e) => setSearchAttTeacher(e.target.value)}
                         className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
@@ -5126,10 +5126,10 @@ export default function Admin() {
                     <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-6">
                       <div className="flex items-center justify-between mb-4">
                         <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                          <span>🔗</span> Link Akses Form Absensi Duty per Lokasi
+                          <span>🔗</span> Duty Attendance Access Links by Location
                         </h4>
                         <span className="text-xs text-slate-400 font-medium">
-                          Bagikan link ini ke guru yang bertugas
+                          Share this link with teachers on duty
                         </span>
                       </div>
                       
@@ -5152,7 +5152,7 @@ export default function Admin() {
                                 <button 
                                   onClick={() => handleOpenQrModal(loc)}
                                   className="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
-                                  title="Buat QR Code Lokasi Ini"
+                                  title="Generate QR Code for this location"
                                 >
                                   <span>📱</span>
                                   <span>QR</span>
@@ -5160,10 +5160,10 @@ export default function Admin() {
                                 <button 
                                   onClick={() => {
                                     navigator.clipboard.writeText(safeUrl);
-                                    alert('Link tersalin!');
+                                    alert('Link copied to clipboard!');
                                   }}
                                   className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition-colors"
-                                  title="Salin Link"
+                                  title="Copy Link"
                                 >
                                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -5174,7 +5174,7 @@ export default function Admin() {
                                   target="_blank" 
                                   rel="noreferrer"
                                   className="flex-shrink-0 bg-slate-200 hover:bg-slate-300 text-slate-700 p-2 rounded-lg transition-colors"
-                                  title="Buka Link"
+                                  title="Open Link"
                                 >
                                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
@@ -5196,7 +5196,7 @@ export default function Admin() {
                           <div className="flex items-center gap-2">
                             <span className="text-xl">📱</span>
                             <h3 className="text-base font-black text-slate-800">
-                              QR Code Absensi Lokasi
+                              Location Duty QR Code
                             </h3>
                           </div>
                           <button
@@ -5233,12 +5233,12 @@ export default function Admin() {
                             />
                           ) : (
                             <div className="w-52 h-52 flex items-center justify-center bg-slate-200 rounded-xl animate-pulse text-xs text-slate-500 font-bold">
-                              Membuat QR Code...
+                              Generating QR Code...
                             </div>
                           )}
 
                           <p className="text-xs font-bold text-slate-700 mt-2">
-                            Scan QR Code ini untuk absen tugas duty
+                            Scan this QR Code to check in for duty
                           </p>
                           <span className="text-[10px] text-slate-400 font-mono mt-1 break-all px-2">
                             https://pengumuman.klprojects.online/duty/{encodeURIComponent(selectedQrLocation)}
@@ -5252,7 +5252,7 @@ export default function Admin() {
                             className="w-full bg-[#1e3a8a] hover:bg-blue-800 text-white text-xs font-bold py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
                           >
                             <span>🖨️</span>
-                            <span>Cetak Poster</span>
+                            <span>Print Poster</span>
                           </button>
                           <button
                             onClick={handleDownloadQr}
@@ -5270,7 +5270,7 @@ export default function Admin() {
                 <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
                   <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
                     <h3 className="text-base font-bold text-slate-800 tracking-tight flex items-center gap-2">
-                      <span className="text-lg">📜</span> Log Data Absensi Terverifikasi ({filteredAttendanceRecords.length})
+                      <span className="text-lg">📜</span> Verified Attendance Records ({filteredAttendanceRecords.length})
                     </h3>
                     <div className="flex items-center gap-2 text-xs text-slate-500">
                       <span>Password:</span>
@@ -5285,15 +5285,15 @@ export default function Admin() {
                       <thead>
                         <tr className="border-b border-slate-100 bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                           <th className="py-4 px-6 text-center w-12">#</th>
-                          <th className="py-4 px-6">Waktu Absen</th>
-                          <th className="py-4 px-6">Nama Guru</th>
-                          <th className="py-4 px-6">Tempat / Lokasi</th>
-                          <th className="py-4 px-6">Sesi Waktu</th>
+                          <th className="py-4 px-6">Check-in Time</th>
+                          <th className="py-4 px-6">Teacher Name</th>
+                          <th className="py-4 px-6">Location</th>
+                          <th className="py-4 px-6">Time Slot</th>
                           <th className="py-4 px-6">Kategori</th>
-                          <th className="py-4 px-6">Status Terjadwal</th>
-                          <th className="py-4 px-6">Kode Valid</th>
-                          <th className="py-4 px-6">Catatan</th>
-                          <th className="py-4 px-6 text-center">Aksi</th>
+                          <th className="py-4 px-6">Schedule Status</th>
+                          <th className="py-4 px-6">Validation</th>
+                          <th className="py-4 px-6">Notes</th>
+                          <th className="py-4 px-6 text-center">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs">
@@ -5306,7 +5306,7 @@ export default function Admin() {
                                   Belum ada catatan absensi duty untuk filter ini.
                                 </p>
                                 <p className="text-xs text-slate-400">
-                                  Klik tombol <strong className="text-amber-600 font-bold">"Uji Coba Data Dummy"</strong> di atas untuk membuat data tes hari ini.
+                                  Klik tombol <strong className="text-amber-600 font-bold">"Test Dummy Data"</strong> di atas untuk membuat data tes hari ini.
                                 </p>
                               </div>
                             </td>
