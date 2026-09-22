@@ -22,7 +22,7 @@ export default function Login() {
     const params = new URLSearchParams(location.search);
     if (params.get("expired") === "1") {
       setExpiredMsg(
-        "⚠️ Sesi login Anda telah berakhir (masa aktif 12 jam telah habis). Silakan login kembali untuk mengakses fitur admin."
+        "⚠️ Your login session has expired (12-hour limit). Please sign in again to access the admin panel."
       );
       clearAdminSession();
     }
@@ -36,7 +36,7 @@ export default function Login() {
         // Token sudah expired di storage, bersihkan
         clearAdminSession();
         setExpiredMsg(
-          "⚠️ Sesi login Anda sebelumnya telah kedaluwarsa (12 jam). Silakan login kembali."
+          "⚠️ Your previous session has expired. Please sign in again."
         );
       }
     }
@@ -71,7 +71,7 @@ export default function Login() {
       if (!response.ok) {
         // data.detail adalah format error standar bawaan HTTPException FastAPI
         throw new Error(
-          data.detail || "Gagal masuk. Periksa koneksi atau kredensial Anda."
+          data.detail || "Sign in failed. Please check your credentials or connection."
         );
       }
 
@@ -115,7 +115,7 @@ export default function Login() {
               </span>
             </h2>
             <p className="text-slate-500 mt-2 font-medium text-sm">
-              Silakan masuk untuk mengelola sistem Cita Hati
+              Please sign in to manage Cita Hati Internal Portal
             </p>
           </div>
 
@@ -145,7 +145,7 @@ export default function Login() {
               </label>
               <input
                 type="text"
-                placeholder="Masukkan username"
+                placeholder="Enter username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full bg-slate-50 border border-transparent rounded-xl px-4 py-3.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus:bg-white focus:border-blue-200 focus:ring-2 focus:ring-blue-100 transition-all outline-none placeholder:text-slate-400 placeholder:font-medium"
@@ -222,7 +222,7 @@ export default function Login() {
                     : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-blue-500/25 hover:from-blue-700 hover:to-indigo-700"
                 }`}
               >
-                {loading ? "Memproses..." : "Masuk ke Dashboard"}
+                {loading ? "Signing in..." : "Sign In to Dashboard"}
               </button>
             </div>
           </form>

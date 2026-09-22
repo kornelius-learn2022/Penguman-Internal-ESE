@@ -276,14 +276,14 @@ export default function Admin() {
   // 3. SEARCH, FILTER TANGGAL, & PAGINATION STATE
   // ==========================================
   const [searchAnnouncements, setSearchAnnouncements] = useState("");
-  const [filterAnnDate, setFilterAnnDate] = useState(""); // Filter Tanggal Tabel Announcement
+  const [filterAnnDate, setFilterAnnDate] = useState(""); // Filter Date Tabel Announcement
   const [currentAnnPage, setCurrentAnnPage] = useState(1);
 
   const [searchAdm, setsearchAdm] = useState("");
   const [currentAdmPage, setcurrentAdmPage] = useState(1);
 
   const [searchBirthdays, setSearchBirthdays] = useState("");
-  const [filterBdayDate, setFilterBdayDate] = useState(""); // Filter Tanggal Tabel Birthday
+  const [filterBdayDate, setFilterBdayDate] = useState(""); // Filter Date Tabel Birthday
   const [currentBdayPage, setCurrentBdayPage] = useState(1);
 
   const [searchSchedule, setSearchSchedule] = useState("");
@@ -535,7 +535,7 @@ export default function Admin() {
     currentAdmPage * itemsPerPage,
   );
 
-  // FILTER TABEL TEACHER SCHEDULES (Search Guru / Mapel / Kelas / Waktu & Filter Hari)
+  // FILTER TABEL TEACHER SCHEDULES (Search Guru / Mapel / Class / Grade / Waktu & Filter Hari)
   const filteredSchedules = Array.isArray(schedules)
     ? schedules.filter((item) => {
         const safeTeacher = item.teacher_name || "";
@@ -922,7 +922,7 @@ export default function Admin() {
 
   const handleDeleteSchedule = async (id_schedule) => {
     const isConfirmed = window.confirm(
-      "Apakah Anda yakin ingin menghapus jadwal guru ini?",
+      "Are you sure you want to delete jadwal guru ini?",
     );
     if (!isConfirmed) return;
 
@@ -1083,7 +1083,7 @@ export default function Admin() {
 
   const handleDeleteDuty = async (id_duty) => {
     const isConfirmed = window.confirm(
-      "Apakah Anda yakin ingin menghapus jadwal duty ini?",
+      "Are you sure you want to delete jadwal duty ini?",
     );
     if (!isConfirmed) return;
 
@@ -1185,7 +1185,7 @@ export default function Admin() {
 
   const handleDeleteInval = async (id_inval) => {
     const isConfirmed = window.confirm(
-      "Apakah Anda yakin ingin menghapus data pergantian piket (inval) ini?",
+      "Are you sure you want to delete data pergantian piket (inval) ini?",
     );
     if (!isConfirmed) return;
 
@@ -1295,7 +1295,7 @@ export default function Admin() {
 
   const handleDeleteEvent = async (id_event) => {
     const isConfirmed = window.confirm(
-      "Apakah Anda yakin ingin menghapus jadwal event khusus ini?",
+      "Are you sure you want to delete jadwal event khusus ini?",
     );
     if (!isConfirmed) return;
 
@@ -1345,7 +1345,7 @@ export default function Admin() {
   }, [activeTab, filterAttDate, filterAttLoc, fetchDutyAttendanceData]);
 
   const handleDeleteAttendanceRecord = async (id_attendance) => {
-    if (!window.confirm("Apakah Anda yakin ingin menghapus data absensi ini?")) return;
+    if (!window.confirm("Are you sure you want to delete data absensi ini?")) return;
     try {
       const res = await apiFetch(`${baseUrl}/duty-attendance/records/${id_attendance}`, {
         method: "DELETE",
@@ -1448,13 +1448,13 @@ export default function Admin() {
     },
     {
       id: "Inval Duties",
-      label: "Inval Duty (Sementara)",
+      label: "Substitute Duties (Inval)",
       icon: "🔄",
       allowed: ["Normal", "Super"],
     },
     {
       id: "Duty Attendance",
-      label: "Absensi Duty",
+      label: "Duty Attendance",
       icon: "📋",
       allowed: ["Normal", "Super"],
     },
@@ -1846,14 +1846,14 @@ export default function Admin() {
                   disabled={isSubmitting}
                   className="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-2xl hover:bg-slate-200 transition-colors text-sm"
                 >
-                  Batal
+                  Cancel
                 </button>
                 <button
                   onClick={handleUpdateAnnouncement}
                   disabled={isSubmitting}
                   className="flex-1 bg-[#1e3a8a] text-white font-bold py-3 rounded-2xl hover:bg-blue-800 transition-all shadow-md hover:shadow-lg disabled:bg-slate-400 text-sm"
                 >
-                  {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
+                  {isSubmitting ? "Menyimpan..." : "Save Changes"}
                 </button>
               </div>
             </div>
@@ -1945,14 +1945,14 @@ export default function Admin() {
                   disabled={isSubmitting}
                   className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl hover:bg-slate-200 transition-colors"
                 >
-                  Batal
+                  Cancel
                 </button>
                 <button
                   onClick={handleUpdateBirth}
                   disabled={isSubmitting}
                   className="flex-1 bg-pink-500 text-white font-bold py-3.5 rounded-2xl hover:bg-pink-600 transition-all shadow-md hover:shadow-lg disabled:bg-slate-400"
                 >
-                  {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
+                  {isSubmitting ? "Menyimpan..." : "Save Changes"}
                 </button>
               </div>
             </form>
@@ -2051,14 +2051,14 @@ export default function Admin() {
                   disabled={isSubmitting}
                   className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl hover:bg-slate-200 transition-colors"
                 >
-                  Batal
+                  Cancel
                 </button>
                 <button
                   onClick={handleupdateAdmin}
                   disabled={isSubmitting}
                   className="flex-1 bg-emerald-600 text-white font-bold py-3.5 rounded-2xl hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg disabled:bg-slate-400"
                 >
-                  {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
+                  {isSubmitting ? "Menyimpan..." : "Save Changes"}
                 </button>
               </div>
             </form>
@@ -2073,7 +2073,7 @@ export default function Admin() {
             <div className="absolute top-0 left-0 w-2 h-full bg-blue-600"></div>
             <div className="flex justify-between items-center mb-6 pl-2">
               <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                📅 Tambah Jadwal Guru
+                📅 Add Schedule Guru
               </h3>
               <button
                 onClick={() => setIsCreateScheduleOpen(false)}
@@ -2099,7 +2099,7 @@ export default function Admin() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                    Mata Pelajaran / Grade
+                    Subject / Grade
                   </label>
                   <input
                     type="text"
@@ -2122,11 +2122,11 @@ export default function Admin() {
                     onChange={(e) => setNewSchedDay(e.target.value)}
                     className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 text-sm font-semibold text-slate-700"
                   >
-                    <option value="Monday">Monday (Senin)</option>
-                    <option value="Tuesday">Tuesday (Selasa)</option>
-                    <option value="Wednesday">Wednesday (Rabu)</option>
-                    <option value="Thursday">Thursday (Kamis)</option>
-                    <option value="Friday">Friday (Jumat)</option>
+                    <option value="Monday">Monday (Monday)</option>
+                    <option value="Tuesday">Tuesday (Tuesday)</option>
+                    <option value="Wednesday">Wednesday (Wednesday)</option>
+                    <option value="Thursday">Thursday (Thursday)</option>
+                    <option value="Friday">Friday (Friday)</option>
                   </select>
                 </div>
                 <div>
@@ -2147,7 +2147,7 @@ export default function Admin() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                    Kelas / Sesi
+                    Class / Grade / Sesi
                   </label>
                   <input
                     type="text"
@@ -2179,7 +2179,7 @@ export default function Admin() {
                   disabled={isSubmitting}
                   className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl hover:bg-slate-200 transition-colors"
                 >
-                  Batal
+                  Cancel
                 </button>
                 <button
                   type="submit"
@@ -2226,7 +2226,7 @@ export default function Admin() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                    Mata Pelajaran / Grade
+                    Subject / Grade
                   </label>
                   <input
                     type="text"
@@ -2248,11 +2248,11 @@ export default function Admin() {
                     onChange={(e) => setEditSchedDay(e.target.value)}
                     className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 text-sm font-semibold text-slate-700"
                   >
-                    <option value="Monday">Monday (Senin)</option>
-                    <option value="Tuesday">Tuesday (Selasa)</option>
-                    <option value="Wednesday">Wednesday (Rabu)</option>
-                    <option value="Thursday">Thursday (Kamis)</option>
-                    <option value="Friday">Friday (Jumat)</option>
+                    <option value="Monday">Monday (Monday)</option>
+                    <option value="Tuesday">Tuesday (Tuesday)</option>
+                    <option value="Wednesday">Wednesday (Wednesday)</option>
+                    <option value="Thursday">Thursday (Thursday)</option>
+                    <option value="Friday">Friday (Friday)</option>
                   </select>
                 </div>
                 <div>
@@ -2272,7 +2272,7 @@ export default function Admin() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                    Kelas / Sesi
+                    Class / Grade / Sesi
                   </label>
                   <input
                     type="text"
@@ -2302,14 +2302,14 @@ export default function Admin() {
                   disabled={isSubmitting}
                   className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl hover:bg-slate-200 transition-colors"
                 >
-                  Batal
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
                   className="flex-1 bg-indigo-600 text-white font-bold py-3.5 rounded-2xl hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg disabled:bg-slate-400"
                 >
-                  {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
+                  {isSubmitting ? "Menyimpan..." : "Save Changes"}
                 </button>
               </div>
             </form>
@@ -2324,7 +2324,7 @@ export default function Admin() {
             <div className="absolute top-0 left-0 w-2 h-full bg-emerald-600"></div>
             <div className="flex justify-between items-center mb-6 pl-2">
               <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                🛡️ Tambah Jadwal Duty / Piket
+                🛡️ Add Schedule Duty / Piket
               </h3>
               <button
                 onClick={() => setIsCreateDutyOpen(false)}
@@ -2421,11 +2421,11 @@ export default function Admin() {
                     onChange={(e) => setNewDutyDay(e.target.value)}
                     className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 text-sm font-semibold text-slate-700"
                   >
-                    <option value="Monday">Monday (Senin)</option>
-                    <option value="Tuesday">Tuesday (Selasa)</option>
-                    <option value="Wednesday">Wednesday (Rabu)</option>
-                    <option value="Thursday">Thursday (Kamis)</option>
-                    <option value="Friday">Friday (Jumat)</option>
+                    <option value="Monday">Monday (Monday)</option>
+                    <option value="Tuesday">Tuesday (Tuesday)</option>
+                    <option value="Wednesday">Wednesday (Wednesday)</option>
+                    <option value="Thursday">Thursday (Thursday)</option>
+                    <option value="Friday">Friday (Friday)</option>
                   </select>
                 </div>
                 <div>
@@ -2463,7 +2463,7 @@ export default function Admin() {
                   disabled={isSubmitting}
                   className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl hover:bg-slate-200 transition-colors"
                 >
-                  Batal
+                  Cancel
                 </button>
                 <button
                   type="submit"
@@ -2581,11 +2581,11 @@ export default function Admin() {
                     onChange={(e) => setEditDutyDay(e.target.value)}
                     className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 text-sm font-semibold text-slate-700"
                   >
-                    <option value="Monday">Monday (Senin)</option>
-                    <option value="Tuesday">Tuesday (Selasa)</option>
-                    <option value="Wednesday">Wednesday (Rabu)</option>
-                    <option value="Thursday">Thursday (Kamis)</option>
-                    <option value="Friday">Friday (Jumat)</option>
+                    <option value="Monday">Monday (Monday)</option>
+                    <option value="Tuesday">Tuesday (Tuesday)</option>
+                    <option value="Wednesday">Wednesday (Wednesday)</option>
+                    <option value="Thursday">Thursday (Thursday)</option>
+                    <option value="Friday">Friday (Friday)</option>
                   </select>
                 </div>
                 <div>
@@ -2621,14 +2621,14 @@ export default function Admin() {
                   disabled={isSubmitting}
                   className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl hover:bg-slate-200 transition-colors"
                 >
-                  Batal
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
                   className="flex-1 bg-emerald-600 text-white font-bold py-3.5 rounded-2xl hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg disabled:bg-slate-400"
                 >
-                  {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
+                  {isSubmitting ? "Menyimpan..." : "Save Changes"}
                 </button>
               </div>
             </form>
@@ -2757,7 +2757,7 @@ export default function Admin() {
                   disabled={isSubmitting}
                   className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl hover:bg-slate-200 transition-colors"
                 >
-                  Batal
+                  Cancel
                 </button>
                 <button
                   type="button"
@@ -2903,7 +2903,7 @@ export default function Admin() {
                   disabled={isSubmitting}
                   className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl hover:bg-slate-200 transition-colors"
                 >
-                  Batal
+                  Cancel
                 </button>
                 <button
                   type="button"
@@ -3047,7 +3047,7 @@ export default function Admin() {
                   disabled={isSubmitting}
                   className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl hover:bg-slate-200 transition-colors"
                 >
-                  Batal
+                  Cancel
                 </button>
                 <button
                   type="button"
@@ -3055,7 +3055,7 @@ export default function Admin() {
                   disabled={isSubmitting}
                   className="flex-1 bg-amber-500 text-white font-bold py-3.5 rounded-2xl hover:bg-amber-600 transition-all shadow-md hover:shadow-lg disabled:bg-slate-400"
                 >
-                  {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
+                  {isSubmitting ? "Menyimpan..." : "Save Changes"}
                 </button>
               </div>
             </div>
@@ -3229,7 +3229,7 @@ export default function Admin() {
                     })
                   ) : (
                     <span className="text-xs text-slate-400 italic">
-                      Belum ada data mingguan
+                      No data available mingguan
                     </span>
                   )}
                 </div>
@@ -3456,7 +3456,7 @@ export default function Admin() {
                                 <div className="flex justify-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                                   <button
                                     onClick={() => handleTogglePin(item.id_announcement)}
-                                    title={item.is_pinned ? "Lepas Sematan (Unpin)" : "Sematkan di Atas (Pin)"}
+                                    title={item.is_pinned ? "Unpin from Top (Unpin)" : "Pin to Top (Pin)"}
                                     className={`px-3 py-2 text-xs font-bold rounded-xl transition-colors ${
                                       item.is_pinned
                                         ? "bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200"
@@ -3961,19 +3961,19 @@ export default function Admin() {
                     {/* Day Filter */}
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                       <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
-                        Filter Hari:
+                        Filter Day:
                       </span>
                       <select
                         value={filterScheduleDay}
                         onChange={(e) => setFilterScheduleDay(e.target.value)}
                         className="bg-white border border-slate-200 px-4 py-3 rounded-2xl text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-xs transition-all"
                       >
-                        <option value="">Semua Hari (All Days)</option>
-                        <option value="Monday">Monday (Senin)</option>
-                        <option value="Tuesday">Tuesday (Selasa)</option>
-                        <option value="Wednesday">Wednesday (Rabu)</option>
-                        <option value="Thursday">Thursday (Kamis)</option>
-                        <option value="Friday">Friday (Jumat)</option>
+                        <option value="">All Days (All Days)</option>
+                        <option value="Monday">Monday (Monday)</option>
+                        <option value="Tuesday">Tuesday (Tuesday)</option>
+                        <option value="Wednesday">Wednesday (Wednesday)</option>
+                        <option value="Thursday">Thursday (Thursday)</option>
+                        <option value="Friday">Friday (Friday)</option>
                       </select>
                     </div>
                   </div>
@@ -3988,7 +3988,7 @@ export default function Admin() {
                           <th className="px-6 py-4">Hari (Day)</th>
                           <th className="px-6 py-4">Waktu (Time Slot)</th>
                           <th className="px-6 py-4 text-center">
-                            Kelas / Sesi
+                            Class / Grade / Sesi
                           </th>
                           <th className="px-6 py-4 text-center">Notes</th>
                           <th className="px-6 py-4 text-center">Action</th>
@@ -4255,19 +4255,19 @@ export default function Admin() {
                     <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
-                          Hari:
+                          Day:
                         </span>
                         <select
                           value={filterDutyDay}
                           onChange={(e) => setFilterDutyDay(e.target.value)}
                           className="bg-white border border-slate-200 px-3 py-2.5 rounded-2xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none shadow-xs transition-all"
                         >
-                          <option value="">Semua Hari (All Days)</option>
-                          <option value="Monday">Monday (Senin)</option>
-                          <option value="Tuesday">Tuesday (Selasa)</option>
-                          <option value="Wednesday">Wednesday (Rabu)</option>
-                          <option value="Thursday">Thursday (Kamis)</option>
-                          <option value="Friday">Friday (Jumat)</option>
+                          <option value="">All Days (All Days)</option>
+                          <option value="Monday">Monday (Monday)</option>
+                          <option value="Tuesday">Tuesday (Tuesday)</option>
+                          <option value="Wednesday">Wednesday (Wednesday)</option>
+                          <option value="Thursday">Thursday (Thursday)</option>
+                          <option value="Friday">Friday (Friday)</option>
                         </select>
                       </div>
 
@@ -4692,7 +4692,7 @@ export default function Admin() {
                                 <button
                                   onClick={() => handleDeleteInval(item.id_inval)}
                                   className="p-2 text-rose-500 hover:text-white hover:bg-rose-500 rounded-xl transition-colors shadow-sm"
-                                  title="Hapus Inval"
+                                  title="Delete Inval"
                                 >
                                   🗑️
                                 </button>
@@ -4705,7 +4705,7 @@ export default function Admin() {
                               colSpan="8"
                               className="p-12 text-center text-slate-400 font-medium italic"
                             >
-                              Belum ada data pergantian piket (inval) tercatat.
+                              No data available pergantian piket (inval) tercatat.
                             </td>
                           </tr>
                         )}
@@ -4865,7 +4865,7 @@ export default function Admin() {
                                 <button
                                   onClick={() => handleDeleteEvent(item.id_event)}
                                   className="p-2 text-rose-500 hover:text-white hover:bg-rose-500 rounded-xl transition-colors shadow-sm"
-                                  title="Hapus Event"
+                                  title="Delete Event"
                                 >
                                   🗑️
                                 </button>
@@ -5370,9 +5370,9 @@ export default function Admin() {
                                 <button
                                   onClick={() => handleDeleteAttendanceRecord(rec.id_attendance)}
                                   className="px-2.5 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl text-xs font-bold transition-all"
-                                  title="Hapus rekaman absensi ini"
+                                  title="Delete rekaman absensi ini"
                                 >
-                                  🗑️ Hapus
+                                  🗑️ Delete
                                 </button>
                               </td>
                             </tr>

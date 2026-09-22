@@ -97,7 +97,7 @@ function Announcements() {
         setActiveEvents([]);
       }
     } catch (error) {
-      console.error("Gagal menghubungi server:", error);
+      console.error("Failed to connect to server:", error);
       setAnnouncements([]);
       setBirthdays([]);
       setActiveEvents([]);
@@ -172,7 +172,7 @@ function Announcements() {
               className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all active:scale-95"
             >
               <span>🛡️</span>
-              <span>Absensi Duty</span>
+              <span>Duty Attendance</span>
             </Link>
 
             <div className="relative group">
@@ -226,7 +226,7 @@ function Announcements() {
                         </span>
                         {ev.affects_kbm && (
                           <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
-                            Penyesuaian Jam KBM
+                            Class Schedule Adjustment
                           </span>
                         )}
                       </div>
@@ -288,12 +288,12 @@ function Announcements() {
                     <div className="flex items-center gap-2 flex-wrap">
                       {item.is_pinned && (
                         <span className="inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-1 bg-amber-400 text-slate-900 rounded-md uppercase tracking-wider shadow-sm">
-                          📌 PENTING
+                          📌 PINNED
                         </span>
                       )}
                       <span className="text-[10px] font-bold px-2.5 py-1 bg-white border border-slate-200 rounded-md text-slate-600 group-hover:text-blue-600 group-hover:border-blue-200 transition-colors uppercase tracking-wider">
                         {item.end_date && item.end_date !== item.date
-                          ? `📅 ${item.date} s/d ${item.end_date}`
+                          ? `📅 ${item.date} to ${item.end_date}`
                           : item.date}
                       </span>
                     </div>
@@ -304,7 +304,7 @@ function Announcements() {
                     {/* Wrapper untuk Tombol Image dan URL agar berjejer rapi */}
                     {(item.url_image || item.url_announcemet) && (
                       <div className="mt-4 flex flex-wrap items-center gap-3">
-                        {/* Tombol Show Image */}
+                        {/* Tombol View Image */}
                         {item.url_image && (
                           <button
                             onClick={() =>
@@ -327,7 +327,7 @@ function Announcements() {
                                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                               ></path>
                             </svg>
-                            Show Image
+                            View Image
                           </button>
                         )}
 
@@ -352,7 +352,7 @@ function Announcements() {
                                 d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
                               ></path>
                             </svg>
-                            Buka Tautan
+                            Open Link
                           </a>
                         )}
                       </div>
