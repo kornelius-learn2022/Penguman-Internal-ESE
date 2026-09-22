@@ -187,7 +187,8 @@ export default function Admin() {
               display: block;
             }
             .school-name {
-              font-size: 20px;
+              font-size: 17px;
+              line-height: 1.3;
               font-weight: 900;
               color: #1e3a8a;
               text-transform: uppercase;
@@ -235,12 +236,12 @@ export default function Admin() {
         <body>
           <div class="poster">
             <img class="logo" src="/252-SMA_CITA_HATI_EAST_SURABAYA.png" alt="Cita Hati Logo" />
-            <h1 class="school-name">Cita Hati East Surabaya</h1>
+            <h1 class="school-name">Cita Hati Christian School Elementary Pakuwon City Campus</h1>
             <div class="subtitle">Duty Attendance Check-In</div>
             <div class="location-box">📍 ${selectedQrLocation}</div>
             <img class="qr-code" src="${qrCodeDataUrl}" alt="QR Code" />
-            <p class="instructions">Scan QR Code ini untuk Absensi Kehadiran Duty</p>
-            <p class="sub-instructions">Gunakan kamera HP / Google Lens / QR Scanner</p>
+            <p class="instructions">Scan this QR Code to check in for duty</p>
+            <p class="sub-instructions">Use your smartphone camera / QR scanner</p>
           </div>
           <script>
             window.onload = function() {
@@ -5214,10 +5215,10 @@ export default function Admin() {
                             alt="Cita Hati Logo"
                             className="h-14 w-auto object-contain mb-2"
                           />
-                          <h4 className="text-xs font-black text-[#1e3a8a] uppercase tracking-wider">
-                            Sekolah Cita Hati East Surabaya
+                          <h4 className="text-xs font-black text-[#1e3a8a] uppercase tracking-wider max-w-xs leading-tight">
+                            Cita Hati Christian School Elementary Pakuwon City Campus
                           </h4>
-                          <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest mt-0.5">
+                          <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest mt-1">
                             Duty Attendance Check-In
                           </span>
 
@@ -5240,9 +5241,6 @@ export default function Admin() {
                           <p className="text-xs font-bold text-slate-700 mt-2">
                             Scan this QR Code to check in for duty
                           </p>
-                          <span className="text-[10px] text-slate-400 font-mono mt-1 break-all px-2">
-                            https://pengumuman.klprojects.online/duty/{encodeURIComponent(selectedQrLocation)}
-                          </span>
                         </div>
 
                         {/* Action Buttons */}
