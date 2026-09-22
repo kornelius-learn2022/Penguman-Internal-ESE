@@ -4990,95 +4990,64 @@ export default function Admin() {
                   </div>
                 </div>
 
-                {/* Sesi Duty Hari Ini Overview Cards */}
-                {dutyAttendanceSessions.length > 0 && (
-                  <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                        <span>🕒</span> Status Slot Sesi Hari Ini ({dutyAttendanceSessions.length} Sesi Terjadwal)
-                      </h4>
-                      <span className="text-xs text-slate-400 font-medium">
-                        WIB Real-time
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {dutyAttendanceSessions.map((sess, idx) => (
-                        <div
-                          key={`${sess.location}-${sess.time_slot}-${idx}`}
-                          className={`p-4 rounded-2xl border transition-all ${
-                            sess.is_current_slot
-                              ? "bg-emerald-50/60 border-emerald-300 ring-2 ring-emerald-500/20"
-                              : sess.is_passed_slot
-                              ? "bg-slate-50/80 border-slate-200"
-                              : "bg-white border-slate-200"
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <div>
-                              <span className="inline-block px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[11px] font-bold rounded-lg mb-1">
-                                {sess.location}
-                              </span>
-                              <div className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
-                                <span>⏰</span> {sess.time_slot}
+{/* GENERATOR LINK ABSENSI DUTY */}
+                  {dutyAttendanceLocations.length > 0 && (
+                    <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                          <span>🔗</span> Link Akses Form Absensi Duty per Lokasi
+                        </h4>
+                        <span className="text-xs text-slate-400 font-medium">
+                          Bagikan link ini ke guru yang bertugas
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {dutyAttendanceLocations.map((loc, idx) => {
+                          const safeUrl = `https://pengumuman.klprojects.online/duty/${encodeURIComponent(loc)}`;
+                          return (
+                            <div key={idx} className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-col justify-between gap-3 hover:shadow-md transition-shadow">
+                              <div className="flex items-center gap-2 font-bold text-slate-700">
+                                <span>📍</span>
+                                <span>{loc}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <input 
+                                  type="text" 
+                                  readOnly 
+                                  value={safeUrl} 
+                                  className="w-full text-[10px] p-2 bg-white border border-slate-300 rounded-lg text-slate-500 font-mono outline-none"
+                                />
+                                <button 
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(safeUrl);
+                                    alert('Link tersalin!');
+                                  }}
+                                  className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition-colors"
+                                  title="Salin Link"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                  </svg>
+                                </button>
+                                <a 
+                                  href={safeUrl} 
+                                  target="_blank" 
+                                  rel="noreferrer"
+                                  className="flex-shrink-0 bg-slate-200 hover:bg-slate-300 text-slate-700 p-2 rounded-lg transition-colors"
+                                  title="Buka Link"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                                  </svg>
+                                </a>
                               </div>
                             </div>
-                            {sess.is_current_slot ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500 text-white text-[10px] font-extrabold rounded-full animate-pulse">
-                                🟢 Sedang Aktif
-                              </span>
-                            ) : sess.is_passed_slot ? (
-                              <span className="px-2 py-0.5 bg-slate-200 text-slate-600 text-[10px] font-semibold rounded-full">
-                                Selesai
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-semibold rounded-full">
-                                Menunggu
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="space-y-1.5 mt-3 pt-3 border-t border-slate-100">
-                            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                              Guru Terjadwal:
-                            </div>
-                            {sess.scheduled_teachers.map((t, tIdx) => {
-                              const icon =
-                                t.status === "Sudah Duty"
-                                  ? "🔵"
-                                  : t.status === "Lagi Duty"
-                                  ? "🟢"
-                                  : t.status === "Tidak Duty"
-                                  ? "🟠"
-                                  : "⚪";
-                              const badgeClass =
-                                t.status === "Sudah Duty"
-                                  ? "bg-blue-100 text-blue-700 border-blue-200"
-                                  : t.status === "Lagi Duty"
-                                  ? "bg-emerald-100 text-emerald-800 border-emerald-300 font-bold"
-                                  : t.status === "Tidak Duty"
-                                  ? "bg-amber-100 text-amber-800 border-amber-300"
-                                  : "bg-slate-100 text-slate-600 border-slate-200";
-
-                              return (
-                                <div
-                                  key={tIdx}
-                                  className="flex items-center justify-between text-xs py-1 px-2 rounded-lg hover:bg-white/60 transition-all"
-                                >
-                                  <span className="font-semibold text-slate-700 flex items-center gap-1.5">
-                                    <span>{icon}</span> {t.teacher_name}
-                                  </span>
-                                  <span className={`text-[10px] px-2 py-0.5 rounded-full border ${badgeClass}`}>
-                                    {t.status_label}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Table Log Absensi Card */}
                 <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
