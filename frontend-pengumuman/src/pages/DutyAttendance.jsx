@@ -114,13 +114,12 @@ export default function DutyAttendance() {
     }
   };
 
-  const isOutsideDuty = (timeSlot) => {
+  const isOutsideDuty = (timeSlot, now) => {
     const parts = timeSlot.replace(" ", "").replace("–", "-").split("-");
     if (parts.length === 2) {
       const startT = parseTime(parts[0]);
       const endT = parseTime(parts[1]);
       if (startT && endT) {
-        const now = new Date();
         const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startT.h, startT.m, 0);
         const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endT.h, endT.m, 0);
         return now < startTime || now > endTime;
@@ -197,6 +196,9 @@ export default function DutyAttendance() {
   // Filter sessions by the URL param
   const decodedLocation = decodeURIComponent(locationParam);
   const locationSessions = sessions.filter(s => s.location.toLowerCase() === decodedLocation.toLowerCase());
+  
+  // Hanya tampilkan sesi yang SEDANG BERLANGSUNG saat ini!
+  const activeSessions = locationSessions.filter(s => !isOutsideDuty(s.time_slot, currentDate));
 
   return (
     <div className="min-h-screen bg-slate-100 pb-20 font-sans">
@@ -254,7 +256,7 @@ export default function DutyAttendance() {
           <div className="flex justify-center py-20">
             <div className="animate-spin rounded-full h-10 w-10 border-4 border-[#1e3a8a] border-t-transparent"></div>
           </div>
-        ) : locationSessions.length === 0 ? (
+        ) : activeSessions.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-3xl border border-slate-200 shadow-sm">
             <div className="text-4xl mb-3">📭</div>
             <h3 className="text-lg font-bold text-slate-700">Tidak ada jadwal</h3>
@@ -262,7 +264,7 @@ export default function DutyAttendance() {
           </div>
         ) : (
           <div className="space-y-6">
-            {locationSessions.map((session, sIdx) => {
+            {activeSessions.map((session, sIdx) => {
               const currentForm = forms[session.session_key] || {
                 teacherName: "",
                 password: "",
@@ -270,7 +272,7 @@ export default function DutyAttendance() {
                 isSubmitting: false,
               };
               
-              const isOutside = isOutsideDuty(session.time_slot);
+              
 
               return (
                 <div
@@ -364,13 +366,8 @@ export default function DutyAttendance() {
                         ✍️ Form Absensi Kehadiran
                       </span>
                       
-                      {isOutside ? (
-                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-center">
-                          <span className="text-2xl mb-2 block">🔒</span>
-                          <h4 className="text-sm font-bold text-slate-700">Tidak Ada Jadwal Duty Saat Ini</h4>
-                          <p className="text-xs text-slate-500 mt-1">Form absensi hanya terbuka saat jam duty berlangsung.</p>
-                        </div>
-                      ) : (
+                      {/* Form Absensi - Pasti ditampilkan karena sudah difilter */}
+                      (
                         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5">
                           <div className="space-y-3">
                             {/* Input Nama */}
@@ -381,7 +378,6 @@ export default function DutyAttendance() {
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 {/* Pilihan cepat */}
                                 <select
-                                  value={currentForm.teacherName}
                                   onChange={(e) =>
                                     setSessionFormField(session.session_key, "teacherName", e.target.value)
                                   }
@@ -464,7 +460,6 @@ export default function DutyAttendance() {
                             </button>
                           </div>
                         </div>
-                      )}
                     </div>
 
                     {/* SECTION: RIWAYAT SUDAH ABSEN */}
