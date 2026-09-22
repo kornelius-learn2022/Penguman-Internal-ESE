@@ -114,14 +114,16 @@ export default function DutyAttendance() {
     }
   };
 
-  const isTimeEnded = (timeSlot) => {
+  const isOutsideDuty = (timeSlot) => {
     const parts = timeSlot.replace(" ", "").replace("–", "-").split("-");
     if (parts.length === 2) {
+      const startT = parseTime(parts[0]);
       const endT = parseTime(parts[1]);
-      if (endT) {
+      if (startT && endT) {
         const now = new Date();
+        const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startT.h, startT.m, 0);
         const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endT.h, endT.m, 0);
-        return now > endTime;
+        return now < startTime || now > endTime;
       }
     }
     return false;
@@ -268,7 +270,7 @@ export default function DutyAttendance() {
                 isSubmitting: false,
               };
               
-              const isEnded = isTimeEnded(session.time_slot);
+              const isOutside = isOutsideDuty(session.time_slot);
 
               return (
                 <div
@@ -302,15 +304,7 @@ export default function DutyAttendance() {
                         </div>
                       </div>
 
-                      {/* Password Hint */}
-                      <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-3 text-center min-w-[120px]">
-                        <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                          Password
-                        </div>
-                        <div className="text-lg font-mono font-bold text-amber-400 select-all cursor-pointer" title="Klik dua kali untuk menyalin">
-                          citahati
-                        </div>
-                      </div>
+                      
                     </div>
                   </div>
 
@@ -358,10 +352,6 @@ export default function DutyAttendance() {
                               <div className="text-[10px] font-black uppercase tracking-wider text-blue-600 bg-blue-100 px-3 py-1 rounded-lg self-start sm:self-center">
                                 Sudah Duty
                               </div>
-                            ) : isEnded ? (
-                              <div className="text-[10px] font-black uppercase tracking-wider text-orange-600 bg-orange-100 px-3 py-1 rounded-lg self-start sm:self-center">
-                                Tidak Hadir
-                              </div>
                             ) : null}
                           </div>
                         ))}
@@ -374,11 +364,11 @@ export default function DutyAttendance() {
                         ✍️ Form Absensi Kehadiran
                       </span>
                       
-                      {isEnded ? (
-                        <div className="bg-red-50 border border-red-200 rounded-2xl p-5 text-center">
-                          <span className="text-2xl mb-2 block">⏳</span>
-                          <h4 className="text-sm font-bold text-red-700">Waktu Absen Telah Berakhir</h4>
-                          <p className="text-xs text-red-600 mt-1">Anda tidak dapat melakukan absen karena jam duty untuk sesi ini sudah selesai.</p>
+                      {isOutside ? (
+                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-center">
+                          <span className="text-2xl mb-2 block">🔒</span>
+                          <h4 className="text-sm font-bold text-slate-700">Tidak Ada Jadwal Duty Saat Ini</h4>
+                          <p className="text-xs text-slate-500 mt-1">Form absensi hanya terbuka saat jam duty berlangsung.</p>
                         </div>
                       ) : (
                         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5">
