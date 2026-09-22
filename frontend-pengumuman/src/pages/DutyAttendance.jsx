@@ -1,712 +1,480 @@
-import { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams, Link } from "react-router-dom";
 
 export default function DutyAttendance() {
-  const getTodayDateString = () => {
-    const d = new Date();
-    return d.toISOString().split("T")[0];
-  };
+  const navigate = useNavigate();
+  const { locationParam } = useParams();
 
-  const [selectedDate, setSelectedDate] = useState(getTodayDateString());
-  const [selectedLocation, setSelectedLocation] = useState("");
-  const [currentTimeStr, setCurrentTimeStr] = useState("");
-
-  const [locations, setLocations] = useState([]);
-  const [allTeachers, setAllTeachers] = useState([]);
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [sessions, setSessions] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [allTeachers, setAllTeachers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Form submission state per session key: { [sessionKey]: { teacherName, password, notes, isSubmitting } }
-  const [formStates, setFormStates] = useState({});
-  const [notification, setNotification] = useState(null); // { type: "success" | "error", message: string }
-  const [isSeedingDummy, setIsSeedingDummy] = useState(false);
+  // Forms state keyed by session_key
+  const [forms, setForms] = useState({});
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
 
-  const baseUrl = import.meta.env.VITE_API_BASE_URL;
-
-  // Realtime clock (WIB / Local)
   useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setCurrentTimeStr(
-        now.toLocaleTimeString("id-ID", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        }) + " WIB"
-      );
-    };
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
+    // Realtime clock
+    const timer = setInterval(() => setCurrentDate(new Date()), 1000);
+    return () => clearInterval(timer);
   }, []);
 
-  // Fetch unique locations taken directly from duty master
-  const fetchLocations = useCallback(async () => {
-    try {
-      const res = await fetch(`${baseUrl}/duty-attendance/locations`);
-      if (res.ok) {
-        const data = await res.json();
-        setLocations(data);
-      }
-    } catch (e) {
-      console.error("Gagal mengambil daftar lokasi duty:", e);
-    }
-  }, [baseUrl]);
+  useEffect(() => {
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Fetch all teachers for substitute / manual dropdown
-  const fetchTeachers = useCallback(async () => {
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      const res = await fetch(`${baseUrl}/duty-attendance/teachers`);
-      if (res.ok) {
-        const data = await res.json();
-        setAllTeachers(data);
-      }
-    } catch (e) {
-      console.error("Gagal mengambil daftar guru:", e);
-    }
-  }, [baseUrl]);
-
-  // Fetch sessions for the selected date & location
-  const fetchSessions = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      let url = `${baseUrl}/duty-attendance/sessions?tanggal=${selectedDate}`;
-      if (selectedLocation) {
-        url += `&location=${encodeURIComponent(selectedLocation)}`;
-      }
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
+      const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+      const [resSess, resTeach] = await Promise.all([
+        fetch(`/api/duty-attendance/sessions?tanggal=${todayStr}`),
+        fetch(`/api/teachers`),
+      ]);
+      if (resSess.ok) {
+        const data = await resSess.json();
         setSessions(data);
-      } else {
-        setSessions([]);
       }
-    } catch (e) {
-      console.error("Gagal mengambil sesi duty:", e);
-      setSessions([]);
-    } finally {
-      setIsLoading(false);
+      if (resTeach.ok) {
+        const data = await resTeach.json();
+        const names = Array.from(new Set(data.map((t) => t.teacher_name))).sort();
+        setAllTeachers(names);
+      }
+    } catch (err) {
+      console.error(err);
     }
-  }, [baseUrl, selectedDate, selectedLocation]);
+    setLoading(false);
+  };
 
-  useEffect(() => {
-    fetchLocations();
-    fetchTeachers();
-  }, [fetchLocations, fetchTeachers]);
+  const showToast = (msg, type = "success") => {
+    setToast({ show: true, message: msg, type });
+    setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000);
+  };
 
-  useEffect(() => {
-    fetchSessions();
-  }, [fetchSessions]);
-
-  // Initialize or update form state for a session
   const setSessionFormField = (sessionKey, field, value) => {
-    setFormStates((prev) => ({
+    setForms((prev) => ({
       ...prev,
       [sessionKey]: {
-        teacherName: "",
-        password: "citahati",
-        notes: "",
-        isSubmitting: false,
-        ...(prev[sessionKey] || {}),
+        ...(prev[sessionKey] || { teacherName: "", password: "", notes: "", isSubmitting: false }),
         [field]: value,
       },
     }));
   };
 
-  const getSessionForm = (sessionKey) => {
-    return (
-      formStates[sessionKey] || {
-        teacherName: "",
-        password: "citahati",
-        notes: "",
-        isSubmitting: false,
-      }
-    );
-  };
-
-  // Submit check-in
   const handleCheckIn = async (session) => {
-    const form = getSessionForm(session.session_key);
+    const form = forms[session.session_key] || {};
     if (!form.teacherName) {
-      showNotice("error", "Pilih atau isi nama guru yang akan absen!");
+      showToast("Pilih nama guru terlebih dahulu!", "error");
       return;
     }
-    if (!form.password) {
-      showNotice("error", "Masukkan password absensi 'citahati'!");
+    if (form.password !== "citahati") {
+      showToast("Password salah!", "error");
       return;
     }
 
     setSessionFormField(session.session_key, "isSubmitting", true);
     try {
-      const payload = {
-        date: selectedDate,
-        location: session.location,
-        time_slot: session.time_slot,
-        duty_category: session.duty_category,
-        teacher_name: form.teacherName,
-        password: form.password,
-        notes: form.notes || null,
-      };
-
-      const res = await fetch(`${baseUrl}/duty-attendance/check-in`, {
+      const res = await fetch("/api/duty-attendance/check-in", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          teacher_name: form.teacherName,
+          location: session.location,
+          time_slot: session.time_slot,
+          passcode: form.password,
+          notes: form.notes || "",
+        }),
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.detail || "Gagal melakukan absensi duty.");
+      if (res.ok) {
+        showToast("Absen berhasil dikonfirmasi!", "success");
+        // Reset form
+        setSessionFormField(session.session_key, "teacherName", "");
+        setSessionFormField(session.session_key, "password", "");
+        setSessionFormField(session.session_key, "notes", "");
+        fetchData();
+      } else {
+        showToast(data.detail || "Gagal absen", "error");
       }
-
-      showNotice(
-        "success",
-        `Absensi berhasil tercatat! [${data.status_label}] untuk ${data.teacher_name}`
-      );
-      // Reset form field for this session
-      setSessionFormField(session.session_key, "teacherName", "");
-      setSessionFormField(session.session_key, "notes", "");
-      // Refresh sessions
-      fetchSessions();
-    } catch (e) {
-      showNotice("error", e.message);
-    } finally {
-      setSessionFormField(session.session_key, "isSubmitting", false);
+    } catch (err) {
+      showToast("Terjadi kesalahan jaringan", "error");
     }
+    setSessionFormField(session.session_key, "isSubmitting", false);
   };
 
-  const showNotice = (type, message) => {
-    setNotification({ type, message });
-    setTimeout(() => setNotification(null), 5000);
-  };
-
-  // Seed Dummy Data for Verification
-  const handleSeedDummy = async () => {
-    setIsSeedingDummy(true);
+  const parseTime = (timeStr) => {
     try {
-      const res = await fetch(`${baseUrl}/duty-attendance/seed-dummy`, {
-        method: "POST",
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Gagal seed dummy");
-      showNotice(
-        "success",
-        `1 Data Dummy Berhasil Dibuat! [${data.scheduled_teacher} (Sudah Duty)] & [${data.unscheduled_teacher} (Bukan Jadwal Duty)]`
-      );
-      setSelectedDate(data.date);
-      fetchSessions();
-    } catch (e) {
-      showNotice("error", e.message);
-    } finally {
-      setIsSeedingDummy(false);
+      const [h, m] = timeStr.replace(":", ".").split(".");
+      return { h: parseInt(h, 10), m: parseInt(m, 10) };
+    } catch {
+      return null;
     }
   };
 
-  // KPI Calculations across all sessions
-  let kpiBelum = 0;
-  let kpiLagi = 0;
-  let kpiSudah = 0;
-  let kpiTidak = 0;
-  sessions.forEach((s) => {
-    s.scheduled_teachers.forEach((t) => {
-      if (t.status === "Sudah Duty") kpiSudah++;
-      else if (t.status === "Lagi Duty") kpiLagi++;
-      else if (t.status === "Tidak Duty") kpiTidak++;
-      else kpiBelum++;
-    });
-  });
+  const isTimeEnded = (timeSlot) => {
+    const parts = timeSlot.replace(" ", "").replace("–", "-").split("-");
+    if (parts.length === 2) {
+      const endT = parseTime(parts[1]);
+      if (endT) {
+        const now = new Date();
+        const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endT.h, endT.m, 0);
+        return now > endTime;
+      }
+    }
+    return false;
+  };
+
+  // If no location in URL, show buttons for all available locations today
+  if (!locationParam) {
+    const uniqueLocations = Array.from(new Set(sessions.map(s => s.location)));
+    
+    return (
+      <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
+        <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
+          <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-black text-[#1e3a8a] tracking-tight">
+                Absensi Duty
+              </h1>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mt-1">
+                {currentDate.toLocaleDateString("id-ID", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-xl font-mono font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
+                {currentDate.toLocaleTimeString("id-ID", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                })}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 max-w-4xl w-full mx-auto p-4 flex flex-col items-center justify-center">
+          {loading ? (
+            <div className="text-slate-500 font-bold animate-pulse">Memuat lokasi...</div>
+          ) : uniqueLocations.length === 0 ? (
+            <div className="text-slate-500">Tidak ada jadwal duty hari ini.</div>
+          ) : (
+            <div className="w-full max-w-2xl bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+              <h2 className="text-center text-lg font-black text-slate-700 mb-6 uppercase tracking-wider">
+                Pilih Lokasi Duty Anda
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {uniqueLocations.map((loc, idx) => {
+                  const urlSafeLoc = encodeURIComponent(loc);
+                  return (
+                    <Link
+                      key={idx}
+                      to={`/duty/${urlSafeLoc}`}
+                      className="bg-slate-50 hover:bg-[#1e3a8a] text-slate-700 hover:text-white border border-slate-200 hover:border-[#1e3a8a] transition-all duration-200 font-bold py-4 px-4 rounded-2xl flex items-center gap-3 shadow-sm hover:shadow-md group"
+                    >
+                      <span className="text-2xl group-hover:scale-110 transition-transform">📍</span>
+                      <span className="text-sm">{loc}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+    );
+  }
+
+  // Filter sessions by the URL param
+  const decodedLocation = decodeURIComponent(locationParam);
+  const locationSessions = sessions.filter(s => s.location.toLowerCase() === decodedLocation.toLowerCase());
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-20">
-      {/* Top Notification Toast */}
-      {notification && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 max-w-md w-full px-4 animate-in fade-in slide-in-from-top-4 duration-300">
-          <div
-            className={`p-4 rounded-2xl shadow-xl flex items-start gap-3 border ${
-              notification.type === "success"
-                ? "bg-emerald-50 border-emerald-200 text-emerald-900"
-                : "bg-rose-50 border-rose-200 text-rose-900"
-            }`}
-          >
-            <span className="text-xl">
-              {notification.type === "success" ? "✅" : "⚠️"}
-            </span>
-            <div className="flex-1 text-xs font-semibold leading-relaxed">
-              {notification.message}
-            </div>
-            <button
-              onClick={() => setNotification(null)}
-              className="text-slate-400 hover:text-slate-600 font-bold text-sm"
-            >
-              ✕
-            </button>
-          </div>
+    <div className="min-h-screen bg-slate-100 pb-20 font-sans">
+      {/* Toast Notification */}
+      {toast.show && (
+        <div
+          className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-full shadow-xl font-bold text-sm flex items-center gap-2 animate-bounce ${
+            toast.type === "success"
+              ? "bg-emerald-500 text-white"
+              : "bg-red-500 text-white"
+          }`}
+        >
+          {toast.type === "success" ? "✅" : "⚠️"} {toast.message}
         </div>
       )}
 
-      {/* HEADER NAVBAR */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
-            <Link to="/" className="flex items-center gap-3 group">
-              <img
-                src="/252-SMA_CITA_HATI_EAST_SURABAYA.png"
-                alt="Logo Cita Hati"
-                className="h-10 w-auto rounded-lg shadow-sm group-hover:scale-105 transition-transform"
-              />
-              <div>
-                <h1 className="text-base sm:text-lg font-black tracking-tight text-slate-800 leading-tight">
-                  Absensi Guru Piket
-                </h1>
-                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
-                  Cita Hati East Surabaya
-                </p>
-              </div>
-            </Link>
-
-            <Link
-              to="/"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-blue-600 bg-slate-100 hover:bg-blue-50 px-3 py-1.5 rounded-xl transition-colors md:hidden"
-            >
-              📢 Pengumuman
-            </Link>
-          </div>
-
-          <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-            <div className="bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-xs font-black font-mono text-slate-700">
-                {currentTimeStr}
-              </span>
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
+        <div className="max-w-3xl mx-auto px-4 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <button onClick={() => navigate("/duty")} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+              <h1 className="text-xl font-black text-[#1e3a8a] tracking-tight">
+                Absensi Duty: {decodedLocation}
+              </h1>
             </div>
-
-            <Link
-              to="/"
-              className="hidden md:inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-blue-600 bg-slate-100 hover:bg-blue-50 px-3.5 py-2 rounded-xl transition-colors"
-            >
-              📢 Halaman Pengumuman
-            </Link>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest pl-11">
+              {currentDate.toLocaleDateString("id-ID", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </p>
+          </div>
+          <div className="flex items-center justify-end">
+            <div className="text-xl font-mono font-bold text-slate-700 bg-slate-100 px-4 py-2 rounded-xl border border-slate-200">
+              {currentDate.toLocaleTimeString("id-ID", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              })}
+            </div>
           </div>
         </div>
       </header>
 
-      {/* HERO SECTION */}
-      <section className="bg-gradient-to-b from-[#1e3a8a] to-[#172554] text-white pt-8 pb-14 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div>
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest bg-blue-500/20 text-blue-200 px-3 py-1 rounded-full border border-blue-400/30 mb-2">
-                🛡️ Teacher on Duty Attendance System
-              </span>
-              <h2 className="text-2xl sm:text-4xl font-black tracking-tight">
-                Sistem Absensi Waktu Duty
-              </h2>
-              <p className="text-blue-100/80 text-xs sm:text-sm mt-1 max-w-2xl font-medium">
-                Pilih tempat tugas dan nama guru, lalu masukkan password tetap{" "}
-                <span className="font-mono font-bold bg-amber-400 text-slate-900 px-2 py-0.5 rounded-md">
-                  citahati
-                </span>{" "}
-                untuk konfirmasi kehadiran piket.
-              </p>
-            </div>
-
-            {/* Test Dummy Action */}
-            <div className="flex-shrink-0">
-              <button
-                onClick={handleSeedDummy}
-                disabled={isSeedingDummy}
-                className="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold text-xs px-4 py-2.5 rounded-2xl shadow-lg shadow-amber-900/20 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
-              >
-                <span>🧪</span>
-                <span>
-                  {isSeedingDummy ? "Memproses Dummy..." : "Uji Coba Data Dummy"}
-                </span>
-              </button>
-            </div>
+      {/* Main Content */}
+      <main className="max-w-3xl mx-auto p-4 mt-4">
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <div className="animate-spin rounded-full h-10 w-10 border-4 border-[#1e3a8a] border-t-transparent"></div>
           </div>
-
-          {/* FILTER BAR: TANGGAL & TEMPAT DUTY */}
-          <div className="mt-8 bg-white/10 backdrop-blur-md p-4 sm:p-5 rounded-3xl border border-white/20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-blue-200 mb-1.5">
-                📅 Tanggal Duty
-              </label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full bg-white text-slate-800 text-xs font-bold px-3.5 py-2.5 rounded-2xl outline-none focus:ring-2 focus:ring-amber-400 shadow-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-blue-200 mb-1.5">
-                📍 Tempat Duty (Dari Daftar Duty)
-              </label>
-              <select
-                value={selectedLocation}
-                onChange={(e) => setSelectedLocation(e.target.value)}
-                className="w-full bg-white text-slate-800 text-xs font-bold px-3.5 py-2.5 rounded-2xl outline-none focus:ring-2 focus:ring-amber-400 shadow-sm"
-              >
-                <option value="">Semua Tempat Duty (All Locations)</option>
-                {locations.map((loc, idx) => (
-                  <option key={idx} value={loc}>
-                    📍 {loc}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="sm:col-span-2 lg:col-span-1 flex flex-col justify-end">
-              <div className="text-[11px] text-blue-200/90 font-medium">
-                Hari:{" "}
-                <span className="font-bold text-white uppercase tracking-wider">
-                  {new Date(selectedDate + "T00:00:00").toLocaleDateString(
-                    "id-ID",
-                    { weekday: "long", day: "numeric", month: "long", year: "numeric" }
-                  )}
-                </span>
-              </div>
-              <p className="text-[10px] text-blue-300 mt-1">
-                Password absensi:{" "}
-                <strong className="text-amber-300 font-mono text-xs">citahati</strong>
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* KPI STATUS BAR (4 LINGKARAN WARNA) */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6">
-        <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-xl shadow-slate-200/60 border border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100">
-            <span className="text-2xl">⚪</span>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                Belum Duty
-              </p>
-              <p className="text-lg font-black text-slate-700">{kpiBelum} Guru</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-100">
-            <span className="text-2xl animate-pulse">🟢</span>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-wider text-emerald-600">
-                Lagi Duty
-              </p>
-              <p className="text-lg font-black text-emerald-800">{kpiLagi} Guru</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-blue-50 border border-blue-100">
-            <span className="text-2xl">🔵</span>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-wider text-blue-600">
-                Sudah Duty
-              </p>
-              <p className="text-lg font-black text-blue-800">{kpiSudah} Guru</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-orange-50 border border-orange-100">
-            <span className="text-2xl">🟠</span>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-wider text-orange-600">
-                Tidak Duty
-              </p>
-              <p className="text-lg font-black text-orange-800">{kpiTidak} Guru</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* SESSIONS LIST */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 mt-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-lg font-black text-slate-800 tracking-tight">
-              Daftar Sesi Duty & Tampilan Code
-            </h3>
-            <p className="text-xs text-slate-500 font-medium">
-              Menampilkan {sessions.length} sesi duty untuk tempat & waktu yang dipilih
-            </p>
-          </div>
-
-          <button
-            onClick={fetchSessions}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-xl transition-colors"
-          >
-            🔄 Segarkan Data
-          </button>
-        </div>
-
-        {isLoading ? (
-          <div className="py-20 text-center">
-            <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-sm font-bold text-slate-600">
-              Memuat data jadwal duty & status kehadiran...
-            </p>
-          </div>
-        ) : sessions.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-slate-200">
-            <div className="text-5xl mb-3 opacity-60">🛡️</div>
-            <h4 className="text-base font-bold text-slate-800">
-              Tidak Ada Jadwal Duty Ditemukan
-            </h4>
-            <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 leading-relaxed">
-              Tidak ada jadwal guru piket pada tanggal atau filter tempat yang dipilih.
-              (Pastikan tanggal yang dipilih adalah hari sekolah Senin–Jumat, atau klik tombol Uji Coba Dummy di atas).
-            </p>
+        ) : locationSessions.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-3xl border border-slate-200 shadow-sm">
+            <div className="text-4xl mb-3">📭</div>
+            <h3 className="text-lg font-bold text-slate-700">Tidak ada jadwal</h3>
+            <p className="text-slate-500 text-sm mt-1">Tidak ditemukan jadwal duty untuk lokasi ini pada hari ini.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {sessions.map((session) => {
-              const currentForm = getSessionForm(session.session_key);
+          <div className="space-y-6">
+            {locationSessions.map((session, sIdx) => {
+              const currentForm = forms[session.session_key] || {
+                teacherName: "",
+                password: "",
+                notes: "",
+                isSubmitting: false,
+              };
+              
+              const isEnded = isTimeEnded(session.time_slot);
 
               return (
                 <div
-                  key={session.session_key}
-                  className="bg-white rounded-[2rem] shadow-sm hover:shadow-md transition-shadow border border-slate-200 overflow-hidden flex flex-col justify-between"
+                  key={sIdx}
+                  className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden"
                 >
-                  {/* CARD HEADER: TEMPAT & WAKTU */}
-                  <div className="p-6 bg-gradient-to-r from-slate-900 to-slate-800 text-white">
-                    <div className="flex items-start justify-between gap-4">
+                  {/* Card Header (Dark Blue) */}
+                  <div className="bg-[#1b2744] p-6 text-white relative overflow-hidden">
+                    {/* Background Pattern */}
+                    <div className="absolute -right-10 -top-10 opacity-10">
+                      <svg width="150" height="150" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                      </svg>
+                    </div>
+
+                    <div className="flex justify-between items-start relative z-10">
                       <div>
-                        <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md bg-white/10 text-amber-300 border border-white/10 inline-block mb-2">
-                          {session.duty_category || "Duty Session"}
-                        </span>
-                        <h4 className="text-lg font-black tracking-tight flex items-center gap-2">
-                          <span>📍</span>
-                          <span>{session.location}</span>
-                        </h4>
-                        <p className="text-xs text-slate-300 font-mono mt-0.5 flex items-center gap-1.5">
-                          <span>🕒</span>
-                          <span className="font-bold">{session.time_slot}</span>
-                          {session.grade_scope && (
-                            <span className="text-[10px] text-slate-400">
-                              • {session.grade_scope}
-                            </span>
-                          )}
-                        </p>
+                        <div className="inline-block px-3 py-1 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-[10px] font-black uppercase tracking-widest text-amber-300 mb-3">
+                          {session.duty_category}
+                        </div>
+                        <h2 className="text-2xl font-black mb-2 flex items-center gap-2">
+                          <span>📍</span> {session.location}
+                        </h2>
+                        <div className="flex items-center gap-4 text-sm font-semibold text-slate-300">
+                          <span className="flex items-center gap-1.5">
+                            🕒 {session.time_slot}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            👥 {session.grade_scope}
+                          </span>
+                        </div>
                       </div>
 
-                      {/* TAMPILAN CODE / PASSWORD CARD */}
-                      <div className="bg-white/10 backdrop-blur-md px-3.5 py-2.5 rounded-2xl border border-white/20 text-center flex-shrink-0">
-                        <span className="block text-[9px] font-black uppercase tracking-widest text-slate-300">
-                          Password Absen
-                        </span>
-                        <span className="font-mono font-black text-sm text-amber-300 tracking-wider">
+                      {/* Password Hint */}
+                      <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-3 text-center min-w-[120px]">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                          Password
+                        </div>
+                        <div className="text-lg font-mono font-bold text-amber-400 select-all cursor-pointer" title="Klik dua kali untuk menyalin">
                           citahati
-                        </span>
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText("citahati");
-                            showNotice("success", "Password 'citahati' disalin!");
-                          }}
-                          className="mt-1 block text-[9px] font-bold text-blue-200 hover:text-white underline mx-auto"
-                        >
-                          Salin Kode
-                        </button>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* CARD BODY */}
-                  <div className="p-6 space-y-5 flex-1">
-                    {/* SECTION: SIAPA SAJA YANG DUTY */}
+                  {/* Card Body */}
+                  <div className="p-6 space-y-6">
+                    {/* SECTION: GURU TERJADWAL */}
                     <div>
-                      <div className="flex items-center justify-between mb-2.5">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                          👥 Guru Terjadwal Duty ({session.scheduled_teachers.length})
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                          👥 Guru Terjadwal Duty ({session.total_scheduled})
                         </span>
-                        <span className="text-[11px] font-bold text-blue-600">
+                        <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
                           {session.total_attended} / {session.total_scheduled} Hadir
                         </span>
                       </div>
-
+                      
                       <div className="space-y-2">
-                        {session.scheduled_teachers.map((t, tIdx) => (
+                        {session.scheduled_teachers.map((st, idx) => (
                           <div
-                            key={tIdx}
-                            className={`p-3 rounded-2xl border flex items-center justify-between gap-3 transition-colors ${
-                              t.status === "Sudah Duty"
-                                ? "bg-blue-50/70 border-blue-200 text-blue-900"
-                                : t.status === "Lagi Duty"
-                                ? "bg-emerald-50/70 border-emerald-200 text-emerald-900"
-                                : t.status === "Tidak Duty"
-                                ? "bg-orange-50/60 border-orange-200 text-orange-900"
-                                : "bg-slate-50 border-slate-200 text-slate-700"
-                            }`}
+                            key={idx}
+                            className={`p-3 rounded-2xl border ${
+                              st.is_attended
+                                ? "bg-blue-50/50 border-blue-200"
+                                : "bg-white border-slate-200"
+                            } flex flex-col sm:flex-row sm:items-center justify-between gap-3`}
                           >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <span className="text-base flex-shrink-0">
-                                {t.icon}
-                              </span>
-                              <div className="truncate">
-                                <p className="text-xs font-bold truncate">
-                                  {t.teacher_name}
-                                </p>
-                                {t.task && (
-                                  <p className="text-[10px] text-slate-500 truncate">
-                                    {t.task}
-                                  </p>
+                            <div className="flex items-start gap-3">
+                              <div
+                                className={`w-4 h-4 mt-0.5 rounded-full shadow-inner flex-shrink-0 ${
+                                  st.is_attended ? "bg-blue-500" : "bg-slate-200"
+                                }`}
+                              ></div>
+                              <div>
+                                <div className="font-bold text-slate-800 text-sm">
+                                  {st.teacher_name}
+                                </div>
+                                {st.task && (
+                                  <div className="text-[11px] font-medium text-slate-500 leading-tight mt-0.5 max-w-md">
+                                    {st.task}
+                                  </div>
                                 )}
                               </div>
                             </div>
-
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              <span
-                                className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
-                                  t.status === "Sudah Duty"
-                                    ? "bg-blue-100 text-blue-800 border-blue-300"
-                                    : t.status === "Lagi Duty"
-                                    ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                                    : t.status === "Tidak Duty"
-                                    ? "bg-orange-100 text-orange-800 border-orange-300"
-                                    : "bg-slate-200 text-slate-600 border-slate-300"
-                                }`}
-                              >
-                                {t.status}
-                              </span>
-
-                              {/* Quick pick button */}
-                              {!t.is_attended && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setSessionFormField(
-                                      session.session_key,
-                                      "teacherName",
-                                      t.teacher_name
-                                    )
-                                  }
-                                  className="text-[10px] font-bold text-blue-600 bg-white hover:bg-blue-600 hover:text-white px-2 py-1 rounded-lg border border-blue-200 transition-colors"
-                                >
-                                  Pilih
-                                </button>
-                              )}
-                            </div>
+                            {st.is_attended ? (
+                              <div className="text-[10px] font-black uppercase tracking-wider text-blue-600 bg-blue-100 px-3 py-1 rounded-lg self-start sm:self-center">
+                                Sudah Duty
+                              </div>
+                            ) : isEnded ? (
+                              <div className="text-[10px] font-black uppercase tracking-wider text-orange-600 bg-orange-100 px-3 py-1 rounded-lg self-start sm:self-center">
+                                Tidak Hadir
+                              </div>
+                            ) : null}
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    {/* SECTION: FORM ABSENSI CEPAT */}
-                    <div className="pt-2 border-t border-slate-100">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">
+                    {/* SECTION: FORM ABSENSI */}
+                    <div>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-3">
                         ✍️ Form Absensi Kehadiran
-                      </p>
+                      </span>
+                      
+                      {isEnded ? (
+                        <div className="bg-red-50 border border-red-200 rounded-2xl p-5 text-center">
+                          <span className="text-2xl mb-2 block">⏳</span>
+                          <h4 className="text-sm font-bold text-red-700">Waktu Absen Telah Berakhir</h4>
+                          <p className="text-xs text-red-600 mt-1">Anda tidak dapat melakukan absen karena jam duty untuk sesi ini sudah selesai.</p>
+                        </div>
+                      ) : (
+                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5">
+                          <div className="space-y-3">
+                            {/* Input Nama */}
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 mb-1">
+                                Nama Guru yang Absen *
+                              </label>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {/* Pilihan cepat */}
+                                <select
+                                  value={currentForm.teacherName}
+                                  onChange={(e) =>
+                                    setSessionFormField(session.session_key, "teacherName", e.target.value)
+                                  }
+                                  className="w-full bg-white border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                  <option value="">-- Pilih Guru Terjadwal --</option>
+                                  {session.scheduled_teachers.map((st, sIdx) => (
+                                    <option key={sIdx} value={st.teacher_name}>
+                                      {st.teacher_name} {st.is_attended ? "(Sudah Absen)" : ""}
+                                    </option>
+                                  ))}
+                                </select>
 
-                      <div className="space-y-2.5">
-                        {/* Option Nama Guru */}
-                        <div>
-                          <label className="block text-[10px] font-bold text-slate-500 mb-1">
-                            Nama Guru yang Absen *
-                          </label>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {/* Pilihan cepat dari guru terjadwal */}
-                            <select
-                              value={currentForm.teacherName}
-                              onChange={(e) =>
-                                setSessionFormField(
-                                  session.session_key,
-                                  "teacherName",
-                                  e.target.value
-                                )
-                              }
-                              className="w-full bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                              <option value="">-- Pilih Guru Terjadwal --</option>
-                              {session.scheduled_teachers.map((st, sIdx) => (
-                                <option key={sIdx} value={st.teacher_name}>
-                                  {st.teacher_name} {st.is_attended ? "(Sudah Absen)" : ""}
-                                </option>
-                              ))}
-                            </select>
+                                {/* Dropdown Inval */}
+                                <select
+                                  onChange={(e) => {
+                                    if (e.target.value) {
+                                      setSessionFormField(session.session_key, "teacherName", e.target.value);
+                                    }
+                                  }}
+                                  className="w-full bg-white border border-slate-200 text-xs font-medium text-slate-600 px-3 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                  <option value="">Atau Pilih Guru Lain / Inval...</option>
+                                  {allTeachers.map((teach, idx) => (
+                                    <option key={idx} value={teach}>
+                                      {teach}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
 
-                            {/* Dropdown guru lain jika inval / pengganti */}
-                            <select
-                              onChange={(e) => {
-                                if (e.target.value) {
-                                  setSessionFormField(
-                                    session.session_key,
-                                    "teacherName",
-                                    e.target.value
-                                  );
-                                }
-                              }}
-                              className="w-full bg-slate-50 border border-slate-200 text-xs font-medium text-slate-600 px-3 py-2 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                            {/* Input Password & Catatan */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-500 mb-1">
+                                  Password Absensi *
+                                </label>
+                                <input
+                                  type="text"
+                                  value={currentForm.password}
+                                  onChange={(e) =>
+                                    setSessionFormField(session.session_key, "password", e.target.value)
+                                  }
+                                  placeholder="Ketik 'citahati'"
+                                  className="w-full bg-white border border-slate-200 font-mono text-xs font-bold text-slate-800 px-3 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-500 mb-1">
+                                  Catatan (Opsional)
+                                </label>
+                                <input
+                                  type="text"
+                                  value={currentForm.notes}
+                                  onChange={(e) =>
+                                    setSessionFormField(session.session_key, "notes", e.target.value)
+                                  }
+                                  placeholder="Misal: Inval / aman"
+                                  className="w-full bg-white border border-slate-200 text-xs font-medium text-slate-700 px-3 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              disabled={currentForm.isSubmitting}
+                              onClick={() => handleCheckIn(session)}
+                              className="w-full mt-2 bg-[#1e3a8a] hover:bg-blue-800 text-white text-xs font-bold py-3 rounded-xl shadow-md transition-all active:scale-[0.99] disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
-                              <option value="">Atau Pilih Guru Lain / Inval...</option>
-                              {allTeachers.map((teach, idx) => (
-                                <option key={idx} value={teach}>
-                                  {teach}
-                                </option>
-                              ))}
-                            </select>
+                              <span>✅</span>
+                              <span>
+                                {currentForm.isSubmitting
+                                  ? "Memproses Absensi..."
+                                  : `Konfirmasi Hadir ${
+                                      currentForm.teacherName ? `(${currentForm.teacherName})` : ""
+                                    }`}
+                              </span>
+                            </button>
                           </div>
                         </div>
-
-                        {/* Input Password & Catatan */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-[10px] font-bold text-slate-500 mb-1">
-                              Password Absensi *
-                            </label>
-                            <input
-                              type="text"
-                              value={currentForm.password}
-                              onChange={(e) =>
-                                setSessionFormField(
-                                  session.session_key,
-                                  "password",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="Ketik 'citahati'"
-                              className="w-full bg-slate-50 border border-slate-200 font-mono text-xs font-bold text-slate-800 px-3 py-2 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-[10px] font-bold text-slate-500 mb-1">
-                              Catatan (Opsional)
-                            </label>
-                            <input
-                              type="text"
-                              value={currentForm.notes}
-                              onChange={(e) =>
-                                setSessionFormField(
-                                  session.session_key,
-                                  "notes",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="Misal: Inval / aman"
-                              className="w-full bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 px-3 py-2 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          disabled={currentForm.isSubmitting}
-                          onClick={() => handleCheckIn(session)}
-                          className="w-full mt-2 bg-[#1e3a8a] hover:bg-blue-800 text-white text-xs font-bold py-2.5 rounded-xl shadow-md transition-all active:scale-[0.99] disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                          <span>✅</span>
-                          <span>
-                            {currentForm.isSubmitting
-                              ? "Memproses Absensi..."
-                              : `Konfirmasi Hadir ${
-                                  currentForm.teacherName
-                                    ? `(${currentForm.teacherName})`
-                                    : ""
-                                }`}
-                          </span>
-                        </button>
-                      </div>
+                      )}
                     </div>
 
                     {/* SECTION: RIWAYAT SUDAH ABSEN */}
@@ -731,7 +499,7 @@ export default function DutyAttendance() {
                                 >
                                   {att.is_scheduled_duty
                                     ? "🛡️ Terjadwal Duty"
-                                    : "⚠️ Bukan Jadwal Duty"}
+                                    : "🔄 Bukan Jadwal Duty"}
                                 </span>
                                 <span className="font-bold text-slate-800">
                                   {att.teacher_name}
