@@ -31,7 +31,7 @@ export default function DutyAttendance() {
       const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
       const [resSess, resTeach] = await Promise.all([
         fetch(`/api/duty-attendance/sessions?tanggal=${todayStr}`),
-        fetch(`/api/teachers`),
+        fetch(`/api/duty-attendance/teachers`),
       ]);
       if (resSess.ok) {
         const data = await resSess.json();
@@ -80,10 +80,11 @@ export default function DutyAttendance() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          date: new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" }),
           teacher_name: form.teacherName,
           location: session.location,
           time_slot: session.time_slot,
-          passcode: form.password,
+          password: form.password,
           notes: form.notes || "",
         }),
       });
@@ -312,54 +313,6 @@ export default function DutyAttendance() {
 
                   {/* Card Body */}
                   <div className="p-6 space-y-6">
-                    {/* SECTION: GURU TERJADWAL */}
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                          👥 Guru Terjadwal Duty ({session.total_scheduled})
-                        </span>
-                        <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
-                          {session.total_attended} / {session.total_scheduled} Hadir
-                        </span>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        {session.scheduled_teachers.map((st, idx) => (
-                          <div
-                            key={idx}
-                            className={`p-3 rounded-2xl border ${
-                              st.is_attended
-                                ? "bg-blue-50/50 border-blue-200"
-                                : "bg-white border-slate-200"
-                            } flex flex-col sm:flex-row sm:items-center justify-between gap-3`}
-                          >
-                            <div className="flex items-start gap-3">
-                              <div
-                                className={`w-4 h-4 mt-0.5 rounded-full shadow-inner flex-shrink-0 ${
-                                  st.is_attended ? "bg-blue-500" : "bg-slate-200"
-                                }`}
-                              ></div>
-                              <div>
-                                <div className="font-bold text-slate-800 text-sm">
-                                  {st.teacher_name}
-                                </div>
-                                {st.task && (
-                                  <div className="text-[11px] font-medium text-slate-500 leading-tight mt-0.5 max-w-md">
-                                    {st.task}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            {st.is_attended ? (
-                              <div className="text-[10px] font-black uppercase tracking-wider text-blue-600 bg-blue-100 px-3 py-1 rounded-lg self-start sm:self-center">
-                                Sudah Duty
-                              </div>
-                            ) : null}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
                     {/* SECTION: FORM ABSENSI */}
                     <div>
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-3">
@@ -367,7 +320,6 @@ export default function DutyAttendance() {
                       </span>
                       
                       {/* Form Absensi - Pasti ditampilkan karena sudah difilter */}
-                      (
                         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5">
                           <div className="space-y-3">
                             {/* Input Nama */}
@@ -375,7 +327,7 @@ export default function DutyAttendance() {
                               <label className="block text-[10px] font-bold text-slate-500 mb-1">
                                 Nama Guru yang Absen *
                               </label>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div className="grid grid-cols-1 gap-2">
                                 {/* Pilihan cepat */}
                                 <select
                                   onChange={(e) =>
@@ -411,7 +363,7 @@ export default function DutyAttendance() {
                             </div>
 
                             {/* Input Password & Catatan */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div className="grid grid-cols-1 gap-2">
                               <div>
                                 <label className="block text-[10px] font-bold text-slate-500 mb-1">
                                   Password Absensi *
@@ -424,21 +376,6 @@ export default function DutyAttendance() {
                                   }
                                   placeholder="Ketik 'citahati'"
                                   className="w-full bg-white border border-slate-200 font-mono text-xs font-bold text-slate-800 px-3 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-500 mb-1">
-                                  Catatan (Opsional)
-                                </label>
-                                <input
-                                  type="text"
-                                  value={currentForm.notes}
-                                  onChange={(e) =>
-                                    setSessionFormField(session.session_key, "notes", e.target.value)
-                                  }
-                                  placeholder="Misal: Inval / aman"
-                                  className="w-full bg-white border border-slate-200 text-xs font-medium text-slate-700 px-3 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                               </div>
                             </div>
