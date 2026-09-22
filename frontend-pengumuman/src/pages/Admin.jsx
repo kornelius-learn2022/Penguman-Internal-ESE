@@ -1,3 +1,4 @@
+import QRCode from "qrcode";
 import React, { useState, useEffect, useCallback } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import {
@@ -129,6 +130,136 @@ export default function Admin() {
   const [dutyAttendanceRecords, setDutyAttendanceRecords] = useState([]);
   const [dutyAttendanceSessions, setDutyAttendanceSessions] = useState([]);
   const [dutyAttendanceLocations, setDutyAttendanceLocations] = useState([]);
+  const [selectedQrLocation, setSelectedQrLocation] = useState(null);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
+
+  const handleOpenQrModal = async (loc) => {
+    setSelectedQrLocation(loc);
+    const targetUrl = `https://pengumuman.klprojects.online/duty/${encodeURIComponent(loc)}`;
+    try {
+      const url = await QRCode.toDataURL(targetUrl, {
+        width: 320,
+        margin: 2,
+        color: {
+          dark: "#1e3a8a",
+          light: "#ffffff",
+        },
+      });
+      setQrCodeDataUrl(url);
+    } catch (err) {
+      console.error("Failed to generate QR Code", err);
+    }
+  };
+
+  const handlePrintQr = () => {
+    const printWindow = window.open("", "_blank");
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>QR Code Duty - ${selectedQrLocation}</title>
+          <style>
+            @media print {
+              @page { size: A4 portrait; margin: 15mm; }
+              body { margin: 0; }
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              margin: 0;
+              background-color: #ffffff;
+            }
+            .poster {
+              border: 5px solid #1e3a8a;
+              border-radius: 28px;
+              padding: 40px 30px;
+              text-align: center;
+              max-width: 480px;
+              width: 100%;
+              box-sizing: border-box;
+            }
+            .logo {
+              height: 90px;
+              margin: 0 auto 16px;
+              display: block;
+            }
+            .school-name {
+              font-size: 20px;
+              font-weight: 900;
+              color: #1e3a8a;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              margin: 0 0 6px 0;
+            }
+            .subtitle {
+              font-size: 13px;
+              font-weight: 700;
+              color: #d97706;
+              letter-spacing: 2px;
+              text-transform: uppercase;
+              margin: 0 0 24px 0;
+            }
+            .location-box {
+              background: #1e3a8a;
+              color: #ffffff;
+              display: inline-block;
+              padding: 12px 32px;
+              border-radius: 40px;
+              font-size: 24px;
+              font-weight: 900;
+              margin-bottom: 24px;
+              letter-spacing: 0.5px;
+            }
+            .qr-code {
+              width: 280px;
+              height: 280px;
+              margin: 0 auto 20px;
+              display: block;
+            }
+            .instructions {
+              font-size: 15px;
+              font-weight: 800;
+              color: #1e293b;
+              margin: 0 0 8px 0;
+            }
+            .sub-instructions {
+              font-size: 12px;
+              color: #64748b;
+              margin: 0;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="poster">
+            <img class="logo" src="/252-SMA_CITA_HATI_EAST_SURABAYA.png" alt="Cita Hati Logo" />
+            <h1 class="school-name">Cita Hati East Surabaya</h1>
+            <div class="subtitle">Duty Attendance Check-In</div>
+            <div class="location-box">📍 ${selectedQrLocation}</div>
+            <img class="qr-code" src="${qrCodeDataUrl}" alt="QR Code" />
+            <p class="instructions">Scan QR Code ini untuk Absensi Kehadiran Duty</p>
+            <p class="sub-instructions">Gunakan kamera HP / Google Lens / QR Scanner</p>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  const handleDownloadQr = () => {
+    if (!qrCodeDataUrl) return;
+    const a = document.createElement("a");
+    a.href = qrCodeDataUrl;
+    a.download = `QR_Duty_${selectedQrLocation.replace(/\s+/g, "_")}.png`;
+    a.click();
+  };
   const [filterAttDate, setFilterAttDate] = useState(today);
   const [filterAttLoc, setFilterAttLoc] = useState("");
   const [filterAttScheduled, setFilterAttScheduled] = useState("all");
@@ -5019,6 +5150,14 @@ export default function Admin() {
                                   className="w-full text-[10px] p-2 bg-white border border-slate-300 rounded-lg text-slate-500 font-mono outline-none"
                                 />
                                 <button 
+                                  onClick={() => handleOpenQrModal(loc)}
+                                  className="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+                                  title="Buat QR Code Lokasi Ini"
+                                >
+                                  <span>📱</span>
+                                  <span>QR</span>
+                                </button>
+                                <button 
                                   onClick={() => {
                                     navigator.clipboard.writeText(safeUrl);
                                     alert('Link tersalin!');
@@ -5049,7 +5188,85 @@ export default function Admin() {
                     </div>
                   )}
 
-                {/* Table Log Absensi Card */}
+                {/* MODAL QR CODE LOKASI DENGAN LOGO CITA HATI */}
+                  {selectedQrLocation && (
+                    <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+                      <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">📱</span>
+                            <h3 className="text-base font-black text-slate-800">
+                              QR Code Absensi Lokasi
+                            </h3>
+                          </div>
+                          <button
+                            onClick={() => setSelectedQrLocation(null)}
+                            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold flex items-center justify-center transition-colors"
+                          >
+                            ✕
+                          </button>
+                        </div>
+
+                        {/* Printable Poster Card Preview */}
+                        <div className="my-5 p-6 bg-slate-50 rounded-2xl border-2 border-dashed border-indigo-200 text-center flex flex-col items-center">
+                          <img
+                            src="/252-SMA_CITA_HATI_EAST_SURABAYA.png"
+                            alt="Cita Hati Logo"
+                            className="h-14 w-auto object-contain mb-2"
+                          />
+                          <h4 className="text-xs font-black text-[#1e3a8a] uppercase tracking-wider">
+                            Sekolah Cita Hati East Surabaya
+                          </h4>
+                          <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest mt-0.5">
+                            Duty Attendance Check-In
+                          </span>
+
+                          <div className="my-3 px-4 py-1.5 bg-[#1e3a8a] text-white text-sm font-black rounded-full shadow-sm">
+                            📍 {selectedQrLocation}
+                          </div>
+
+                          {qrCodeDataUrl ? (
+                            <img
+                              src={qrCodeDataUrl}
+                              alt="QR Code"
+                              className="w-52 h-52 my-1 rounded-xl shadow-md border border-slate-200 bg-white p-2"
+                            />
+                          ) : (
+                            <div className="w-52 h-52 flex items-center justify-center bg-slate-200 rounded-xl animate-pulse text-xs text-slate-500 font-bold">
+                              Membuat QR Code...
+                            </div>
+                          )}
+
+                          <p className="text-xs font-bold text-slate-700 mt-2">
+                            Scan QR Code ini untuk absen tugas duty
+                          </p>
+                          <span className="text-[10px] text-slate-400 font-mono mt-1 break-all px-2">
+                            https://pengumuman.klprojects.online/duty/{encodeURIComponent(selectedQrLocation)}
+                          </span>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <button
+                            onClick={handlePrintQr}
+                            className="w-full bg-[#1e3a8a] hover:bg-blue-800 text-white text-xs font-bold py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                          >
+                            <span>🖨️</span>
+                            <span>Cetak Poster</span>
+                          </button>
+                          <button
+                            onClick={handleDownloadQr}
+                            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-3 rounded-xl border border-slate-200 transition-all flex items-center justify-center gap-2"
+                          >
+                            <span>💾</span>
+                            <span>Download PNG</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Table Log Absensi Card */}
                 <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
                   <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
                     <h3 className="text-base font-bold text-slate-800 tracking-tight flex items-center gap-2">

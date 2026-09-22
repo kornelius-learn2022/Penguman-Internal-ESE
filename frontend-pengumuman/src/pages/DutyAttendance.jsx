@@ -135,12 +135,17 @@ export default function DutyAttendance() {
     return (
       <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
         <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
-          <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
+            <img
+              src="/252-SMA_CITA_HATI_EAST_SURABAYA.png"
+              alt="Cita Hati Logo"
+              className="h-10 w-auto object-contain flex-shrink-0"
+            />
             <div>
-              <h1 className="text-xl font-black text-[#1e3a8a] tracking-tight">
+              <h1 className="text-lg font-black text-[#1e3a8a] tracking-tight">
                 Duty Attendance
               </h1>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mt-1">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mt-0.5">
                 {currentDate.toLocaleDateString("en-US", {
                   weekday: "long",
                   day: "numeric",
@@ -148,16 +153,6 @@ export default function DutyAttendance() {
                   year: "numeric",
                 })}
               </p>
-            </div>
-            <div className="text-right">
-              <div className="text-xl font-mono font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
-                {currentDate.toLocaleTimeString("en-US", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                  hour12: false,
-                })}
-              </div>
             </div>
           </div>
         </header>
@@ -218,27 +213,17 @@ export default function DutyAttendance() {
 
       {/* Header */}
       <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
+          <img
+            src="/252-SMA_CITA_HATI_EAST_SURABAYA.png"
+            alt="Cita Hati Logo"
+            className="h-10 w-auto object-contain flex-shrink-0"
+          />
           <div>
-            <div className="flex items-center gap-3 mb-1">
-              <button
-                onClick={() => navigate("/duty")}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
-                title="Back to Locations"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path
-                    fillRule="evenodd"
-                    d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
-              <h1 className="text-xl font-black text-[#1e3a8a] tracking-tight">
-                Duty Attendance: {decodedLocation}
-              </h1>
-            </div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest pl-11">
+            <h1 className="text-lg font-black text-[#1e3a8a] tracking-tight">
+              Duty Attendance: {decodedLocation}
+            </h1>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mt-0.5">
               {currentDate.toLocaleDateString("en-US", {
                 weekday: "long",
                 day: "numeric",
@@ -246,16 +231,6 @@ export default function DutyAttendance() {
                 year: "numeric",
               })}
             </p>
-          </div>
-          <div className="flex items-center justify-end">
-            <div className="text-xl font-mono font-bold text-slate-700 bg-slate-100 px-4 py-2 rounded-xl border border-slate-200">
-              {currentDate.toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: false,
-              })}
-            </div>
           </div>
         </div>
       </header>
@@ -401,28 +376,20 @@ export default function DutyAttendance() {
                     {/* SECTION: TERCATAT DI SISTEM (RECORDED IN SYSTEM) */}
                     {session.attended_list && session.attended_list.length > 0 && (
                       <div className="pt-3 border-t border-slate-100">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-2">
-                          📋 RECORDED IN SYSTEM ({session.attended_list.length})
-                        </span>
-                        <div className="space-y-1.5">
+                        <div className="space-y-2">
                           {session.attended_list.map((att) => (
                             <div
                               key={att.id_attendance}
-                              className="flex items-center justify-between text-xs p-2.5 bg-slate-50 rounded-xl border border-slate-100"
+                              className="flex items-center gap-3 p-3 bg-emerald-50/90 border border-emerald-200 rounded-2xl shadow-sm"
                             >
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
-                                  Tercatat di Sistem
-                                </span>
-                                <span className="font-bold text-slate-800">{att.teacher_name}</span>
+                              <img
+                                src="/252-SMA_CITA_HATI_EAST_SURABAYA.png"
+                                alt="Cita Hati Logo"
+                                className="h-9 w-auto object-contain flex-shrink-0"
+                              />
+                              <div className="text-xs font-bold text-emerald-950">
+                                <span className="font-extrabold text-[#1e3a8a]">{att.teacher_name}</span> telah tercatat dalam sistem
                               </div>
-                              <span className="font-mono text-[10px] text-slate-400">
-                                {new Date(att.check_in_time).toLocaleTimeString("en-US", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                  hour12: false,
-                                })}
-                              </span>
                             </div>
                           ))}
                         </div>
