@@ -115,10 +115,7 @@ export default function DutyAttendance() {
       showToast("Please select your teacher name from the list first!", "error");
       return;
     }
-    if ((form.password || "").trim().toLowerCase() !== "citahati") {
-      showToast("Incorrect passcode! Please type: citahati", "error");
-      return;
-    }
+    
 
     setSessionFormField(session.session_key, "isSubmitting", true);
     try {
@@ -132,6 +129,7 @@ export default function DutyAttendance() {
           location: session.location,
           time_slot: session.time_slot,
           password: form.password.trim(),
+          substitute_name: form.substituteName || null,
         }),
       });
 
@@ -472,24 +470,22 @@ export default function DutyAttendance() {
                                       </select>
 
                                       {/* Opsi Pengganti / Substitute: Ditiadakan khusus untuk Morning Devotion */}
-                                      {!isDevotion && (
-                                        <select
-                                          onFocus={() => fetchFreeTeachers(session.time_slot)}
-                                          onChange={(e) => {
-                                            if (e.target.value) {
-                                              setSessionFormField(session.session_key, "teacherName", e.target.value);
-                                            }
-                                          }}
-                                          className="w-full bg-white border border-slate-300 text-sm font-medium text-slate-700 px-3.5 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
-                                        >
-                                          <option value="">Or Select Free Substitute (Covering for someone)...</option>
-                                          {(freeTeachersBySlot[session.time_slot] || []).map((teach, idx) => (
-                                            <option key={idx} value={teach}>
-                                              {teach} (Free)
-                                            </option>
-                                          ))}
-                                        </select>
-                                      )}
+                                      {/* Opsi Pengganti / Substitute */}
+                                      <select
+                                        onFocus={() => fetchFreeTeachers(session.time_slot)}
+                                        value={currentForm.substituteName || ""}
+                                        onChange={(e) => {
+                                          setSessionFormField(session.session_key, "substituteName", e.target.value);
+                                        }}
+                                        className="w-full bg-white border border-slate-300 text-sm font-medium text-slate-700 px-3.5 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
+                                      >
+                                        <option value="">Or Select Substitute (Covering for someone)...</option>
+                                        {allTeachers.map((t, idx) => (
+                                          <option key={`sub-${idx}`} value={t}>
+                                            {t}
+                                          </option>
+                                        ))}
+                                      </select>
                                     </div>
                                   </div>
 

@@ -135,6 +135,9 @@ export default function Admin() {
   const [filterAttStatus, setFilterAttStatus] = useState("all");
   const [showLocationLinks, setShowLocationLinks] = useState(true);
   const [isExportingExcel, setIsExportingExcel] = useState(false);
+  const [teachersList, setTeachersList] = useState([]);
+  const [teachersLoading, setTeachersLoading] = useState(false);
+  const [searchTeacherKeyword, setSearchTeacherKeyword] = useState("");
 
   // State untuk Tab Available Teachers (Guru Kosong Berdasarkan Hari & Jam)
   const currentDayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
@@ -485,7 +488,10 @@ export default function Admin() {
     window.addEventListener("resize", handleResize);
 
     // Panggil data saat komponen dimuat
-    if (tokenJWT) fetchSemuaData();
+    if (tokenJWT) {
+      fetchSemuaData();
+      fetchTeachers();
+    }
 
     return () => window.removeEventListener("resize", handleResize);
   }, [fetchSemuaData, tokenJWT]);
@@ -1368,6 +1374,23 @@ export default function Admin() {
   // ==========================================
   // HANDLERS ABSENSI DUTY GURU & AVAILABLE TEACHERS
   // ==========================================
+  const fetchTeachers = useCallback(async () => {
+    setTeachersLoading(true);
+    try {
+      const res = await apiFetch(`${baseUrl}/admin/teachers`, {
+        headers: { Authorization: `Bearer ${tokenJWT}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTeachersList(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch teachers:", err);
+    } finally {
+      setTeachersLoading(false);
+    }
+  }, [baseUrl, tokenJWT, apiFetch]);
+
   const fetchDutyAttendanceData = useCallback(async () => {
     try {
       const params = new URLSearchParams();
@@ -1403,6 +1426,9 @@ export default function Admin() {
   useEffect(() => {
     if (activeTab === "Duty Attendance") {
       fetchDutyAttendanceData();
+    }
+    if (activeTab === "Manage Teachers") {
+      fetchTeachers();
     }
   }, [activeTab, filterAttDate, filterAttEndDate, filterAttLoc, searchAttTeacher, filterAttStatus, fetchDutyAttendanceData]);
 
@@ -1727,6 +1753,12 @@ export default function Admin() {
       label: "Event Schedules",
       icon: "⭐",
       allowed: ["Normal", "Super"],
+    },
+    {
+      id: "Manage Teachers",
+      label: "Teacher Codes & PIN",
+      icon: "??",
+      allowed: ["Super"],
     },
     {
       id: "Manage Admin",
@@ -3805,11 +3837,19 @@ export default function Admin() {
                       <input
                         type="text"
                         required
+                        list="teacher-names"
                         value={newBdayName}
                         onChange={(e) => setNewBdayName(e.target.value)}
-                        placeholder="Full name..."
+                        placeholder="Select or type name..."
                         className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-pink-500 transition-all font-medium text-slate-700"
                       />
+                      <datalist id="teacher-names">
+                        {teachersList.map((t) => (
+                          <option key={t.id_teacher} value={t.full_name}>
+                            {t.full_name} ({t.db_name})
+                          </option>
+                        ))}
+                      </datalist>
                     </div>
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
@@ -3978,6 +4018,120 @@ export default function Admin() {
             {/* ========================================================= */}
             {/* TAB: MANAGE ADMIN */}
             {/* ========================================================= */}
+            
+            {activeTab === "Manage Teachers" && (
+              <div className="space-y-8 animate-in fade-in duration-300">
+                <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-200 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-2 h-full bg-blue-500"></div>
+                  
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3">
+                        <span className="bg-blue-50 text-blue-600 p-2 rounded-xl text-lg">??</span>
+                        Teacher Duty Passcodes & PIN Management
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Manage individual duty check-in PIN / employee codes for teachers and substitutes.
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                      <input
+                        type="text"
+                        placeholder="Search teacher by name or code..."
+                        value={searchTeacherKeyword}
+                        onChange={(e) => setSearchTeacherKeyword(e.target.value)}
+                        className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
+                      />
+                      <button
+                        onClick={fetchTeachers}
+                        disabled={teachersLoading}
+                        className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all whitespace-nowrap"
+                      >
+                        {teachersLoading ? "Refreshing..." : "?? Refresh"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {teachersLoading && teachersList.length === 0 ? (
+                    <div className="py-12 text-center text-slate-400">Loading teachers from database...</div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-2xl border border-slate-100">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="border-b border-slate-200 bg-slate-50/80">
+                            <th className="p-4 font-bold text-slate-600 uppercase tracking-wider">No</th>
+                            <th className="p-4 font-bold text-slate-600 uppercase tracking-wider">Duty Name (DB)</th>
+                            <th className="p-4 font-bold text-slate-600 uppercase tracking-wider">Full Name</th>
+                            <th className="p-4 font-bold text-slate-600 uppercase tracking-wider">PIN / Check-in Code</th>
+                            <th className="p-4 font-bold text-slate-600 uppercase tracking-wider text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {teachersList
+                            .filter((t) => {
+                              if (!searchTeacherKeyword.trim()) return true;
+                              const kw = searchTeacherKeyword.toLowerCase();
+                              return (
+                                (t.db_name && t.db_name.toLowerCase().includes(kw)) ||
+                                (t.full_name && t.full_name.toLowerCase().includes(kw)) ||
+                                (t.pin_code && t.pin_code.toLowerCase().includes(kw))
+                              );
+                            })
+                            .map((t, idx) => (
+                              <tr key={t.id_teacher} className="hover:bg-slate-50/70 transition-colors">
+                                <td className="p-4 text-slate-400 font-mono">{idx + 1}</td>
+                                <td className="p-4 font-bold text-slate-800">{t.db_name}</td>
+                                <td className="p-4 text-slate-600">{t.full_name}</td>
+                                <td className="p-4">
+                                  <input
+                                    type="text"
+                                    id={`pin-${t.id_teacher}`}
+                                    defaultValue={t.pin_code}
+                                    className="border border-slate-300 bg-white px-3 py-1.5 rounded-xl font-mono text-xs font-bold text-indigo-700 focus:ring-2 focus:ring-blue-500 outline-none w-32 shadow-xs"
+                                  />
+                                </td>
+                                <td className="p-4 text-right">
+                                  <button
+                                    onClick={async () => {
+                                      const inputEl = document.getElementById(`pin-${t.id_teacher}`);
+                                      const newPin = inputEl ? inputEl.value.trim() : "";
+                                      if (!newPin) {
+                                        alert("PIN code cannot be empty!");
+                                        return;
+                                      }
+                                      try {
+                                        const res = await apiFetch(`${baseUrl}/admin/teachers/${t.id_teacher}/pin`, {
+                                          method: "PUT",
+                                          headers: authHeaders,
+                                          body: JSON.stringify({ pin_code: newPin }),
+                                        });
+                                        if (res.ok) {
+                                          alert(`PIN for ${t.db_name} updated successfully to: ${newPin}`);
+                                          fetchTeachers();
+                                        } else {
+                                          const errData = await res.json();
+                                          alert("Failed to update PIN: " + (errData.detail || "Error"));
+                                        }
+                                      } catch (err) {
+                                        alert("Network error: " + err.message);
+                                      }
+                                    }}
+                                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95"
+                                  >
+                                    Save PIN
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {activeTab === "Manage Admin" && (
               <div className="space-y-8">
                 {/* CREATE CARD */}
@@ -5797,6 +5951,11 @@ export default function Admin() {
                               </td>
                               <td className="py-4 px-6 font-bold text-slate-800">
                                 {rec.teacher_name}
+                                {rec.substitute_name && (
+                                  <div className="text-xs text-amber-600 font-medium">
+                                    Substituted by: {rec.substitute_name}
+                                  </div>
+                                )}
                               </td>
                               <td className="py-4 px-6">
                                 <span className="px-2.5 py-1 bg-indigo-50 border border-indigo-100 text-indigo-700 font-semibold rounded-lg">

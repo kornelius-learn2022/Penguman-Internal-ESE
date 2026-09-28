@@ -196,12 +196,23 @@ class DutyAttendance(Base):
     time_slot = Column(String(50), nullable=False)
     duty_category = Column(String(100), nullable=True)
     teacher_name = Column(String(100), nullable=False, index=True)
+    substitute_name = Column(String(100), nullable=True)
     check_in_time = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     is_scheduled_duty = Column(Boolean, default=True, nullable=False)
     status_label = Column(String(50), nullable=False)  # "Terjadwal Duty" / "Bukan Jadwal Duty"
     verified_code = Column(String(50), default="citahati", nullable=False)
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+class Teacher(Base):
+    __tablename__ = "teachers"
+
+    id_teacher = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    db_name = Column(String(100), nullable=False, unique=True)
+    full_name = Column(String(150), nullable=False)
+    pin_code = Column(String(50), nullable=False)
+
+
 
 
 

@@ -247,6 +247,7 @@ class DutyAttendanceCreate(BaseModel):
     duty_category: Optional[str] = None
     teacher_name: str
     password: str
+    substitute_name: Optional[str] = None
     notes: Optional[str] = None
 
 
@@ -257,6 +258,7 @@ class DutyAttendanceResponse(BaseModel):
     time_slot: str
     duty_category: Optional[str] = None
     teacher_name: str
+    substitute_name: Optional[str] = None
     check_in_time: datetime
     is_scheduled_duty: bool
     status_label: str
@@ -266,6 +268,20 @@ class DutyAttendanceResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class TeacherPublicResponse(BaseModel):
+    id_teacher: int
+    db_name: str
+    full_name: str
+
+    class Config:
+        from_attributes = True
+
+class TeacherResponse(TeacherPublicResponse):
+    pin_code: str
+
+class TeacherUpdate(BaseModel):
+    pin_code: str
 
 
 class DutyAttendanceUpdate(BaseModel):

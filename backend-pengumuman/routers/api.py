@@ -1609,14 +1609,30 @@ def submit_duty_attendance(
     Sistem otomatis memeriksa apakah guru terjadwal duty (atau pengganti inval)
     dan menandainya di database.
     """
-    # 1. Validasi Password Tetap "citahati"
-    if data.password.strip().lower() != "citahati":
-        raise HTTPException(
-            status_code=400,
-            detail="Incorrect passcode! The duty attendance passcode is 'citahati'.",
-        )
-
     teacher_clean = data.teacher_name.strip()
+    substitute_clean = data.substitute_name.strip() if data.substitute_name else None
+
+    # Check who is checking in (if substitute is provided, check substitute's PIN)
+    checking_in_name = substitute_clean if substitute_clean else teacher_clean
+
+    teacher_record = (
+        db.query(models.Teacher)
+        .filter(models.Teacher.db_name.ilike(checking_in_name))
+        .first()
+    )
+
+    if not teacher_record:
+        if data.password.strip().lower() != "citahati":
+            raise HTTPException(
+                status_code=400,
+                detail=f"Incorrect passcode! Teacher code for {checking_in_name} not found, and fallback code is invalid.",
+            )
+    else:
+        if data.password.strip() != teacher_record.pin_code:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Incorrect passcode for {checking_in_name}! Please enter your valid Teacher Code / PIN.",
+            )
     loc_clean = data.location.strip()
     slot_clean = data.time_slot.strip()
 
@@ -1692,6 +1708,7 @@ def submit_duty_attendance(
         time_slot=slot_clean,
         duty_category=cat,
         teacher_name=teacher_clean,
+        substitute_name=substitute_clean,
         check_in_time=now_wib,
         is_scheduled_duty=is_scheduled,
         status_label=status_label,
@@ -2546,3 +2563,35 @@ def seed_dummy_duty_attendance(
         "unscheduled_teacher": "Mr. Dummy Pengganti",
     }
 
+
+
+# ==========================================
+# TEACHER / PIN MANAGEMENT
+# ==========================================
+
+@router.get("/teachers", response_model=List[schemas.TeacherPublicResponse])
+def get_all_teachers_public(db: Session = Depends(get_db)):
+    """
+    Mengambil daftar semua guru tanpa PIN (Untuk dropdown form absensi).
+    """
+    return db.query(models.Teacher).order_by(models.Teacher.db_name.asc()).all()
+
+@router.get("/admin/teachers", response_model=List[schemas.TeacherResponse])
+def get_all_teachers_admin(db: Session = Depends(get_db)):
+    """
+    Mengambil daftar semua guru beserta PIN mereka (Untuk admin).
+    """
+    return db.query(models.Teacher).order_by(models.Teacher.db_name.asc()).all()
+
+@router.put("/admin/teachers/{id_teacher}/pin")
+def update_teacher_pin(id_teacher: int, update_data: schemas.TeacherUpdate, db: Session = Depends(get_db)):
+    """
+    Admin dapat mengupdate PIN guru.
+    """
+    teacher = db.query(models.Teacher).filter(models.Teacher.id_teacher == id_teacher).first()
+    if not teacher:
+        raise HTTPException(status_code=404, detail="Teacher not found")
+    
+    teacher.pin_code = update_data.pin_code
+    db.commit()
+    return {"message": "PIN updated successfully", "teacher": teacher.db_name}
