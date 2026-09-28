@@ -138,6 +138,7 @@ export default function Admin() {
   const [teachersList, setTeachersList] = useState([]);
   const [teachersLoading, setTeachersLoading] = useState(false);
   const [searchTeacherKeyword, setSearchTeacherKeyword] = useState("");
+  const [dutyViewMode, setDutyViewMode] = useState("schedules"); // "schedules" | "pins"
 
   // State untuk Tab Available Teachers (Guru Kosong Berdasarkan Hari & Jam)
   const currentDayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
@@ -4573,6 +4574,144 @@ export default function Admin() {
             {/* ================= TAB TEACHER DUTY SCHEDULES ================= */}
             {activeTab === "Duty Schedules" && (
               <div className="space-y-8 animate-in fade-in duration-300">
+                {/* Sub Tab Navigation inside Duty Schedules */}
+                <div className="flex items-center gap-3 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs w-fit">
+                  <button
+                    onClick={() => setDutyViewMode("schedules")}
+                    className={`px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all ${
+                      dutyViewMode === "schedules"
+                        ? "bg-slate-900 text-white shadow-sm"
+                        : "text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    <span>???</span> Jadwal Penugasan Duty ({duties.length})
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDutyViewMode("pins");
+                      fetchTeachers();
+                    }}
+                    className={`px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all ${
+                      dutyViewMode === "pins"
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    <span>??</span> Manajemen PIN Guru Duty ({teachersList.length})
+                  </button>
+                </div>
+                {dutyViewMode === "pins" && (
+                  <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-200 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-2 h-full bg-blue-500"></div>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                      <div>
+                        <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3">
+                          <span className="bg-blue-50 text-blue-600 p-2 rounded-xl text-lg">??</span>
+                          Manajemen PIN & Password Guru Duty
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Guru menggunakan PIN / Kode Pegawai masing-masing untuk check-in duty dan menggantikan (substitusi) rekan lain.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <input
+                          type="text"
+                          placeholder="Cari guru (nama atau kode)..."
+                          value={searchTeacherKeyword}
+                          onChange={(e) => setSearchTeacherKeyword(e.target.value)}
+                          className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
+                        />
+                        <button
+                          onClick={fetchTeachers}
+                          disabled={teachersLoading}
+                          className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all whitespace-nowrap"
+                        >
+                          {teachersLoading ? "Loading..." : "?? Refresh"}
+                        </button>
+                      </div>
+                    </div>
+
+                    {teachersLoading && teachersList.length === 0 ? (
+                      <div className="py-12 text-center text-slate-400">Loading data guru...</div>
+                    ) : (
+                      <div className="overflow-x-auto rounded-2xl border border-slate-100">
+                        <table className="w-full text-left border-collapse text-xs">
+                          <thead>
+                            <tr className="border-b border-slate-200 bg-slate-50/80">
+                              <th className="p-4 font-bold text-slate-600 uppercase tracking-wider">No</th>
+                              <th className="p-4 font-bold text-slate-600 uppercase tracking-wider">Nama Duty (DB)</th>
+                              <th className="p-4 font-bold text-slate-600 uppercase tracking-wider">Nama Lengkap</th>
+                              <th className="p-4 font-bold text-slate-600 uppercase tracking-wider">PIN / Kode Check-in</th>
+                              <th className="p-4 font-bold text-slate-600 uppercase tracking-wider text-right">Aksi</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {teachersList
+                              .filter((t) => {
+                                if (!searchTeacherKeyword.trim()) return true;
+                                const kw = searchTeacherKeyword.toLowerCase();
+                                return (
+                                  (t.db_name && t.db_name.toLowerCase().includes(kw)) ||
+                                  (t.full_name && t.full_name.toLowerCase().includes(kw)) ||
+                                  (t.pin_code && t.pin_code.toLowerCase().includes(kw))
+                                );
+                              })
+                              .map((t, idx) => (
+                                <tr key={t.id_teacher} className="hover:bg-slate-50/70 transition-colors">
+                                  <td className="p-4 text-slate-400 font-mono">{idx + 1}</td>
+                                  <td className="p-4 font-bold text-slate-800">{t.db_name}</td>
+                                  <td className="p-4 text-slate-600">{t.full_name}</td>
+                                  <td className="p-4">
+                                    <input
+                                      type="text"
+                                      id={`duty-pin-${t.id_teacher}`}
+                                      defaultValue={t.pin_code}
+                                      className="border border-slate-300 bg-white px-3 py-1.5 rounded-xl font-mono text-xs font-bold text-indigo-700 focus:ring-2 focus:ring-blue-500 outline-none w-32 shadow-xs"
+                                    />
+                                  </td>
+                                  <td className="p-4 text-right">
+                                    <button
+                                      onClick={async () => {
+                                        const inputEl = document.getElementById(`duty-pin-${t.id_teacher}`);
+                                        const newPin = inputEl ? inputEl.value.trim() : "";
+                                        if (!newPin) {
+                                          alert("PIN tidak boleh kosong!");
+                                          return;
+                                        }
+                                        try {
+                                          const res = await apiFetch(`${baseUrl}/admin/teachers/${t.id_teacher}/pin`, {
+                                            method: "PUT",
+                                            headers: authHeaders,
+                                            body: JSON.stringify({ pin_code: newPin }),
+                                          });
+                                          if (res.ok) {
+                                            alert(`PIN untuk ${t.db_name} berhasil diubah ke: ${newPin}`);
+                                            fetchTeachers();
+                                          } else {
+                                            const errData = await res.json();
+                                            alert("Gagal update PIN: " + (errData.detail || "Error"));
+                                          }
+                                        } catch (err) {
+                                          alert("Network error: " + err.message);
+                                        }
+                                      }}
+                                      className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95"
+                                    >
+                                      Simpan PIN
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {dutyViewMode === "schedules" && (
+                  <>
+
                 {/* Header Card */}
                 <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
@@ -4599,6 +4738,15 @@ export default function Admin() {
                       title="Sinkronkan ulang data master dari JADWAL_DUTY_MASTER.csv"
                     >
                       <span>🔄</span> Sync dari Master CSV
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDutyViewMode("pins");
+                        fetchTeachers();
+                      }}
+                      className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xs flex items-center gap-2 shadow-md shadow-blue-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      <span>??</span> Kelola PIN Guru Duty
                     </button>
                     <button
                       onClick={() => setIsCreateDutyOpen(true)}
@@ -4794,7 +4942,22 @@ export default function Admin() {
                               className="hover:bg-slate-50/80 transition-colors group"
                             >
                               <td className="px-6 py-4 font-bold text-slate-800 whitespace-nowrap">
-                                {item.teacher_name}
+                                <div className="flex items-center gap-2">
+                                  <span>{item.teacher_name}</span>
+                                  {teachersList.find((t) => t.db_name === item.teacher_name)?.pin_code && (
+                                    <button
+                                      onClick={() => {
+                                        setSearchTeacherKeyword(item.teacher_name);
+                                        setDutyViewMode("pins");
+                                      }}
+                                      title="Klik untuk ubah PIN guru ini"
+                                      className="px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-[11px] font-mono font-bold rounded-lg transition-all flex items-center gap-1"
+                                    >
+                                      <span>PIN: {teachersList.find((t) => t.db_name === item.teacher_name)?.pin_code}</span>
+                                      <span className="text-[10px]">??</span>
+                                    </button>
+                                  )}
+                                </div>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <span
@@ -4932,6 +5095,8 @@ export default function Admin() {
                     </div>
                   )}
                 </div>
+              </>
+                )}
               </div>
             )}
 
