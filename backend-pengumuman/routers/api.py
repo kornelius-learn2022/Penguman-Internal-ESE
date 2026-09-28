@@ -1490,7 +1490,7 @@ def get_duty_sessions(
                 teaching_teachers_set.add(t_norm)
 
         # Guru tambahan yang dikonfirmasi ikut devotion (kecuali ada tugas duty):
-        # Ms. Phoebe, Ms. Agnes, Ms. Ivo, Mr. Hendy, Ms. Joke, Ms. Shenny, Ms. Citra, Mr. Dion, Ms. Sus, Ms. Vita
+        # Ms. Phoebe, Ms. Agnes, Ms. Ivo, Mr. Hendy, Ms. Joke, Ms. Shenny, Ms. Citra, Mr. Dion, Sus Veronika, Ms. Vita
         confirmed_devotion_teachers = [
             "Ms. Phoebe",
             "Ms. Agnes",
@@ -1500,7 +1500,7 @@ def get_duty_sessions(
             "Ms. Shenny",
             "Ms. Citra",
             "Mr. Dion",
-            "Ms. Sus",
+            "Sus Veronika",
             "Ms. Vita",
         ]
         for ct in confirmed_devotion_teachers:
@@ -1864,7 +1864,7 @@ def build_comprehensive_records(
         "Ms. Shenny",
         "Ms. Citra",
         "Mr. Dion",
-        "Ms. Sus",
+        "Sus Veronika",
         "Ms. Vita",
     ]
     for ct in confirmed_devotion_teachers:
@@ -2583,6 +2583,25 @@ def get_all_teachers_admin(db: Session = Depends(get_db)):
     """
     return db.query(models.Teacher).order_by(models.Teacher.db_name.asc()).all()
 
+@router.post("/admin/teachers", response_model=schemas.TeacherResponse)
+def create_teacher(teacher_data: schemas.TeacherCreate, db: Session = Depends(get_db)):
+    """
+    Admin dapat menambahkan guru baru beserta PIN.
+    """
+    existing = db.query(models.Teacher).filter(models.Teacher.db_name == teacher_data.db_name.strip()).first()
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Teacher '{teacher_data.db_name}' already exists.")
+    
+    new_t = models.Teacher(
+        db_name=teacher_data.db_name.strip(),
+        full_name=teacher_data.full_name.strip(),
+        pin_code=teacher_data.pin_code.strip()
+    )
+    db.add(new_t)
+    db.commit()
+    db.refresh(new_t)
+    return new_t
+
 @router.put("/admin/teachers/{id_teacher}/pin")
 def update_teacher_pin(id_teacher: int, update_data: schemas.TeacherUpdate, db: Session = Depends(get_db)):
     """
@@ -2592,6 +2611,40 @@ def update_teacher_pin(id_teacher: int, update_data: schemas.TeacherUpdate, db: 
     if not teacher:
         raise HTTPException(status_code=404, detail="Teacher not found")
     
-    teacher.pin_code = update_data.pin_code
+    teacher.pin_code = update_data.pin_code.strip()
     db.commit()
     return {"message": "PIN updated successfully", "teacher": teacher.db_name}
+
+@router.put("/admin/teachers/{id_teacher}", response_model=schemas.TeacherResponse)
+def update_teacher_full(id_teacher: int, update_data: schemas.TeacherUpdateFull, db: Session = Depends(get_db)):
+    """
+    Admin dapat mengupdate data lengkap guru.
+    """
+    teacher = db.query(models.Teacher).filter(models.Teacher.id_teacher == id_teacher).first()
+    if not teacher:
+        raise HTTPException(status_code=404, detail="Teacher not found")
+    
+    if update_data.db_name:
+        teacher.db_name = update_data.db_name.strip()
+    if update_data.full_name:
+        teacher.full_name = update_data.full_name.strip()
+    if update_data.pin_code:
+        teacher.pin_code = update_data.pin_code.strip()
+    
+    db.commit()
+    db.refresh(teacher)
+    return teacher
+
+@router.delete("/admin/teachers/{id_teacher}")
+def delete_teacher(id_teacher: int, db: Session = Depends(get_db)):
+    """
+    Admin dapat menghapus guru dari sistem PIN/database.
+    """
+    teacher = db.query(models.Teacher).filter(models.Teacher.id_teacher == id_teacher).first()
+    if not teacher:
+        raise HTTPException(status_code=404, detail="Teacher not found")
+    
+    deleted_name = teacher.db_name
+    db.delete(teacher)
+    db.commit()
+    return {"message": f"Teacher {deleted_name} deleted successfully"}

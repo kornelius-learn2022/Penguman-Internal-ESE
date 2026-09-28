@@ -501,7 +501,7 @@ export default function DutyAttendance() {
                                         onChange={(e) =>
                                           setSessionFormField(session.session_key, "password", e.target.value)
                                         }
-                                        placeholder="Enter passcode (citahati)"
+                                        placeholder="Enter your Teacher PIN / Code"
                                         className="w-full bg-white border border-slate-300 font-mono text-sm font-bold text-slate-800 px-3.5 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 pr-20 shadow-xs"
                                       />
                                       <button
@@ -518,7 +518,7 @@ export default function DutyAttendance() {
                                       </button>
                                     </div>
                                     <p className="text-[11px] text-slate-500 mt-1 font-medium">
-                                      School passcode: <strong className="font-mono text-blue-700">citahati</strong>
+                                      Enter your personal Teacher Code / PIN (or substitute code if covering)
                                     </p>
                                   </div>
 

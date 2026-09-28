@@ -138,6 +138,11 @@ export default function Admin() {
   const [teachersList, setTeachersList] = useState([]);
   const [teachersLoading, setTeachersLoading] = useState(false);
   const [searchTeacherKeyword, setSearchTeacherKeyword] = useState("");
+  const [isAddTeacherOpen, setIsAddTeacherOpen] = useState(false);
+  const [newTeacherDbName, setNewTeacherDbName] = useState("");
+  const [newTeacherFullName, setNewTeacherFullName] = useState("");
+  const [newTeacherPin, setNewTeacherPin] = useState("");
+  const [isSubmittingTeacher, setIsSubmittingTeacher] = useState(false);
   const [dutyViewMode, setDutyViewMode] = useState("schedules"); // "schedules" | "pins"
 
   // State untuk Tab Available Teachers (Guru Kosong Berdasarkan Hari & Jam)
@@ -4024,48 +4029,55 @@ export default function Admin() {
               <div className="space-y-8 animate-in fade-in duration-300">
                 <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-200 relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-2 h-full bg-blue-500"></div>
-                  
+
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                     <div>
                       <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3">
                         <span className="bg-blue-50 text-blue-600 p-2 rounded-xl text-lg">🔑</span>
-                        Teacher Duty Passcodes & PIN Management
+                        Teacher Codes & PIN Management
                       </h3>
                       <p className="text-xs text-slate-500 mt-1">
-                        Manage individual duty check-in PIN / employee codes for teachers and substitutes.
+                        Kelola data guru, nama duty, nama lengkap, dan kode PIN check-in absensi. Total:{" "}
+                        <span className="font-bold text-blue-600">{teachersList.length}</span> guru terdaftar.
                       </p>
                     </div>
-                    
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
+
+                    <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap w-full sm:w-auto">
                       <input
                         type="text"
-                        placeholder="Search teacher by name or code..."
+                        placeholder="Cari guru (nama atau PIN)..."
                         value={searchTeacherKeyword}
                         onChange={(e) => setSearchTeacherKeyword(e.target.value)}
-                        className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
+                        className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-60"
                       />
                       <button
                         onClick={fetchTeachers}
                         disabled={teachersLoading}
                         className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all whitespace-nowrap"
                       >
-                        {teachersLoading ? "Refreshing..." : "🔄 Refresh"}
+                        {teachersLoading ? "Loading..." : "🔄 Refresh"}
+                      </button>
+                      <button
+                        onClick={() => setIsAddTeacherOpen(true)}
+                        className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 shadow-md shadow-blue-600/20"
+                      >
+                        <span>+</span> Tambah Guru & PIN
                       </button>
                     </div>
                   </div>
 
                   {teachersLoading && teachersList.length === 0 ? (
-                    <div className="py-12 text-center text-slate-400">Loading teachers from database...</div>
+                    <div className="py-12 text-center text-slate-400">Loading data guru...</div>
                   ) : (
                     <div className="overflow-x-auto rounded-2xl border border-slate-100">
                       <table className="w-full text-left border-collapse text-xs">
                         <thead>
                           <tr className="border-b border-slate-200 bg-slate-50/80">
                             <th className="p-4 font-bold text-slate-600 uppercase tracking-wider">No</th>
-                            <th className="p-4 font-bold text-slate-600 uppercase tracking-wider">Duty Name (DB)</th>
-                            <th className="p-4 font-bold text-slate-600 uppercase tracking-wider">Full Name</th>
+                            <th className="p-4 font-bold text-slate-600 uppercase tracking-wider">Nama Duty (DB)</th>
+                            <th className="p-4 font-bold text-slate-600 uppercase tracking-wider">Nama Lengkap</th>
                             <th className="p-4 font-bold text-slate-600 uppercase tracking-wider">PIN / Check-in Code</th>
-                            <th className="p-4 font-bold text-slate-600 uppercase tracking-wider text-right">Actions</th>
+                            <th className="p-4 font-bold text-slate-600 uppercase tracking-wider text-right">Aksi</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -4087,41 +4099,67 @@ export default function Admin() {
                                 <td className="p-4">
                                   <input
                                     type="text"
-                                    id={`pin-${t.id_teacher}`}
+                                    id={`crud-pin-${t.id_teacher}`}
                                     defaultValue={t.pin_code}
                                     className="border border-slate-300 bg-white px-3 py-1.5 rounded-xl font-mono text-xs font-bold text-indigo-700 focus:ring-2 focus:ring-blue-500 outline-none w-32 shadow-xs"
                                   />
                                 </td>
                                 <td className="p-4 text-right">
-                                  <button
-                                    onClick={async () => {
-                                      const inputEl = document.getElementById(`pin-${t.id_teacher}`);
-                                      const newPin = inputEl ? inputEl.value.trim() : "";
-                                      if (!newPin) {
-                                        alert("PIN code cannot be empty!");
-                                        return;
-                                      }
-                                      try {
-                                        const res = await apiFetch(`${baseUrl}/admin/teachers/${t.id_teacher}/pin`, {
-                                          method: "PUT",
-                                          headers: authHeaders,
-                                          body: JSON.stringify({ pin_code: newPin }),
-                                        });
-                                        if (res.ok) {
-                                          alert(`PIN for ${t.db_name} updated successfully to: ${newPin}`);
-                                          fetchTeachers();
-                                        } else {
-                                          const errData = await res.json();
-                                          alert("Failed to update PIN: " + (errData.detail || "Error"));
+                                  <div className="flex items-center justify-end gap-2">
+                                    <button
+                                      onClick={async () => {
+                                        const inputEl = document.getElementById(`crud-pin-${t.id_teacher}`);
+                                        const newPin = inputEl ? inputEl.value.trim() : "";
+                                        if (!newPin) {
+                                          alert("PIN tidak boleh kosong!");
+                                          return;
                                         }
-                                      } catch (err) {
-                                        alert("Network error: " + err.message);
-                                      }
-                                    }}
-                                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95"
-                                  >
-                                    Save PIN
-                                  </button>
+                                        try {
+                                          const res = await apiFetch(`${baseUrl}/admin/teachers/${t.id_teacher}/pin`, {
+                                            method: "PUT",
+                                            headers: authHeaders,
+                                            body: JSON.stringify({ pin_code: newPin }),
+                                          });
+                                          if (res.ok) {
+                                            alert(`PIN untuk ${t.db_name} berhasil diubah ke: ${newPin}`);
+                                            fetchTeachers();
+                                          } else {
+                                            const errData = await res.json();
+                                            alert("Gagal update PIN: " + (errData.detail || "Error"));
+                                          }
+                                        } catch (err) {
+                                          alert("Network error: " + err.message);
+                                        }
+                                      }}
+                                      className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95"
+                                    >
+                                      Simpan PIN
+                                    </button>
+                                    <button
+                                      onClick={async () => {
+                                        if (!window.confirm(`Hapus guru ${t.db_name} (${t.full_name}) dari daftar PIN?`)) return;
+                                        try {
+                                          const res = await apiFetch(`${baseUrl}/admin/teachers/${t.id_teacher}`, {
+                                            method: "DELETE",
+                                            headers: authHeaders,
+                                          });
+                                          if (res.ok) {
+                                            alert(`Guru ${t.db_name} berhasil dihapus.`);
+                                            fetchTeachers();
+                                          } else {
+                                            const errData = await res.json();
+                                            alert("Gagal menghapus: " + (errData.detail || "Error"));
+                                          }
+                                        } catch (err) {
+                                          alert("Network error: " + err.message);
+                                        }
+                                      }}
+                                      className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold transition-all"
+                                      title="Hapus Guru"
+                                    >
+                                      Hapus
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}
@@ -4130,6 +4168,122 @@ export default function Admin() {
                     </div>
                   )}
                 </div>
+
+                {/* MODAL TAMBAH GURU */}
+                {isAddTeacherOpen && (
+                  <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+                      <div className="flex items-center justify-between mb-6">
+                        <h4 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                          <span>➕</span> Tambah Guru & PIN Baru
+                        </h4>
+                        <button
+                          onClick={() => setIsAddTeacherOpen(false)}
+                          className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      <form
+                        onSubmit={async (e) => {
+                          e.preventDefault();
+                          if (!newTeacherDbName.trim() || !newTeacherFullName.trim() || !newTeacherPin.trim()) {
+                            alert("Semua kolom wajib diisi!");
+                            return;
+                          }
+                          setIsSubmittingTeacher(true);
+                          try {
+                            const res = await apiFetch(`${baseUrl}/admin/teachers`, {
+                              method: "POST",
+                              headers: authHeaders,
+                              body: JSON.stringify({
+                                db_name: newTeacherDbName.trim(),
+                                full_name: newTeacherFullName.trim(),
+                                pin_code: newTeacherPin.trim(),
+                              }),
+                            });
+                            if (res.ok) {
+                              alert(`Guru ${newTeacherDbName} berhasil ditambahkan!`);
+                              setNewTeacherDbName("");
+                              setNewTeacherFullName("");
+                              setNewTeacherPin("");
+                              setIsAddTeacherOpen(false);
+                              fetchTeachers();
+                            } else {
+                              const errData = await res.json();
+                              alert("Gagal menambahkan: " + (errData.detail || "Error"));
+                            }
+                          } catch (err) {
+                            alert("Network error: " + err.message);
+                          } finally {
+                            setIsSubmittingTeacher(false);
+                          }
+                        }}
+                        className="space-y-4 text-xs"
+                      >
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">
+                            Nama Duty di Database (misal: "Mr. Alex" atau "Ms. Dina")
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="Contoh: Mr. John"
+                            value={newTeacherDbName}
+                            onChange={(e) => setNewTeacherDbName(e.target.value)}
+                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">
+                            Nama Lengkap Guru (misal: "Johnathan Doe, S.Pd")
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="Contoh: Johnathan Doe"
+                            value={newTeacherFullName}
+                            onChange={(e) => setNewTeacherFullName(e.target.value)}
+                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">
+                            Kode PIN Absensi / Employee ID (tanpa strip, misal: 25099)
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="Contoh: 25099"
+                            value={newTeacherPin}
+                            onChange={(e) => setNewTeacherPin(e.target.value)}
+                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-mono font-bold"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                          <button
+                            type="button"
+                            onClick={() => setIsAddTeacherOpen(false)}
+                            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold"
+                          >
+                            Batal
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={isSubmittingTeacher}
+                            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold disabled:opacity-50"
+                          >
+                            {isSubmittingTeacher ? "Menyimpan..." : "Simpan Guru"}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -4574,144 +4728,6 @@ export default function Admin() {
             {/* ================= TAB TEACHER DUTY SCHEDULES ================= */}
             {activeTab === "Duty Schedules" && (
               <div className="space-y-8 animate-in fade-in duration-300">
-                {/* Sub Tab Navigation inside Duty Schedules */}
-                <div className="flex items-center gap-3 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs w-fit">
-                  <button
-                    onClick={() => setDutyViewMode("schedules")}
-                    className={`px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all ${
-                      dutyViewMode === "schedules"
-                        ? "bg-slate-900 text-white shadow-sm"
-                        : "text-slate-600 hover:bg-slate-100"
-                    }`}
-                  >
-                    <span>🛡️</span> Jadwal Penugasan Duty ({duties.length})
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDutyViewMode("pins");
-                      fetchTeachers();
-                    }}
-                    className={`px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all ${
-                      dutyViewMode === "pins"
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "text-slate-600 hover:bg-slate-100"
-                    }`}
-                  >
-                    <span>🔑</span> Manajemen PIN Guru Duty ({teachersList.length})
-                  </button>
-                </div>
-                {dutyViewMode === "pins" && (
-                  <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-200 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-2 h-full bg-blue-500"></div>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-                      <div>
-                        <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3">
-                          <span className="bg-blue-50 text-blue-600 p-2 rounded-xl text-lg">🔑</span>
-                          Manajemen PIN & Password Guru Duty
-                        </h3>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Guru menggunakan PIN / Kode Pegawai masing-masing untuk check-in duty dan menggantikan (substitusi) rekan lain.
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <input
-                          type="text"
-                          placeholder="Cari guru (nama atau kode)..."
-                          value={searchTeacherKeyword}
-                          onChange={(e) => setSearchTeacherKeyword(e.target.value)}
-                          className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
-                        />
-                        <button
-                          onClick={fetchTeachers}
-                          disabled={teachersLoading}
-                          className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all whitespace-nowrap"
-                        >
-                          {teachersLoading ? "Loading..." : "🔄 Refresh"}
-                        </button>
-                      </div>
-                    </div>
-
-                    {teachersLoading && teachersList.length === 0 ? (
-                      <div className="py-12 text-center text-slate-400">Loading data guru...</div>
-                    ) : (
-                      <div className="overflow-x-auto rounded-2xl border border-slate-100">
-                        <table className="w-full text-left border-collapse text-xs">
-                          <thead>
-                            <tr className="border-b border-slate-200 bg-slate-50/80">
-                              <th className="p-4 font-bold text-slate-600 uppercase tracking-wider">No</th>
-                              <th className="p-4 font-bold text-slate-600 uppercase tracking-wider">Nama Duty (DB)</th>
-                              <th className="p-4 font-bold text-slate-600 uppercase tracking-wider">Nama Lengkap</th>
-                              <th className="p-4 font-bold text-slate-600 uppercase tracking-wider">PIN / Kode Check-in</th>
-                              <th className="p-4 font-bold text-slate-600 uppercase tracking-wider text-right">Aksi</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {teachersList
-                              .filter((t) => {
-                                if (!searchTeacherKeyword.trim()) return true;
-                                const kw = searchTeacherKeyword.toLowerCase();
-                                return (
-                                  (t.db_name && t.db_name.toLowerCase().includes(kw)) ||
-                                  (t.full_name && t.full_name.toLowerCase().includes(kw)) ||
-                                  (t.pin_code && t.pin_code.toLowerCase().includes(kw))
-                                );
-                              })
-                              .map((t, idx) => (
-                                <tr key={t.id_teacher} className="hover:bg-slate-50/70 transition-colors">
-                                  <td className="p-4 text-slate-400 font-mono">{idx + 1}</td>
-                                  <td className="p-4 font-bold text-slate-800">{t.db_name}</td>
-                                  <td className="p-4 text-slate-600">{t.full_name}</td>
-                                  <td className="p-4">
-                                    <input
-                                      type="text"
-                                      id={`duty-pin-${t.id_teacher}`}
-                                      defaultValue={t.pin_code}
-                                      className="border border-slate-300 bg-white px-3 py-1.5 rounded-xl font-mono text-xs font-bold text-indigo-700 focus:ring-2 focus:ring-blue-500 outline-none w-32 shadow-xs"
-                                    />
-                                  </td>
-                                  <td className="p-4 text-right">
-                                    <button
-                                      onClick={async () => {
-                                        const inputEl = document.getElementById(`duty-pin-${t.id_teacher}`);
-                                        const newPin = inputEl ? inputEl.value.trim() : "";
-                                        if (!newPin) {
-                                          alert("PIN tidak boleh kosong!");
-                                          return;
-                                        }
-                                        try {
-                                          const res = await apiFetch(`${baseUrl}/admin/teachers/${t.id_teacher}/pin`, {
-                                            method: "PUT",
-                                            headers: authHeaders,
-                                            body: JSON.stringify({ pin_code: newPin }),
-                                          });
-                                          if (res.ok) {
-                                            alert(`PIN untuk ${t.db_name} berhasil diubah ke: ${newPin}`);
-                                            fetchTeachers();
-                                          } else {
-                                            const errData = await res.json();
-                                            alert("Gagal update PIN: " + (errData.detail || "Error"));
-                                          }
-                                        } catch (err) {
-                                          alert("Network error: " + err.message);
-                                        }
-                                      }}
-                                      className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95"
-                                    >
-                                      Simpan PIN
-                                    </button>
-                                  </td>
-                                </tr>
-                              ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {dutyViewMode === "schedules" && (
-                  <>
-
                 {/* Header Card */}
                 <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
@@ -4739,15 +4755,7 @@ export default function Admin() {
                     >
                       <span>🔄</span> Sync dari Master CSV
                     </button>
-                    <button
-                      onClick={() => {
-                        setDutyViewMode("pins");
-                        fetchTeachers();
-                      }}
-                      className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xs flex items-center gap-2 shadow-md shadow-blue-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                      <span>🔑</span> Kelola PIN Guru Duty
-                    </button>
+
                     <button
                       onClick={() => setIsCreateDutyOpen(true)}
                       className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-xs flex items-center gap-2 shadow-md shadow-emerald-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
@@ -4942,22 +4950,7 @@ export default function Admin() {
                               className="hover:bg-slate-50/80 transition-colors group"
                             >
                               <td className="px-6 py-4 font-bold text-slate-800 whitespace-nowrap">
-                                <div className="flex items-center gap-2">
-                                  <span>{item.teacher_name}</span>
-                                  {teachersList.find((t) => t.db_name === item.teacher_name)?.pin_code && (
-                                    <button
-                                      onClick={() => {
-                                        setSearchTeacherKeyword(item.teacher_name);
-                                        setDutyViewMode("pins");
-                                      }}
-                                      title="Klik untuk ubah PIN guru ini"
-                                      className="px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-[11px] font-mono font-bold rounded-lg transition-all flex items-center gap-1"
-                                    >
-                                      <span>PIN: {teachersList.find((t) => t.db_name === item.teacher_name)?.pin_code}</span>
-                                      <span className="text-[10px]">✏️</span>
-                                    </button>
-                                  )}
-                                </div>
+                                {item.teacher_name}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <span
@@ -5095,8 +5088,6 @@ export default function Admin() {
                     </div>
                   )}
                 </div>
-              </>
-                )}
               </div>
             )}
 
@@ -5455,22 +5446,11 @@ export default function Admin() {
                       Duty Attendance Monitoring & Summary
                     </h3>
                     <p className="text-xs text-slate-500 mt-1">
-                      Daily teacher duty attendance records by time slot & location. Evaluated automatically from 06:00 WIB with fixed passcode{" "}
-                      <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
-                        citahati
-                      </span>
-                      .
+                      Daily teacher duty attendance records by time slot & location. Teachers verify check-in using their personal Teacher Code / PIN.
                     </p>
                   </div>
                   <div className="flex items-center gap-3 flex-wrap">
-                    <button
-                      onClick={handleAdminSeedDummy}
-                      disabled={isSeedingAttDummy}
-                      className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-4 py-3 rounded-2xl transition-all shadow-md shadow-amber-500/20 active:scale-95 disabled:opacity-50"
-                      title="Generate 1 data uji coba untuk hari ini"
-                    >
-                      <span>🧪</span> {isSeedingAttDummy ? "Generating Dummy..." : "Test Dummy Data"}
-                    </button>
+
                     <button
                       onClick={handleExportAttendanceExcel}
                       disabled={isExportingExcel}
@@ -6038,12 +6018,7 @@ export default function Admin() {
                           </button>
                         </span>
                       )}
-                      <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <span>Password:</span>
-                        <span className="font-mono font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
-                          citahati
-                        </span>
-                      </div>
+
                     </div>
                   </div>
 

@@ -280,8 +280,18 @@ class TeacherPublicResponse(BaseModel):
 class TeacherResponse(TeacherPublicResponse):
     pin_code: str
 
+class TeacherCreate(BaseModel):
+    db_name: str
+    full_name: str
+    pin_code: str
+
 class TeacherUpdate(BaseModel):
     pin_code: str
+
+class TeacherUpdateFull(BaseModel):
+    db_name: Optional[str] = None
+    full_name: Optional[str] = None
+    pin_code: Optional[str] = None
 
 
 class DutyAttendanceUpdate(BaseModel):
