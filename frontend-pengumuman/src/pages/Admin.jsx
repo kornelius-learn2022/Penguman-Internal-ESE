@@ -1758,7 +1758,7 @@ export default function Admin() {
     {
       id: "Manage Teachers",
       label: "Teacher Codes & PIN",
-      icon: "??",
+      icon: "🔑",
       allowed: ["Super"],
     },
     {
@@ -4028,7 +4028,7 @@ export default function Admin() {
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                     <div>
                       <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3">
-                        <span className="bg-blue-50 text-blue-600 p-2 rounded-xl text-lg">??</span>
+                        <span className="bg-blue-50 text-blue-600 p-2 rounded-xl text-lg">🔑</span>
                         Teacher Duty Passcodes & PIN Management
                       </h3>
                       <p className="text-xs text-slate-500 mt-1">
@@ -4049,7 +4049,7 @@ export default function Admin() {
                         disabled={teachersLoading}
                         className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all whitespace-nowrap"
                       >
-                        {teachersLoading ? "Refreshing..." : "?? Refresh"}
+                        {teachersLoading ? "Refreshing..." : "🔄 Refresh"}
                       </button>
                     </div>
                   </div>
@@ -4584,7 +4584,7 @@ export default function Admin() {
                         : "text-slate-600 hover:bg-slate-100"
                     }`}
                   >
-                    <span>???</span> Jadwal Penugasan Duty ({duties.length})
+                    <span>🛡️</span> Jadwal Penugasan Duty ({duties.length})
                   </button>
                   <button
                     onClick={() => {
@@ -4597,7 +4597,7 @@ export default function Admin() {
                         : "text-slate-600 hover:bg-slate-100"
                     }`}
                   >
-                    <span>??</span> Manajemen PIN Guru Duty ({teachersList.length})
+                    <span>🔑</span> Manajemen PIN Guru Duty ({teachersList.length})
                   </button>
                 </div>
                 {dutyViewMode === "pins" && (
@@ -4606,7 +4606,7 @@ export default function Admin() {
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                       <div>
                         <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3">
-                          <span className="bg-blue-50 text-blue-600 p-2 rounded-xl text-lg">??</span>
+                          <span className="bg-blue-50 text-blue-600 p-2 rounded-xl text-lg">🔑</span>
                           Manajemen PIN & Password Guru Duty
                         </h3>
                         <p className="text-xs text-slate-500 mt-1">
@@ -4626,7 +4626,7 @@ export default function Admin() {
                           disabled={teachersLoading}
                           className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all whitespace-nowrap"
                         >
-                          {teachersLoading ? "Loading..." : "?? Refresh"}
+                          {teachersLoading ? "Loading..." : "🔄 Refresh"}
                         </button>
                       </div>
                     </div>
@@ -4746,7 +4746,7 @@ export default function Admin() {
                       }}
                       className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xs flex items-center gap-2 shadow-md shadow-blue-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
                     >
-                      <span>??</span> Kelola PIN Guru Duty
+                      <span>🔑</span> Kelola PIN Guru Duty
                     </button>
                     <button
                       onClick={() => setIsCreateDutyOpen(true)}
@@ -4954,7 +4954,7 @@ export default function Admin() {
                                       className="px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-[11px] font-mono font-bold rounded-lg transition-all flex items-center gap-1"
                                     >
                                       <span>PIN: {teachersList.find((t) => t.db_name === item.teacher_name)?.pin_code}</span>
-                                      <span className="text-[10px]">??</span>
+                                      <span className="text-[10px]">✏️</span>
                                     </button>
                                   )}
                                 </div>
