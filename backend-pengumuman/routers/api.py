@@ -1,10 +1,13 @@
 import os
+import io
 import hashlib
 import datetime
-from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile, Request
+import openpyxl
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile, Request, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import date
+from datetime import date, time, timedelta
 from sqlalchemy import extract, or_, and_, desc, func
 import models
 import schemas
@@ -1087,7 +1090,7 @@ def parse_time_slot_range(time_slot: str):
 @router.get("/duty-attendance/locations", response_model=List[str])
 def get_duty_locations(db: Session = Depends(get_db)):
     """
-    Mengambil seluruh daftar lokasi tempat duty dari master teacher_duties.
+    Mengambil seluruh daftar lokasi tempat duty dari master teacher_duties dan Morning Devotion.
     """
     results = (
         db.query(models.TeacherDuty.location)
@@ -1095,7 +1098,23 @@ def get_duty_locations(db: Session = Depends(get_db)):
         .order_by(models.TeacherDuty.location.asc())
         .all()
     )
-    return [r[0] for r in results if r[0]]
+    locs = [r[0] for r in results if r[0]]
+    if "Morning Devotion" not in locs:
+        locs.append("Morning Devotion")
+    return locs
+
+
+# In-memory caching for high-concurrency peak loads (30-40+ concurrent requests)
+import time as time_mod
+
+_free_teachers_cache = {}
+_FREE_TEACHERS_TTL = 60  # seconds
+
+_duty_teachers_cache = {"data": None, "exp": 0.0}
+_DUTY_TEACHERS_TTL = 300  # seconds
+
+_duty_sessions_cache = {}
+_DUTY_SESSIONS_TTL = 15  # seconds
 
 
 @router.get("/duty-attendance/teachers", response_model=List[str])
@@ -1103,6 +1122,10 @@ def get_all_duty_teachers(db: Session = Depends(get_db)):
     """
     Mengambil daftar seluruh guru untuk dropdown pemilihan guru.
     """
+    now_m = time_mod.monotonic()
+    if _duty_teachers_cache["data"] is not None and now_m < _duty_teachers_cache["exp"]:
+        return _duty_teachers_cache["data"]
+
     duty_teachers = (
         db.query(models.TeacherDuty.teacher_name).distinct().all()
     )
@@ -1113,7 +1136,77 @@ def get_all_duty_teachers(db: Session = Depends(get_db)):
         [r[0].strip() for r in duty_teachers if r[0] and r[0].strip()]
         + [r[0].strip() for r in schedule_teachers if r[0] and r[0].strip()]
     )
-    return sorted(list(all_names))
+    result = sorted(list(all_names))
+    _duty_teachers_cache["data"] = result
+    _duty_teachers_cache["exp"] = now_m + _DUTY_TEACHERS_TTL
+    return result
+
+
+@router.get("/duty-attendance/free-teachers", response_model=List[str])
+def get_free_duty_teachers(
+    date: Optional[date] = None,
+    day_of_week: Optional[str] = None,
+    time_slot: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Mengambil daftar guru yang KOSONG (free) pada hari/tanggal dan time_slot tersebut:
+    1. Tidak sedang bertugas piket (teacher_duties).
+    2. Tidak sedang mengajar (teacher_schedules).
+    """
+    if date:
+        resolved_day = date.strftime("%A")
+    elif day_of_week and day_of_week.strip():
+        resolved_day = day_of_week.strip()
+    else:
+        resolved_day = get_now_wib().date().strftime("%A")
+
+    cache_key = f"{resolved_day.lower()}:{(time_slot or 'all').strip().lower()}"
+    now_m = time_mod.monotonic()
+    if cache_key in _free_teachers_cache:
+        cached_res, exp_m = _free_teachers_cache[cache_key]
+        if now_m < exp_m:
+            return cached_res
+
+    duty_teachers = [r[0].strip() for r in db.query(models.TeacherDuty.teacher_name).distinct().all() if r[0]]
+    sched_teachers = [r[0].strip() for r in db.query(models.TeacherSchedule.teacher_name).distinct().all() if r[0]]
+    all_names = sorted(list(set(duty_teachers + sched_teachers)))
+
+    busy_duty = set()
+    day_duties = db.query(models.TeacherDuty).filter(models.TeacherDuty.day_of_week.ilike(resolved_day)).all()
+
+    busy_teaching = set()
+    day_schedules = db.query(models.TeacherSchedule).filter(models.TeacherSchedule.day_of_week.ilike(resolved_day)).all()
+
+    if time_slot and time_slot.strip().lower() not in ["", "all", "semua"]:
+        target_start, target_end = parse_time_slot_range(time_slot)
+        for d in day_duties:
+            s_start, s_end = parse_time_slot_range(d.time_slot)
+            if s_start and s_end and target_start and target_end:
+                if max(s_start, target_start) < min(s_end, target_end):
+                    busy_duty.add(d.teacher_name.strip().lower())
+            elif d.time_slot.strip().lower() == time_slot.strip().lower():
+                busy_duty.add(d.teacher_name.strip().lower())
+
+        for s in day_schedules:
+            s_start, s_end = parse_time_slot_range(s.time_slot)
+            if s_start and s_end and target_start and target_end:
+                if max(s_start, target_start) < min(s_end, target_end):
+                    busy_teaching.add(s.teacher_name.strip().lower())
+            elif s.time_slot.strip().lower() == time_slot.strip().lower():
+                busy_teaching.add(s.teacher_name.strip().lower())
+    else:
+        for d in day_duties:
+            busy_duty.add(d.teacher_name.strip().lower())
+        for s in day_schedules:
+            busy_teaching.add(s.teacher_name.strip().lower())
+
+    free_teachers = [
+        name for name in all_names
+        if name.lower() not in busy_duty and name.lower() not in busy_teaching
+    ]
+    _free_teachers_cache[cache_key] = (free_teachers, now_m + _FREE_TEACHERS_TTL)
+    return free_teachers
 
 
 @router.get("/duty-attendance/sessions", response_model=List[schemas.DutySessionDetail])
@@ -1131,6 +1224,13 @@ def get_duty_sessions(
     today_wib = wib_now.date()
     target_date = tanggal if tanggal else today_wib
     day_of_week = target_date.strftime("%A")  # Monday, Tuesday, ...
+
+    cache_key = f"{str(target_date)}:{(location or 'all').strip().lower()}"
+    now_m = time_mod.monotonic()
+    if cache_key in _duty_sessions_cache:
+        cached_res, exp_m = _duty_sessions_cache[cache_key]
+        if now_m < exp_m:
+            return cached_res
 
     # Query master duties for this day
     query = db.query(models.TeacherDuty).filter(
@@ -1204,9 +1304,22 @@ def get_duty_sessions(
             inv_key = (loc_clean, slot_clean, orig_teacher.lower())
             is_inval = inv_key in inval_map
             effective_teacher = inval_map[inv_key] if is_inval else orig_teacher
+            if not is_inval:
+                for (ik_loc, ik_slot, ik_orig), ik_sub in inval_map.items():
+                    if ik_loc == loc_clean and ik_slot == slot_clean:
+                        if ik_orig in orig_teacher.lower() or orig_teacher.lower() in ik_orig:
+                            is_inval = True
+                            effective_teacher = ik_sub
+                            break
 
             att_key = (loc_clean, slot_clean, effective_teacher.lower())
             att_record = attendance_map.get(att_key)
+            if not att_record:
+                for (ak_loc, ak_slot, ak_teacher), ak_obj in attendance_map.items():
+                    if ak_loc == loc_clean and ak_slot == slot_clean:
+                        if ak_teacher in effective_teacher.lower() or effective_teacher.lower() in ak_teacher:
+                            att_record = ak_obj
+                            break
 
             if att_record:
                 is_attended = True
@@ -1225,6 +1338,10 @@ def get_duty_sessions(
                             status = "Sudah Duty"
                             color = "blue"
                             icon = "🔵"
+                        elif current_time_wib < start_t:
+                            status = "Belum Duty"
+                            color = "grey"
+                            icon = "⚪"
                         else:
                             status = "Lagi Duty"
                             color = "green"
@@ -1250,8 +1367,13 @@ def get_duty_sessions(
                             status = "Tidak Duty"
                             color = "orange"
                             icon = "🟠"
+                        elif start_t <= current_time_wib <= end_t:
+                            # Harusnya duty saat ini namun belum absen (Sedang Jam Piket)
+                            status = "Sedang Jam Piket"
+                            color = "yellow"
+                            icon = "🟡"
                         else:
-                            # Jika belum absen (baik jam piket belum mulai atau sedang berlangsung)
+                            # current_time_wib < start_t
                             status = "Belum Duty"
                             color = "grey"
                             icon = "⚪"
@@ -1260,22 +1382,69 @@ def get_duty_sessions(
                         color = "grey"
                         icon = "⚪"
 
-            task_info = d.task
             if is_inval:
-                task_info = f"Inval pengganti dari {orig_teacher}. {task_info or ''}".strip()
+                # Guru asli (misal Mr. Kornelius) tetap tercatat duty dengan keterangan digantikan Mr. Nano
+                if target_date < today_wib or (target_date == today_wib and end_t and current_time_wib > end_t):
+                    k_status = "Sudah Duty"
+                    k_color = "blue"
+                    k_icon = "🔵"
+                elif target_date == today_wib and start_t and end_t and start_t <= current_time_wib <= end_t:
+                    k_status = "Lagi Duty"
+                    k_color = "green"
+                    k_icon = "🟢"
+                else:
+                    k_status = "Belum Duty"
+                    k_color = "grey"
+                    k_icon = "⚪"
 
-            scheduled_teacher_statuses.append(
-                schemas.DutyTeacherStatus(
-                    teacher_name=effective_teacher,
-                    status=status,
-                    color=color,
-                    icon=icon,
-                    is_attended=is_attended,
-                    check_in_time=check_in_str,
-                    is_scheduled=True,
-                    task=task_info,
+                scheduled_teacher_statuses.append(
+                    schemas.DutyTeacherStatus(
+                        teacher_name=orig_teacher,
+                        status=k_status,
+                        color=k_color,
+                        icon=k_icon,
+                        is_attended=True if att_record else False,
+                        check_in_time=check_in_str,
+                        is_scheduled=True,
+                        task=f"Digantikan oleh {effective_teacher}. {d.task or ''}".strip(),
+                        original_teacher=orig_teacher,
+                        substitute_teacher=effective_teacher,
+                        is_inval=True,
+                    )
                 )
-            )
+
+                # Guru pengganti (misal Mr. Nano) juga terdaftar agar dapat absen
+                scheduled_teacher_statuses.append(
+                    schemas.DutyTeacherStatus(
+                        teacher_name=effective_teacher,
+                        status=k_status if is_attended else status,
+                        color=k_color if is_attended else color,
+                        icon=k_icon if is_attended else icon,
+                        is_attended=is_attended,
+                        check_in_time=check_in_str,
+                        is_scheduled=False,
+                        task=f"Inval pengganti dari {orig_teacher}. {d.task or ''}".strip(),
+                        original_teacher=orig_teacher,
+                        substitute_teacher=effective_teacher,
+                        is_inval=True,
+                    )
+                )
+            else:
+                scheduled_teacher_statuses.append(
+                    schemas.DutyTeacherStatus(
+                        teacher_name=orig_teacher,
+                        status=status,
+                        color=color,
+                        icon=icon,
+                        is_attended=is_attended,
+                        check_in_time=check_in_str,
+                        is_scheduled=True,
+                        task=d.task,
+                        original_teacher=None,
+                        substitute_teacher=None,
+                        is_inval=False,
+                    )
+                )
 
         attended_list = attendance_by_session.get(sess_key, [])
         total_scheduled = len(scheduled_teacher_statuses)
@@ -1296,6 +1465,137 @@ def get_duty_sessions(
             )
         )
 
+    # Build Morning Devotion virtual session (07.15-07.45)
+    if not location or location.strip().lower() == "morning devotion":
+        devotion_slot = "07.15-07.45"
+        dev_start_t, dev_end_t = parse_time_slot_range(devotion_slot)
+        morning_duty_teachers = set()
+        day_morning_duties = db.query(models.TeacherDuty).filter(
+            models.TeacherDuty.day_of_week.ilike(day_of_week)
+        ).all()
+        for md in day_morning_duties:
+            s_s, s_e = parse_time_slot_range(md.time_slot)
+            if s_s and s_e and dev_start_t and dev_end_t:
+                if max(s_s, dev_start_t) < min(s_e, dev_end_t):
+                    morning_duty_teachers.add(md.teacher_name.strip().lower())
+            elif md.time_slot.strip().lower() == devotion_slot:
+                morning_duty_teachers.add(md.teacher_name.strip().lower())
+
+        # Guru yang wajib mengikuti Morning Devotion (kecuali sedang bertugas duty pagi 07.15-07.45)
+        raw_sched_teachers = [r[0].strip() for r in db.query(models.TeacherSchedule.teacher_name).distinct().all() if r[0]]
+        teaching_teachers_set = set()
+        for t in raw_sched_teachers:
+            t_norm = "Ms. Destha" if t.replace(" ", "") == "Ms.Destha" else t
+            if t_norm.lower() != "library team":
+                teaching_teachers_set.add(t_norm)
+
+        # Guru tambahan yang dikonfirmasi ikut devotion (kecuali ada tugas duty):
+        # Ms. Phoebe, Ms. Agnes, Ms. Ivo, Mr. Hendy, Ms. Joke, Ms. Shenny, Ms. Citra, Mr. Dion, Ms. Sus, Ms. Vita
+        confirmed_devotion_teachers = [
+            "Ms. Phoebe",
+            "Ms. Agnes",
+            "Ms. Ivo",
+            "Mr. Hendy",
+            "Ms. Joke",
+            "Ms. Shenny",
+            "Ms. Citra",
+            "Mr. Dion",
+            "Ms. Sus",
+            "Ms. Vita",
+        ]
+        for ct in confirmed_devotion_teachers:
+            teaching_teachers_set.add(ct)
+
+        # Guru part-time yang tidak memiliki jadwal pagi (tidak ikut morning devotion):
+        part_time_morning_exempt = {"mr. ivan", "ms. alitha"}
+        teaching_teachers_set = {t for t in teaching_teachers_set if t.lower() not in part_time_morning_exempt}
+
+        teaching_teachers = sorted(list(teaching_teachers_set))
+
+        devotion_teachers = []
+        for t in teaching_teachers:
+            is_busy = False
+            for md_busy in morning_duty_teachers:
+                if md_busy == t.lower() or md_busy in t.lower() or t.lower() in md_busy:
+                    is_busy = True
+                    break
+            if not is_busy:
+                devotion_teachers.append(t)
+
+        dev_scheduled_statuses = []
+        for dt in devotion_teachers:
+            att_k = ("morning devotion", devotion_slot.lower(), dt.lower())
+            att_rec = attendance_map.get(att_k)
+            if att_rec:
+                is_att = True
+                chk_str = att_rec.check_in_time.strftime("%H:%M:%S")
+                if target_date < today_wib or target_date > today_wib:
+                    stat = "Sudah Duty"
+                    col = "blue"
+                    ico = "🔵"
+                else:
+                    if dev_start_t and dev_end_t and current_time_wib > dev_end_t:
+                        stat = "Sudah Duty"
+                        col = "blue"
+                        ico = "🔵"
+                    elif dev_start_t and dev_end_t and current_time_wib < dev_start_t:
+                        stat = "Belum Duty"
+                        col = "grey"
+                        ico = "⚪"
+                    else:
+                        stat = "Lagi Duty"
+                        col = "green"
+                        ico = "🟢"
+            else:
+                is_att = False
+                chk_str = None
+                if target_date < today_wib or (target_date == today_wib and dev_end_t and current_time_wib > dev_end_t):
+                    stat = "Tidak Duty"
+                    col = "orange"
+                    ico = "🟠"
+                elif target_date == today_wib and dev_start_t and dev_end_t and dev_start_t <= current_time_wib <= dev_end_t:
+                    stat = "Sedang Jam Piket"
+                    col = "yellow"
+                    ico = "🟡"
+                else:
+                    stat = "Belum Duty"
+                    col = "grey"
+                    ico = "⚪"
+
+            dev_scheduled_statuses.append(
+                schemas.DutyTeacherStatus(
+                    teacher_name=dt,
+                    status=stat,
+                    color=col,
+                    icon=ico,
+                    is_attended=is_att,
+                    check_in_time=chk_str,
+                    is_scheduled=True,
+                    task="Morning Devotion (07.15-07.45)",
+                    original_teacher=None,
+                    substitute_teacher=None,
+                    is_inval=False,
+                )
+            )
+
+        dev_sess_key = "Morning Devotion_07.15-07.45"
+        dev_attended_list = attendance_by_session.get(dev_sess_key, [])
+        results.append(
+            schemas.DutySessionDetail(
+                session_key=dev_sess_key,
+                location="Morning Devotion",
+                time_slot=devotion_slot,
+                duty_category="Morning Devotion",
+                grade_scope="All Teachers without Morning Duty",
+                passcode="citahati",
+                scheduled_teachers=dev_scheduled_statuses,
+                attended_list=dev_attended_list,
+                total_scheduled=len(dev_scheduled_statuses),
+                total_attended=len([s for s in dev_scheduled_statuses if s.is_attended]),
+            )
+        )
+
+    _duty_sessions_cache[cache_key] = (results, now_m + _DUTY_SESSIONS_TTL)
     return results
 
 
@@ -1313,7 +1613,7 @@ def submit_duty_attendance(
     if data.password.strip().lower() != "citahati":
         raise HTTPException(
             status_code=400,
-            detail="Password salah! Password absensi duty adalah 'citahati'.",
+            detail="Incorrect passcode! The duty attendance passcode is 'citahati'.",
         )
 
     teacher_clean = data.teacher_name.strip()
@@ -1334,7 +1634,7 @@ def submit_duty_attendance(
     if already_attended:
         raise HTTPException(
             status_code=400,
-            detail=f"{teacher_clean} sudah tercatat absen untuk duty di {loc_clean} ({slot_clean}).",
+            detail=f"{teacher_clean} has already been recorded for attendance at {loc_clean} ({slot_clean}).",
         )
 
     # 3. Cek apakah guru terjadwal duty pada hari, tempat, dan jam tersebut
@@ -1362,12 +1662,27 @@ def submit_duty_attendance(
         .first()
     )
 
-    if scheduled_duty or inval_record:
+    is_devotion = loc_clean.lower() == "morning devotion"
+    notes_to_save = data.notes
+
+    if is_devotion:
+        is_scheduled = True
+        status_label = "Terjadwal Devotion"
+        cat = "Morning Devotion"
+    elif scheduled_duty:
         is_scheduled = True
         status_label = "Terjadwal Duty"
+        cat = data.duty_category or (scheduled_duty.category if scheduled_duty else None)
+    elif inval_record:
+        is_scheduled = True
+        status_label = f"Inval ({inval_record.original_teacher})"
+        cat = data.duty_category
+        inval_note = f"Inval pengganti {inval_record.original_teacher}"
+        notes_to_save = f"{inval_note} - {notes_to_save}" if notes_to_save else inval_note
     else:
         is_scheduled = False
         status_label = "Bukan Jadwal Duty / Pengganti"
+        cat = data.duty_category
 
     now_wib = get_now_wib()
 
@@ -1375,45 +1690,760 @@ def submit_duty_attendance(
         date=data.date,
         location=loc_clean,
         time_slot=slot_clean,
-        duty_category=data.duty_category,
+        duty_category=cat,
         teacher_name=teacher_clean,
         check_in_time=now_wib,
         is_scheduled_duty=is_scheduled,
         status_label=status_label,
         verified_code="citahati",
-        notes=data.notes,
+        notes=notes_to_save,
         created_at=now_wib,
     )
 
     db.add(new_attendance)
     db.commit()
     db.refresh(new_attendance)
+    _duty_sessions_cache.clear()
     return new_attendance
 
 
 @router.get("/duty-attendance/records", response_model=List[schemas.DutyAttendanceResponse])
 def get_duty_attendance_records(
     tanggal: Optional[date] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
     location: Optional[str] = None,
     is_scheduled_duty: Optional[bool] = None,
+    teacher_name: Optional[str] = None,
+    status_duty: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
     """
-    Mengambil riwayat log absensi guru lengkap.
+    Mengambil riwayat log absensi guru lengkap dengan dukungan filter fleksibel.
+    Jika start_date, end_date, dan tanggal kosong, mengambil SELURUH record (All Records).
     """
     query = db.query(models.DutyAttendance)
-    if tanggal:
+    if start_date and end_date:
+        query = query.filter(models.DutyAttendance.date >= start_date, models.DutyAttendance.date <= end_date)
+    elif start_date:
+        query = query.filter(models.DutyAttendance.date >= start_date)
+    elif end_date:
+        query = query.filter(models.DutyAttendance.date <= end_date)
+    elif tanggal:
         query = query.filter(models.DutyAttendance.date == tanggal)
+
     if location:
         query = query.filter(models.DutyAttendance.location == location)
     if is_scheduled_duty is not None:
         query = query.filter(models.DutyAttendance.is_scheduled_duty == is_scheduled_duty)
+    if teacher_name:
+        query = query.filter(models.DutyAttendance.teacher_name.ilike(f"%{teacher_name.strip()}%"))
 
     return query.order_by(
         models.DutyAttendance.date.desc(),
         models.DutyAttendance.check_in_time.desc(),
         models.DutyAttendance.id_attendance.desc(),
     ).all()
+
+
+@router.put("/duty-attendance/records/{id_attendance}", response_model=schemas.DutyAttendanceResponse)
+def update_duty_attendance_record(
+    id_attendance: int,
+    data: schemas.DutyAttendanceUpdate,
+    db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
+):
+    """
+    Mengupdate rekaman data absensi guru (Admin only).
+    """
+    record = (
+        db.query(models.DutyAttendance)
+        .filter(models.DutyAttendance.id_attendance == id_attendance)
+        .first()
+    )
+    if not record:
+        raise HTTPException(
+            status_code=404, detail="Data absensi tidak ditemukan."
+        )
+
+    if data.teacher_name is not None:
+        record.teacher_name = data.teacher_name.strip()
+    if data.location is not None:
+        record.location = data.location.strip()
+    if data.time_slot is not None:
+        record.time_slot = data.time_slot.strip()
+    if data.duty_category is not None:
+        record.duty_category = data.duty_category.strip()
+    if data.date is not None:
+        if isinstance(data.date, str):
+            import datetime as dt_module
+            record.date = dt_module.date.fromisoformat(data.date.split("T")[0])
+        else:
+            record.date = data.date
+    if data.status_label is not None:
+        record.status_label = data.status_label.strip()
+    elif data.status is not None:
+        record.status_label = data.status.strip()
+    elif data.is_scheduled_duty is not None:
+        record.status_label = "Terjadwal Duty" if data.is_scheduled_duty else "Bukan Jadwal / Pengganti"
+    if data.is_scheduled_duty is not None:
+        record.is_scheduled_duty = data.is_scheduled_duty
+    if data.notes is not None:
+        record.notes = data.notes.strip()
+
+    db.commit()
+    db.refresh(record)
+    _duty_sessions_cache.clear()
+    return record
+
+
+def build_comprehensive_records(
+    db: Session,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    tanggal: Optional[date] = None,
+    location: Optional[str] = None,
+    status_duty: Optional[str] = None,
+    teacher_name: Optional[str] = None,
+    is_scheduled_duty: Optional[bool] = None,
+) -> List[schemas.ComprehensiveAttendanceRecord]:
+    wib_now = get_now_wib()
+    today_wib = wib_now.date()
+    current_time_wib = wib_now.time()
+
+    if tanggal:
+        target_dates = [tanggal]
+    elif start_date and end_date:
+        if start_date > end_date:
+            start_date, end_date = end_date, start_date
+        delta = (end_date - start_date).days
+        target_dates = [start_date + timedelta(days=i) for i in range(min(delta + 1, 45))]
+    elif start_date:
+        target_dates = [start_date]
+    elif end_date:
+        target_dates = [end_date]
+    else:
+        att_dates = [r[0] for r in db.query(models.DutyAttendance.date).distinct().all() if r[0]]
+        if today_wib not in att_dates:
+            att_dates.append(today_wib)
+        target_dates = sorted(list(set(att_dates)), reverse=True)
+
+    records: List[schemas.ComprehensiveAttendanceRecord] = []
+
+    # Pre-fetch master data guru mengajar untuk Morning Devotion (staff tidak ikut devotion)
+    raw_sched_teachers = [r[0].strip() for r in db.query(models.TeacherSchedule.teacher_name).distinct().all() if r[0]]
+    teaching_teachers_set = set()
+    for t in raw_sched_teachers:
+        t_norm = "Ms. Destha" if t.replace(" ", "") == "Ms.Destha" else t
+        if t_norm.lower() != "library team":
+            teaching_teachers_set.add(t_norm)
+
+    confirmed_devotion_teachers = [
+        "Ms. Phoebe",
+        "Ms. Agnes",
+        "Ms. Ivo",
+        "Mr. Hendy",
+        "Ms. Joke",
+        "Ms. Shenny",
+        "Ms. Citra",
+        "Mr. Dion",
+        "Ms. Sus",
+        "Ms. Vita",
+    ]
+    for ct in confirmed_devotion_teachers:
+        teaching_teachers_set.add(ct)
+
+    # Guru part-time yang tidak memiliki jadwal pagi (tidak ikut morning devotion):
+    part_time_morning_exempt = {"mr. ivan", "ms. alitha"}
+    teaching_teachers_set = {t for t in teaching_teachers_set if t.lower() not in part_time_morning_exempt}
+
+    teaching_teachers_cached = sorted(list(teaching_teachers_set))
+
+    q_all_duties = db.query(models.TeacherDuty)
+    if location and location.strip().lower() != "morning devotion":
+        q_all_duties = q_all_duties.filter(models.TeacherDuty.location == location)
+    all_master_duties = q_all_duties.all()
+    duties_by_day = {}
+    for d in all_master_duties:
+        duties_by_day.setdefault(d.day_of_week.strip().lower(), []).append(d)
+
+    all_invals = db.query(models.DutyInval).filter(models.DutyInval.date.in_(target_dates)).all() if target_dates else []
+    inval_map_by_date = {}
+    for inv in all_invals:
+        k = (inv.location.strip().lower(), inv.time_slot.strip().lower(), inv.original_teacher.strip().lower())
+        inval_map_by_date.setdefault(inv.date, {})[k] = inv.substitute_teacher.strip()
+
+    q_all_att = db.query(models.DutyAttendance).filter(models.DutyAttendance.date.in_(target_dates)) if target_dates else None
+    if location and q_all_att is not None:
+        q_all_att = q_all_att.filter(models.DutyAttendance.location == location)
+    all_attendances = q_all_att.all() if q_all_att is not None else []
+    att_by_date = {}
+    for a in all_attendances:
+        att_by_date.setdefault(a.date, []).append(a)
+
+    for cur_date in target_dates:
+        day_of_week = cur_date.strftime("%A")
+        duties = duties_by_day.get(day_of_week.lower(), [])
+        inval_map = inval_map_by_date.get(cur_date, {})
+        attendances = att_by_date.get(cur_date, [])
+        att_map = {}
+        for a in attendances:
+            k = (a.location.strip().lower(), a.time_slot.strip().lower(), a.teacher_name.strip().lower())
+            att_map[k] = a
+
+        matched_att_ids = set()
+
+        if not location or location.strip().lower() != "morning devotion":
+            for d in duties:
+                orig_t = d.teacher_name.strip()
+                inv_k = (d.location.strip().lower(), d.time_slot.strip().lower(), orig_t.lower())
+                is_inv = inv_k in inval_map
+                eff_t = inval_map[inv_k] if is_inv else orig_t
+                if not is_inv:
+                    for (ik_loc, ik_slot, ik_orig), ik_sub in inval_map.items():
+                        if ik_loc == d.location.strip().lower() and ik_slot == d.time_slot.strip().lower():
+                            if ik_orig in orig_t.lower() or orig_t.lower() in ik_orig:
+                                is_inv = True
+                                eff_t = ik_sub
+                                break
+
+                att_k = (d.location.strip().lower(), d.time_slot.strip().lower(), eff_t.lower())
+                att_rec = att_map.get(att_k)
+                if not att_rec:
+                    for (ak_loc, ak_slot, ak_teacher), ak_obj in att_map.items():
+                        if ak_loc == d.location.strip().lower() and ak_slot == d.time_slot.strip().lower():
+                            if ak_teacher in eff_t.lower() or eff_t.lower() in ak_teacher:
+                                att_rec = ak_obj
+                                break
+
+                start_t, end_t = parse_time_slot_range(d.time_slot)
+
+                if is_inv:
+                    # Guru asli (misal Mr. Kornelius) tetap tercatat duty dengan keterangan digantikan Mr. Nano
+                    if cur_date < today_wib or (cur_date == today_wib and end_t and current_time_wib > end_t):
+                        st = "Sudah Duty"
+                        st_lbl = f"Sudah Duty (Digantikan oleh {eff_t})"
+                    elif cur_date == today_wib and start_t and end_t and start_t <= current_time_wib <= end_t:
+                        st = "Lagi Duty"
+                        st_lbl = f"Lagi Duty (Digantikan oleh {eff_t})"
+                    else:
+                        st = "Belum Duty"
+                        st_lbl = f"Jadwal Belum Mulai (Digantikan oleh {eff_t})"
+
+                    records.append(schemas.ComprehensiveAttendanceRecord(
+                        id_attendance=att_rec.id_attendance if att_rec else None,
+                        date=cur_date,
+                        location=d.location,
+                        time_slot=d.time_slot,
+                        duty_category=d.category,
+                        teacher_name=orig_t,
+                        check_in_time=att_rec.check_in_time if att_rec else None,
+                        is_scheduled_duty=True,
+                        status=st,
+                        status_label=st_lbl,
+                        is_verified=True,
+                        verified_code=att_rec.verified_code if att_rec else "INVAL",
+                        notes=f"Digantikan oleh {eff_t}",
+                        original_teacher=orig_t,
+                        substitute_teacher=eff_t,
+                        is_inval=True
+                    ))
+
+                    if att_rec:
+                        matched_att_ids.add(att_rec.id_attendance)
+                        records.append(schemas.ComprehensiveAttendanceRecord(
+                            id_attendance=att_rec.id_attendance,
+                            date=cur_date,
+                            location=d.location,
+                            time_slot=d.time_slot,
+                            duty_category=d.category,
+                            teacher_name=eff_t,
+                            check_in_time=att_rec.check_in_time,
+                            is_scheduled_duty=False,
+                            status=st,
+                            status_label=f"Inval Pengganti {orig_t} (Hadir)",
+                            is_verified=True,
+                            verified_code=att_rec.verified_code,
+                            notes=f"Inval menggantikan {orig_t}",
+                            original_teacher=orig_t,
+                            substitute_teacher=eff_t,
+                            is_inval=True
+                        ))
+                else:
+                    if att_rec:
+                        matched_att_ids.add(att_rec.id_attendance)
+                        if att_rec.status_label in ["Tidak Duty", "Sudah Duty", "Lagi Duty"]:
+                            st = att_rec.status_label
+                            st_lbl = f"{st} (Diverifikasi Admin)"
+                        elif cur_date < today_wib or cur_date > today_wib:
+                            st = "Sudah Duty"
+                            st_lbl = "Sudah Diverifikasi / Hadir"
+                        else:
+                            if start_t and end_t:
+                                if current_time_wib > end_t:
+                                    st = "Sudah Duty"
+                                    st_lbl = "Sudah Selesai Bertugas"
+                                elif current_time_wib < start_t:
+                                    st = "Belum Duty"
+                                    st_lbl = "Sudah Absen (Menunggu Jam Mulai)"
+                                else:
+                                    st = "Lagi Duty"
+                                    st_lbl = "Sedang Bertugas"
+                            else:
+                                st = "Sudah Duty"
+                                st_lbl = "Sudah Diverifikasi / Hadir"
+
+                        records.append(schemas.ComprehensiveAttendanceRecord(
+                            id_attendance=att_rec.id_attendance,
+                            date=cur_date,
+                            location=d.location,
+                            time_slot=d.time_slot,
+                            duty_category=d.category,
+                            teacher_name=orig_t,
+                            check_in_time=att_rec.check_in_time,
+                            is_scheduled_duty=True,
+                            status=st,
+                            status_label=st_lbl,
+                            is_verified=True,
+                            verified_code=att_rec.verified_code,
+                            notes=att_rec.notes,
+                            original_teacher=None,
+                            substitute_teacher=None,
+                            is_inval=False
+                        ))
+                    else:
+                        if cur_date < today_wib:
+                            st = "Tidak Duty"
+                            st_lbl = "Tidak Duty (Terlewat / Belum Diverifikasi)"
+                        elif cur_date > today_wib:
+                            st = "Belum Duty"
+                            st_lbl = "Jadwal Belum Mulai"
+                        else:
+                            if start_t and end_t:
+                                if current_time_wib > end_t:
+                                    st = "Tidak Duty"
+                                    st_lbl = "Tidak Duty (Terlewat / Belum Absen)"
+                                elif start_t <= current_time_wib <= end_t:
+                                    st = "Sedang Jam Piket"
+                                    st_lbl = "Sedang Jam Piket (Harusnya Duty / Belum Absen)"
+                                else:
+                                    st = "Belum Duty"
+                                    st_lbl = "Jadwal Belum Mulai"
+                            else:
+                                st = "Belum Duty"
+                                st_lbl = "Jadwal Belum Mulai"
+
+                        records.append(schemas.ComprehensiveAttendanceRecord(
+                            id_attendance=None,
+                            date=cur_date,
+                            location=d.location,
+                            time_slot=d.time_slot,
+                            duty_category=d.category,
+                            teacher_name=orig_t,
+                            check_in_time=None,
+                            is_scheduled_duty=True,
+                            status=st,
+                            status_label=st_lbl,
+                            is_verified=False,
+                            verified_code="-",
+                            notes=None,
+                            original_teacher=None,
+                            substitute_teacher=None,
+                            is_inval=False
+                        ))
+
+        # Morning Devotion
+        if not location or location.strip().lower() == "morning devotion":
+            dev_slot = "07.15-07.45"
+            dev_s, dev_e = parse_time_slot_range(dev_slot)
+            morning_busy = set()
+            for d in duties:
+                s_s, s_e = parse_time_slot_range(d.time_slot)
+                is_overlap = False
+                if s_s and s_e and dev_s and dev_e:
+                    if max(s_s, dev_s) < min(s_e, dev_e):
+                        is_overlap = True
+                elif d.time_slot.strip().lower() == dev_slot:
+                    is_overlap = True
+
+                if is_overlap:
+                    orig_t = d.teacher_name.strip()
+                    inv_k = (d.location.strip().lower(), d.time_slot.strip().lower(), orig_t.lower())
+                    eff_t = orig_t
+                    if inv_k in inval_map:
+                        eff_t = inval_map[inv_k]
+                    else:
+                        for (ik_loc, ik_slot, ik_orig), ik_sub in inval_map.items():
+                            if ik_loc == d.location.strip().lower() and ik_slot == d.time_slot.strip().lower():
+                                if ik_orig in orig_t.lower() or orig_t.lower() in ik_orig:
+                                    eff_t = ik_sub
+                                    break
+                    morning_busy.add(eff_t.lower())
+
+            devotion_teachers = []
+            for dt in teaching_teachers_cached:
+                is_busy = False
+                for mb in morning_busy:
+                    if mb == dt.lower() or mb in dt.lower() or dt.lower() in mb:
+                        is_busy = True
+                        break
+                if not is_busy:
+                    devotion_teachers.append(dt)
+
+            for dt in devotion_teachers:
+                att_k = ("morning devotion", dev_slot.lower(), dt.lower())
+                att_rec = att_map.get(att_k)
+                if att_rec:
+                    matched_att_ids.add(att_rec.id_attendance)
+                    st_dev = att_rec.status_label if att_rec.status_label in ["Tidak Duty", "Sudah Duty", "Lagi Duty"] else "Sudah Duty"
+                    records.append(schemas.ComprehensiveAttendanceRecord(
+                        id_attendance=att_rec.id_attendance,
+                        date=cur_date,
+                        location="Morning Devotion",
+                        time_slot=dev_slot,
+                        duty_category="Morning Devotion",
+                        teacher_name=dt,
+                        check_in_time=att_rec.check_in_time,
+                        is_scheduled_duty=True,
+                        status=st_dev,
+                        status_label=f"{st_dev} (Devotion)" if att_rec.status_label in ["Tidak Duty", "Sudah Duty", "Lagi Duty"] else "Sudah Diverifikasi (Devotion)",
+                        is_verified=True,
+                        verified_code=att_rec.verified_code,
+                        notes=att_rec.notes
+                    ))
+                else:
+                    if cur_date < today_wib or (cur_date == today_wib and current_time_wib > time(7, 45)):
+                        records.append(schemas.ComprehensiveAttendanceRecord(
+                            id_attendance=None,
+                            date=cur_date,
+                            location="Morning Devotion",
+                            time_slot=dev_slot,
+                            duty_category="Morning Devotion",
+                            teacher_name=dt,
+                            check_in_time=None,
+                            is_scheduled_duty=True,
+                            status="Tidak Duty",
+                            status_label="Tidak Hadir Devotion",
+                            is_verified=False,
+                            verified_code="-",
+                            notes="Tidak ada absensi devotion"
+                        ))
+                    elif cur_date == today_wib and time(7, 15) <= current_time_wib <= time(7, 45):
+                        records.append(schemas.ComprehensiveAttendanceRecord(
+                            id_attendance=None,
+                            date=cur_date,
+                            location="Morning Devotion",
+                            time_slot=dev_slot,
+                            duty_category="Morning Devotion",
+                            teacher_name=dt,
+                            check_in_time=None,
+                            is_scheduled_duty=True,
+                            status="Sedang Jam Piket",
+                            status_label="Sedang Jam Piket (Devotion - Belum Absen)",
+                            is_verified=False,
+                            verified_code="-",
+                            notes="Belum absensi devotion"
+                        ))
+                    else:
+                        records.append(schemas.ComprehensiveAttendanceRecord(
+                            id_attendance=None,
+                            date=cur_date,
+                            location="Morning Devotion",
+                            time_slot=dev_slot,
+                            duty_category="Morning Devotion",
+                            teacher_name=dt,
+                            check_in_time=None,
+                            is_scheduled_duty=True,
+                            status="Belum Duty",
+                            status_label="Jadwal Devotion Belum Mulai",
+                            is_verified=False,
+                            verified_code="-",
+                            notes=None
+                        ))
+
+        # Unmatched attendances (substitutes / additional attendances)
+        for a in attendances:
+            if a.id_attendance not in matched_att_ids:
+                st_unm = a.status_label if a.status_label in ["Tidak Duty", "Sudah Duty", "Lagi Duty"] else "Sudah Duty"
+                records.append(schemas.ComprehensiveAttendanceRecord(
+                    id_attendance=a.id_attendance,
+                    date=a.date,
+                    location=a.location,
+                    time_slot=a.time_slot,
+                    duty_category=a.duty_category,
+                    teacher_name=a.teacher_name,
+                    check_in_time=a.check_in_time,
+                    is_scheduled_duty=a.is_scheduled_duty,
+                    status=st_unm,
+                    status_label=a.status_label if a.status_label in ["Tidak Duty", "Sudah Duty", "Lagi Duty"] else ("Bukan Jadwal / Pengganti (Terverifikasi)" if not a.is_scheduled_duty else "Terjadwal Duty"),
+                    is_verified=True,
+                    verified_code=a.verified_code,
+                    notes=a.notes
+                ))
+
+    # Apply filters
+    filtered = []
+    for r in records:
+        if status_duty and status_duty.strip().lower() not in ["all", ""]:
+            sd = status_duty.strip().lower()
+            if sd in ["tidak_duty", "tidak duty", "missed"] and r.status != "Tidak Duty":
+                continue
+            elif sd in ["sudah_duty", "sudah duty", "verified"] and r.status != "Sudah Duty":
+                continue
+            elif sd in ["lagi_duty", "lagi duty", "active"] and r.status != "Lagi Duty":
+                continue
+            elif sd in ["sedang_jam_piket", "sedang jam piket", "piket"] and r.status != "Sedang Jam Piket":
+                continue
+            elif sd in ["belum_duty", "belum duty", "upcoming"] and r.status != "Belum Duty":
+                continue
+
+        if teacher_name and teacher_name.strip():
+            if teacher_name.strip().lower() not in r.teacher_name.lower():
+                continue
+
+        if is_scheduled_duty is not None:
+            if r.is_scheduled_duty != is_scheduled_duty:
+                continue
+
+        filtered.append(r)
+
+    filtered.sort(key=lambda x: (x.date, x.time_slot, x.teacher_name), reverse=True)
+    return filtered
+
+
+@router.get("/duty-attendance/comprehensive-records", response_model=List[schemas.ComprehensiveAttendanceRecord])
+def get_comprehensive_duty_records(
+    tanggal: Optional[date] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    location: Optional[str] = None,
+    status_duty: Optional[str] = None,
+    teacher_name: Optional[str] = None,
+    is_scheduled_duty: Optional[bool] = None,
+    db: Session = Depends(get_db),
+):
+    """
+    Mengambil SELURUH rekaman piket guru:
+    1. Sudah Duty (Sudah Diverifikasi / Hadir)
+    2. Lagi Duty (Sedang Berlangsung)
+    3. Tidak Duty (Tidak Diverifikasi / Terlewat)
+    4. Belum Duty (Jadwal Belum Mulai)
+    """
+    return build_comprehensive_records(
+        db=db,
+        start_date=start_date,
+        end_date=end_date,
+        tanggal=tanggal,
+        location=location,
+        status_duty=status_duty,
+        teacher_name=teacher_name,
+        is_scheduled_duty=is_scheduled_duty,
+    )
+
+
+@router.post("/duty-attendance/manual-verify", response_model=schemas.ComprehensiveAttendanceRecord)
+def manual_verify_duty_attendance(
+    data: schemas.ManualVerifyRequest,
+    db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
+):
+    """
+    Memverifikasi manual guru yang berstatus Tidak Duty / Belum Absen (Admin only).
+    """
+    wib_now = get_now_wib()
+    new_att = models.DutyAttendance(
+        date=data.date,
+        location=data.location.strip(),
+        time_slot=data.time_slot.strip(),
+        duty_category=data.duty_category.strip() if data.duty_category else None,
+        teacher_name=data.teacher_name.strip(),
+        check_in_time=wib_now,
+        is_scheduled_duty=data.is_scheduled_duty,
+        status_label="Terjadwal Duty (Verifikasi Manual)",
+        verified_code="citahati",
+        notes=data.notes.strip() if data.notes else "Manual verification by Admin",
+        created_at=wib_now,
+    )
+    db.add(new_att)
+    db.commit()
+    db.refresh(new_att)
+    _duty_sessions_cache.clear()
+
+    return schemas.ComprehensiveAttendanceRecord(
+        id_attendance=new_att.id_attendance,
+        date=new_att.date,
+        location=new_att.location,
+        time_slot=new_att.time_slot,
+        duty_category=new_att.duty_category,
+        teacher_name=new_att.teacher_name,
+        check_in_time=new_att.check_in_time,
+        is_scheduled_duty=new_att.is_scheduled_duty,
+        status="Sudah Duty",
+        status_label="Terjadwal Duty (Verifikasi Manual)",
+        is_verified=True,
+        verified_code=new_att.verified_code,
+        notes=new_att.notes,
+        is_inval=False
+    )
+
+
+@router.get("/duty-attendance/export-excel")
+def export_duty_attendance_excel(
+    tanggal: Optional[date] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    location: Optional[str] = None,
+    teacher_name: Optional[str] = None,
+    status_duty: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    """
+    Export laporan absensi guru ke Excel (.xlsx) dengan Sheet Detail dan Sheet Kalkulasi Summary,
+    mencakup seluruh record (Sudah, Lagi, dan Tidak Duty) sesuai filter.
+    """
+    records = build_comprehensive_records(
+        db=db,
+        start_date=start_date,
+        end_date=end_date,
+        tanggal=tanggal,
+        location=location,
+        status_duty=status_duty,
+        teacher_name=teacher_name,
+    )
+
+    wb = openpyxl.Workbook()
+    # Sheet 1: Detail Attendance Logs
+    ws1 = wb.active
+    ws1.title = "Attendance Detail"
+
+    header_fill = PatternFill(start_color="1E3A8A", end_color="1E3A8A", fill_type="solid")
+    header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+    align_center = Alignment(horizontal="center", vertical="center")
+    align_left = Alignment(horizontal="left", vertical="center")
+    thin_border = Border(
+        left=Side(style='thin', color='E2E8F0'),
+        right=Side(style='thin', color='E2E8F0'),
+        top=Side(style='thin', color='E2E8F0'),
+        bottom=Side(style='thin', color='E2E8F0')
+    )
+
+    headers1 = [
+        "No", "Date", "Day", "Check-in Time", "Teacher Name", "Location",
+        "Time Slot", "Category", "Verification Status", "Schedule Status", "Validation Code", "Notes"
+    ]
+    ws1.append(headers1)
+    for col_idx in range(1, len(headers1) + 1):
+        cell = ws1.cell(row=1, column=col_idx)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = align_center
+
+    teacher_summary = {}
+    for idx, r in enumerate(records, start=1):
+        day_name = r.date.strftime("%A")
+        check_time_str = r.check_in_time.strftime("%H:%M:%S") + " WIB" if r.check_in_time else "-"
+        sched_label = "Terjadwal Duty" if r.is_scheduled_duty else "Bukan Jadwal / Pengganti"
+
+        row_data = [
+            idx,
+            str(r.date),
+            day_name,
+            check_time_str,
+            r.teacher_name,
+            r.location,
+            r.time_slot,
+            r.duty_category or "-",
+            r.status_label,
+            sched_label,
+            r.verified_code or "-",
+            r.notes or "-"
+        ]
+        ws1.append(row_data)
+        for col_idx in range(1, len(row_data) + 1):
+            c = ws1.cell(row=idx + 1, column=col_idx)
+            c.border = thin_border
+            if col_idx in [1, 2, 3, 4, 7, 9, 10, 11]:
+                c.alignment = align_center
+            else:
+                c.alignment = align_left
+
+        t_name = r.teacher_name.strip()
+        if t_name not in teacher_summary:
+            teacher_summary[t_name] = {
+                "total_scheduled": 0,
+                "hadir": 0,
+                "sedang_piket": 0,
+                "tidak_hadir": 0,
+                "belum_mulai": 0,
+                "other": 0,
+            }
+        if r.is_scheduled_duty:
+            teacher_summary[t_name]["total_scheduled"] += 1
+            if r.status in ["Sudah Duty", "Lagi Duty"]:
+                teacher_summary[t_name]["hadir"] += 1
+            elif r.status == "Sedang Jam Piket":
+                teacher_summary[t_name]["sedang_piket"] += 1
+            elif r.status == "Tidak Duty":
+                teacher_summary[t_name]["tidak_hadir"] += 1
+            elif r.status == "Belum Duty":
+                teacher_summary[t_name]["belum_mulai"] += 1
+        else:
+            teacher_summary[t_name]["other"] += 1
+
+    for col in ws1.columns:
+        max_len = max(len(str(cell.value or '')) for cell in col)
+        col_letter = openpyxl.utils.get_column_letter(col[0].column)
+        ws1.column_dimensions[col_letter].width = max(max_len + 3, 12)
+
+    # Sheet 2: Summary Calculation per Teacher
+    ws2 = wb.create_sheet(title="Duty Summary Calculation")
+    headers2 = [
+        "No", "Teacher Name", "Total Scheduled Duty", 
+        "Hadir (Verified/Active)", "Sedang Jam Piket (Belum Absen)", "Tidak Hadir (Tidak Duty)", "Belum Mulai", "Substitute / Devotion", "Participation Rate (%)"
+    ]
+    ws2.append(headers2)
+    header2_fill = PatternFill(start_color="1E3A8A", end_color="1E3A8A", fill_type="solid")
+    for col_idx in range(1, len(headers2) + 1):
+        cell = ws2.cell(row=1, column=col_idx)
+        cell.fill = header2_fill
+        cell.font = header_font
+        cell.alignment = align_center
+
+    sorted_teachers = sorted(
+        teacher_summary.items(),
+        key=lambda x: (x[1]["hadir"] + x[1]["total_scheduled"]),
+        reverse=True
+    )
+    for s_idx, (t_name, stats) in enumerate(sorted_teachers, start=1):
+        tot_sched = stats["total_scheduled"]
+        hadir_cnt = stats["hadir"]
+        piket_cnt = stats["sedang_piket"]
+        tidak_cnt = stats["tidak_hadir"]
+        belum_cnt = stats["belum_mulai"]
+        other_cnt = stats["other"]
+        rate = f"{(hadir_cnt / tot_sched * 100):.1f}%" if tot_sched > 0 else "100.0%"
+        row2 = [s_idx, t_name, tot_sched, hadir_cnt, piket_cnt, tidak_cnt, belum_cnt, other_cnt, rate]
+        ws2.append(row2)
+        for col_idx in range(1, len(row2) + 1):
+            c = ws2.cell(row=s_idx + 1, column=col_idx)
+            c.border = thin_border
+            c.alignment = align_center if col_idx != 2 else align_left
+
+    for col in ws2.columns:
+        max_len = max(len(str(cell.value or '')) for cell in col)
+        col_letter = openpyxl.utils.get_column_letter(col[0].column)
+        ws2.column_dimensions[col_letter].width = max(max_len + 3, 14)
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    filename = f"Comprehensive_Duty_Report_{start_date or 'All'}_{end_date or 'Dates'}.xlsx"
+    return Response(
+        content=output.getvalue(),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
 
 
 @router.delete("/duty-attendance/records/{id_attendance}")
@@ -1436,6 +2466,7 @@ def delete_duty_attendance_record(
         )
     db.delete(record)
     db.commit()
+    _duty_sessions_cache.clear()
     return {"message": "Data absensi berhasil dihapus."}
 
 

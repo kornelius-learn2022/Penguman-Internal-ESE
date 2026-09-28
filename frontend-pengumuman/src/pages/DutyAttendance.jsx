@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 
 export default function DutyAttendance() {
@@ -12,8 +12,22 @@ export default function DutyAttendance() {
 
   // Forms state keyed by session_key
   const [forms, setForms] = useState({});
+  const [showPasswords, setShowPasswords] = useState({});
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
-  const [submittedSessions, setSubmittedSessions] = useState({});
+  const todayDateStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+  const [submittedSessions, setSubmittedSessions] = useState(() => {
+    const initial = {};
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("duty_attended_") && key.endsWith(`_${todayDateStr}`)) {
+          const sessKey = key.replace("duty_attended_", "").replace(`_${todayDateStr}`, "");
+          initial[sessKey] = localStorage.getItem(key);
+        }
+      }
+    } catch (e) {}
+    return initial;
+  });
 
   useEffect(() => {
     // Real-time clock update
@@ -26,6 +40,26 @@ export default function DutyAttendance() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const [freeTeachersBySlot, setFreeTeachersBySlot] = useState({});
+  const inFlightSlotsRef = useRef(new Set());
+
+  const fetchFreeTeachers = async (timeSlot) => {
+    if (!timeSlot || freeTeachersBySlot[timeSlot] || inFlightSlotsRef.current.has(timeSlot)) return;
+    inFlightSlotsRef.current.add(timeSlot);
+    try {
+      const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+      const res = await fetch(`/api/duty-attendance/free-teachers?date=${todayStr}&time_slot=${encodeURIComponent(timeSlot)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setFreeTeachersBySlot((prev) => ({ ...prev, [timeSlot]: data }));
+      }
+    } catch (err) {
+      console.error("Failed to load free teachers:", err);
+    } finally {
+      inFlightSlotsRef.current.delete(timeSlot);
+    }
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -37,6 +71,17 @@ export default function DutyAttendance() {
       if (resSess.ok) {
         const data = await resSess.json();
         setSessions(data);
+        // Pre-fetch unique free teacher slots only (except Morning Devotion)
+        const uniqueSlots = Array.from(
+          new Set(
+            data
+              .filter((s) => s.time_slot && !s.location?.toLowerCase().includes("devotion"))
+              .map((s) => s.time_slot)
+          )
+        );
+        for (const slot of uniqueSlots) {
+          fetchFreeTeachers(slot);
+        }
       }
       if (resTeach.ok) {
         const data = await resTeach.json();
@@ -67,11 +112,11 @@ export default function DutyAttendance() {
   const handleCheckIn = async (session) => {
     const form = forms[session.session_key] || {};
     if (!form.teacherName) {
-      showToast("Please select your teacher name first!", "error");
+      showToast("Please select your teacher name from the list first!", "error");
       return;
     }
     if ((form.password || "").trim().toLowerCase() !== "citahati") {
-      showToast("Incorrect password!", "error");
+      showToast("Incorrect passcode! Please type: citahati", "error");
       return;
     }
 
@@ -92,16 +137,21 @@ export default function DutyAttendance() {
 
       const data = await res.json();
       if (res.ok) {
-        showToast("Attendance successfully recorded in system!", "success");
-        setSubmittedSessions(prev => ({ ...prev, [session.session_key]: true }));
+        showToast(`Great! Attendance for ${form.teacherName} has been successfully recorded in the system.`, "success");
+        const recordedTeacherName = form.teacherName;
+        setSubmittedSessions(prev => ({ ...prev, [session.session_key]: recordedTeacherName }));
+        try {
+          localStorage.setItem(`duty_attended_${session.session_key}_${todayStr}`, recordedTeacherName);
+        } catch (e) {}
+
         setSessionFormField(session.session_key, "teacherName", "");
         setSessionFormField(session.session_key, "password", "");
         fetchData();
       } else {
-        showToast(data.detail || "Failed to record attendance", "error");
+        showToast(data.detail || "Failed to record attendance. Please try again.", "error");
       }
     } catch (err) {
-      showToast("Network error occurred. Please try again.", "error");
+      showToast("Network error occurred. Please check your connection and try again.", "error");
     }
     setSessionFormField(session.session_key, "isSubmitting", false);
   };
@@ -291,107 +341,196 @@ export default function DutyAttendance() {
                   {/* Card Body */}
                   <div className="p-6 space-y-5">
                     {(() => {
-                      const isAlreadyAttended =
-                        Boolean(submittedSessions[session.session_key]) ||
-                        (session.attended_list && session.attended_list.length > 0 && (
-                          (session.scheduled_teachers && session.scheduled_teachers.length > 0 && session.scheduled_teachers.every(t => t.is_attended)) ||
-                          (session.attended_list.length >= (session.total_scheduled || 1))
-                        ));
+                      const isDevotion =
+                        (session.location || "").toLowerCase().includes("devotion") ||
+                        (session.duty_category || "").toLowerCase().includes("devotion") ||
+                        (decodedLocation || "").toLowerCase().includes("devotion");
 
                       const availableScheduled = (session.scheduled_teachers || []).filter(st => !st.is_attended);
+                      const mySubmittedTeacher = submittedSessions[session.session_key];
+
+                      const isAlreadyAttended = isDevotion
+                        ? Boolean(mySubmittedTeacher) || (availableScheduled.length === 0 && (session.scheduled_teachers || []).length > 0)
+                        : (
+                            Boolean(submittedSessions[session.session_key]) ||
+                            (session.attended_list && session.attended_list.length > 0 && (
+                              (session.scheduled_teachers && session.scheduled_teachers.length > 0 && session.scheduled_teachers.every(t => t.is_attended)) ||
+                              (session.attended_list.length >= (session.total_scheduled || 1))
+                            ))
+                          );
 
                       return (
                         <>
-                          {/* JIKA SUDAH ABSEN: Sembunyikan Form Dropdown & Password, Hanya Tampilkan Nama Guru + Logo */}
-                          {session.attended_list && session.attended_list.length > 0 && (
-                            <div className="space-y-3">
-                              {session.attended_list.map((att) => (
-                                <div
-                                  key={att.id_attendance}
-                                  className="flex items-center gap-3 p-4 bg-emerald-50/90 border border-emerald-200 rounded-2xl shadow-sm"
-                                >
+                          {/* Success Banner */}
+                          {isDevotion ? (
+                            mySubmittedTeacher ? (
+                              <div className="p-4 bg-emerald-50/90 border border-emerald-200 rounded-2xl shadow-sm flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
                                   <img
                                     src="/252-SMA_CITA_HATI_EAST_SURABAYA.png"
                                     alt="Cita Hati Logo"
                                     className="h-10 w-auto object-contain flex-shrink-0"
                                   />
                                   <div className="text-sm font-bold text-emerald-950">
-                                    <span className="font-extrabold text-[#1e3a8a] text-base">{att.teacher_name}</span> has been recorded in the system
+                                    <span className="font-extrabold text-[#1e3a8a] text-base">{mySubmittedTeacher}</span> has been recorded in the system
                                   </div>
                                 </div>
-                              ))}
-                            </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSubmittedSessions((prev) => {
+                                      const next = { ...prev };
+                                      delete next[session.session_key];
+                                      return next;
+                                    });
+                                    try {
+                                      localStorage.removeItem(`duty_attended_${session.session_key}_${todayDateStr}`);
+                                    } catch (e) {}
+                                  }}
+                                  className="text-xs font-semibold text-slate-500 hover:text-slate-700 underline flex-shrink-0"
+                                >
+                                  Check in another
+                                </button>
+                              </div>
+                            ) : (
+                              availableScheduled.length === 0 && (session.scheduled_teachers || []).length > 0 && (
+                                <div className="p-4 bg-blue-50/90 border border-blue-200 rounded-2xl text-center text-sm font-bold text-[#1e3a8a]">
+                                  All scheduled teachers for Morning Devotion have completed attendance.
+                                </div>
+                              )
+                            )
+                          ) : (
+                            session.attended_list && session.attended_list.length > 0 && (
+                              <div className="space-y-3">
+                                {session.attended_list.map((att) => (
+                                  <div
+                                    key={att.id_attendance}
+                                    className="flex items-center gap-3 p-4 bg-emerald-50/90 border border-emerald-200 rounded-2xl shadow-sm"
+                                  >
+                                    <img
+                                      src="/252-SMA_CITA_HATI_EAST_SURABAYA.png"
+                                      alt="Cita Hati Logo"
+                                      className="h-10 w-auto object-contain flex-shrink-0"
+                                    />
+                                    <div className="text-sm font-bold text-emerald-950">
+                                      <span className="font-extrabold text-[#1e3a8a] text-base">{att.teacher_name}</span> has been recorded in the system
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )
                           )}
 
                           {/* JIKA BELUM SELESAI ABSEN: Tampilkan Form */}
                           {!isAlreadyAttended && (
                             <div>
-                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-3">
-                                ✍️ Duty Check-In Form
+                              <span className="text-xs font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-3">
+                                ✍️ {isDevotion ? "Morning Devotion Check-In Form" : "Duty Check-In Form"}
                               </span>
 
                               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5">
-                                <div className="space-y-3">
+                                {/* Friendly Guidance Box */}
+                                <div className="mb-4 p-3.5 bg-blue-50/80 border border-blue-200/80 rounded-xl text-xs text-blue-900 flex items-start gap-2.5">
+                                  <span className="text-base flex-shrink-0">ℹ️</span>
+                                  <p className="leading-relaxed font-medium">
+                                    {isDevotion ? (
+                                      <>
+                                        <strong>How to check in:</strong> Select your name from the scheduled teacher list below, then enter the passcode to record your Morning Devotion attendance.
+                                      </>
+                                    ) : (
+                                      <>
+                                        <strong>How to check in:</strong> Select your name from the scheduled list below (or choose a free substitute if you are substituting), then enter the passcode to record your attendance.
+                                      </>
+                                    )}
+                                  </p>
+                                </div>
+
+                                <div className="space-y-4">
                                   {/* Input Nama Guru */}
                                   <div>
-                                    <label className="block text-[10px] font-bold text-slate-500 mb-1">
+                                    <label className="block text-xs font-bold text-slate-600 mb-1.5">
                                       Select Teacher Name *
                                     </label>
-                                    <div className="grid grid-cols-1 gap-2">
+                                    <div className="grid grid-cols-1 gap-2.5">
                                       <select
                                         value={currentForm.teacherName}
                                         onChange={(e) =>
                                           setSessionFormField(session.session_key, "teacherName", e.target.value)
                                         }
-                                        className="w-full bg-white border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="w-full bg-white border border-slate-300 text-sm font-bold text-slate-800 px-3.5 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
                                       >
-                                        <option value="">-- Select Scheduled Teacher --</option>
+                                        <option value="">
+                                          {isDevotion ? "-- Select Teacher Name --" : "-- Select Scheduled Teacher (Today) --"}
+                                        </option>
                                         {availableScheduled.map((st, idx) => (
                                           <option key={idx} value={st.teacher_name}>
-                                            {st.teacher_name}
+                                            {st.is_inval
+                                              ? `🔄 ${st.teacher_name} (Substitute for ${st.original_teacher})`
+                                              : st.teacher_name}
                                           </option>
                                         ))}
                                       </select>
 
-                                      <select
-                                        onChange={(e) => {
-                                          if (e.target.value) {
-                                            setSessionFormField(session.session_key, "teacherName", e.target.value);
-                                          }
-                                        }}
-                                        className="w-full bg-white border border-slate-200 text-xs font-medium text-slate-600 px-3 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
-                                      >
-                                        <option value="">Or Select Other Teacher / Substitute...</option>
-                                        {allTeachers.map((teach, idx) => (
-                                          <option key={idx} value={teach}>
-                                            {teach}
-                                          </option>
-                                        ))}
-                                      </select>
+                                      {/* Opsi Pengganti / Substitute: Ditiadakan khusus untuk Morning Devotion */}
+                                      {!isDevotion && (
+                                        <select
+                                          onFocus={() => fetchFreeTeachers(session.time_slot)}
+                                          onChange={(e) => {
+                                            if (e.target.value) {
+                                              setSessionFormField(session.session_key, "teacherName", e.target.value);
+                                            }
+                                          }}
+                                          className="w-full bg-white border border-slate-300 text-sm font-medium text-slate-700 px-3.5 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
+                                        >
+                                          <option value="">Or Select Free Substitute (Covering for someone)...</option>
+                                          {(freeTeachersBySlot[session.time_slot] || []).map((teach, idx) => (
+                                            <option key={idx} value={teach}>
+                                              {teach} (Free)
+                                            </option>
+                                          ))}
+                                        </select>
+                                      )}
                                     </div>
                                   </div>
 
-                                  {/* Input Password */}
+                                  {/* Input Password with Show/Hide Toggle */}
                                   <div>
-                                    <label className="block text-[10px] font-bold text-slate-500 mb-1">
-                                      Attendance Password *
+                                    <label className="block text-xs font-bold text-slate-600 mb-1.5">
+                                      Attendance Passcode *
                                     </label>
-                                    <input
-                                      type="password"
-                                      value={currentForm.password}
-                                      onChange={(e) =>
-                                        setSessionFormField(session.session_key, "password", e.target.value)
-                                      }
-                                      placeholder="Enter password"
-                                      className="w-full bg-white border border-slate-200 font-mono text-xs font-bold text-slate-800 px-3 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
+                                    <div className="relative">
+                                      <input
+                                        type={showPasswords[session.session_key] ? "text" : "password"}
+                                        value={currentForm.password}
+                                        onChange={(e) =>
+                                          setSessionFormField(session.session_key, "password", e.target.value)
+                                        }
+                                        placeholder="Enter passcode (citahati)"
+                                        className="w-full bg-white border border-slate-300 font-mono text-sm font-bold text-slate-800 px-3.5 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 pr-20 shadow-xs"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setShowPasswords((prev) => ({
+                                            ...prev,
+                                            [session.session_key]: !prev[session.session_key],
+                                          }))
+                                        }
+                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 px-2.5 py-1 text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 rounded-lg border border-blue-200 transition-colors"
+                                      >
+                                        {showPasswords[session.session_key] ? "👁️ Hide" : "👁️ Show"}
+                                      </button>
+                                    </div>
+                                    <p className="text-[11px] text-slate-500 mt-1 font-medium">
+                                      School passcode: <strong className="font-mono text-blue-700">citahati</strong>
+                                    </p>
                                   </div>
 
                                   <button
                                     type="button"
                                     disabled={currentForm.isSubmitting}
                                     onClick={() => handleCheckIn(session)}
-                                    className="w-full mt-2 bg-[#1e3a8a] hover:bg-blue-800 text-white text-xs font-bold py-3 rounded-xl shadow-md transition-all active:scale-[0.99] disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    className="w-full mt-2 bg-[#1e3a8a] hover:bg-blue-800 text-white text-sm font-extrabold py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.99] disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                   >
                                     <span>✅</span>
                                     <span>

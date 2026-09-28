@@ -1,6 +1,6 @@
 from pydantic import BaseModel
-from typing import Optional, List
-from datetime import date, datetime
+from typing import Optional, List, Union
+from datetime import date, datetime, date as dt_date
 import models
 
 
@@ -48,7 +48,7 @@ class BirthdayCreate(BaseModel):
 
 class BirthdayUpdate(BaseModel):
     name: Optional[str] = None
-    date: Optional[date] = None
+    date: Optional[Union[dt_date, str]] = None
     gender: Optional[models.GenderType] = None
     admin_update: Optional[int] = None
 
@@ -221,8 +221,8 @@ class EventScheduleCreate(EventScheduleBase):
 class EventScheduleUpdate(BaseModel):
     event_name: Optional[str] = None
     target_scope: Optional[str] = None
-    date: Optional[date] = None
-    end_date: Optional[date] = None
+    date: Optional[Union[dt_date, str]] = None
+    end_date: Optional[Union[dt_date, str]] = None
     time_slot: Optional[str] = None
     description: Optional[str] = None
     affects_kbm: Optional[bool] = None
@@ -268,15 +268,30 @@ class DutyAttendanceResponse(BaseModel):
         from_attributes = True
 
 
+class DutyAttendanceUpdate(BaseModel):
+    teacher_name: Optional[str] = None
+    location: Optional[str] = None
+    time_slot: Optional[str] = None
+    duty_category: Optional[str] = None
+    date: Optional[Union[dt_date, str]] = None
+    is_scheduled_duty: Optional[bool] = None
+    status: Optional[str] = None
+    status_label: Optional[str] = None
+    notes: Optional[str] = None
+
+
 class DutyTeacherStatus(BaseModel):
     teacher_name: str
-    status: str  # "Belum Duty" | "Lagi Duty" | "Sudah Duty" | "Tidak Duty"
-    color: str  # "grey" | "green" | "blue" | "orange"
-    icon: str  # "⚪" | "🟢" | "🔵" | "🟠"
+    status: str  # "Belum Duty" | "Lagi Duty" | "Sedang Jam Piket" | "Sudah Duty" | "Tidak Duty"
+    color: str  # "grey" | "green" | "yellow" | "blue" | "orange"
+    icon: str  # "⚪" | "🟢" | "🟡" | "🔵" | "🟠"
     is_attended: bool = False
     check_in_time: Optional[str] = None
     is_scheduled: bool = True
     task: Optional[str] = None
+    original_teacher: Optional[str] = None
+    substitute_teacher: Optional[str] = None
+    is_inval: bool = False
 
 
 class DutySessionDetail(BaseModel):
@@ -290,6 +305,36 @@ class DutySessionDetail(BaseModel):
     attended_list: List[DutyAttendanceResponse] = []
     total_scheduled: int = 0
     total_attended: int = 0
+
+
+class ComprehensiveAttendanceRecord(BaseModel):
+    id_attendance: Optional[int] = None
+    date: date
+    location: str
+    time_slot: str
+    duty_category: Optional[str] = None
+    teacher_name: str
+    check_in_time: Optional[datetime] = None
+    is_scheduled_duty: bool = True
+    status: str  # "Sudah Duty" | "Lagi Duty" | "Sedang Jam Piket" | "Tidak Duty" | "Belum Duty"
+    status_label: str
+    is_verified: bool
+    verified_code: Optional[str] = "citahati"
+    notes: Optional[str] = None
+    original_teacher: Optional[str] = None
+    substitute_teacher: Optional[str] = None
+    is_inval: bool = False
+
+
+class ManualVerifyRequest(BaseModel):
+    date: date
+    location: str
+    time_slot: str
+    teacher_name: str
+    duty_category: Optional[str] = None
+    is_scheduled_duty: bool = True
+    notes: Optional[str] = "Manual verification by Admin"
+
 
 
 

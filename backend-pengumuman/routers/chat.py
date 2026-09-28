@@ -1,5 +1,6 @@
 import os
 import re
+import asyncio
 import datetime
 import time
 from itertools import groupby
@@ -75,6 +76,21 @@ def get_teacher_names(db: Session):
         _teacher_names_cache["duty"]  = duty
         _teacher_names_cache["timestamp"] = now
     return _teacher_names_cache["sched"], _teacher_names_cache["duty"]
+
+
+# ============================================================
+# IN-MEMORY CACHE UNTUK PERTANYAAN CHAT REPETITIF (TTL 5 MENIT)
+# Mengembalikan respons instan (< 10 ms) tanpa membebani kuota API
+# ============================================================
+_CHAT_CACHE_TTL = 300  # 5 menit
+_chat_response_cache = {}
+
+def _get_chat_cache_key(msg: str) -> str:
+    cleaned = re.sub(r"[^\w\s]", "", msg.lower()).strip()
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    now_wib = datetime.datetime.utcnow() + datetime.timedelta(hours=7)
+    today_str = now_wib.strftime("%Y-%m-%d")
+    return f"{today_str}:{cleaned}"
 
 
 MONTHS_MAP = {
@@ -198,6 +214,23 @@ def is_time_in_slot(query_time: datetime.time, slot_str: str) -> bool:
         return start_m <= q_m < end_m
     except Exception:
         return False
+
+
+def parse_time_slot_range(slot: str):
+    if not slot:
+        return None, None
+    clean_slot = slot.replace(" ", "").replace("–", "-")
+    parts = clean_slot.split("-")
+    if len(parts) != 2:
+        return None, None
+    try:
+        s_parts = parts[0].replace(":", ".").split(".")
+        e_parts = parts[1].replace(":", ".").split(".")
+        s_time = datetime.time(int(s_parts[0]), int(s_parts[1]))
+        e_time = datetime.time(int(e_parts[0]), int(e_parts[1]))
+        return s_time, e_time
+    except Exception:
+        return None, None
 
 
 def build_school_context(user_message: str, db: Session) -> str:
@@ -608,8 +641,9 @@ def build_school_context(user_message: str, db: Session) -> str:
         )
         inval_map = {}
         for inv in inval_records:
-            inval_map[(inv.original_teacher.strip().lower(), inv.time_slot.strip())] = inv
-            inval_map[(inv.location.strip().lower(), inv.time_slot.strip())] = inv
+            t_slot = inv.time_slot.strip().lower()
+            inval_map[(inv.original_teacher.strip().lower(), t_slot)] = inv
+            inval_map[(inv.location.strip().lower(), t_slot)] = inv
 
         if inval_records:
             context_lines.append(
@@ -638,7 +672,7 @@ def build_school_context(user_message: str, db: Session) -> str:
 
         if duties:
             context_lines.append("=== INFORMASI JADWAL DUTY / PIKET GURU (TEACHER ON DUTY) ===")
-            context_lines.append("[PANDUAN STATUS KEHADIRAN GURU: ⚪ Belum Duty | 🟢 Lagi Duty | 🔵 Sudah Duty | 🟠 Tidak Duty]")
+            context_lines.append("[PANDUAN STATUS KEHADIRAN GURU: ⚪ Belum Duty | 🟢 Lagi Duty | 🟡 Sedang Jam Piket | 🔵 Sudah Duty | 🟠 Tidak Duty]")
             active_duties_now = []
             
             day_order = {d: i for i, d in enumerate(DAYS_NAME)}
@@ -650,9 +684,20 @@ def build_school_context(user_message: str, db: Session) -> str:
                 for d in day_group:
                     task_info = f" (Tugas: {d.task})" if d.task else ""
                     time_marker = ""
-                    matching_inval = inval_map.get((d.teacher_name.strip().lower(), d.time_slot.strip())) or inval_map.get((d.location.strip().lower(), d.time_slot.strip()))
+                    d_slot_lower = d.time_slot.strip().lower()
+                    matching_inval = (
+                        inval_map.get((d.teacher_name.strip().lower(), d_slot_lower))
+                        or inval_map.get((d.location.strip().lower(), d_slot_lower))
+                    )
+                    if not matching_inval:
+                        for (ik_key, ik_slot), inv_obj in inval_map.items():
+                            if ik_slot == d_slot_lower:
+                                if ik_key in d.teacher_name.strip().lower() or d.teacher_name.strip().lower() in ik_key:
+                                    matching_inval = inv_obj
+                                    break
+
                     if matching_inval:
-                        teacher_display = f"{d.teacher_name} -> [DIGANTIKAN SEMENTARA OLEH {matching_inval.substitute_teacher}]"
+                        teacher_display = f"{d.teacher_name} -> [DIGANTIKAN OLEH {matching_inval.substitute_teacher}]"
                         active_teacher = f"{matching_inval.substitute_teacher} (Inval pengganti {d.teacher_name})"
                         check_name = matching_inval.substitute_teacher.strip().lower()
                     else:
@@ -660,7 +705,7 @@ def build_school_context(user_message: str, db: Session) -> str:
                         active_teacher = d.teacher_name
                         check_name = d.teacher_name.strip().lower()
 
-                    # Evaluasi status lingkaran warna: ⚪ Grey, 🟢 Hijau, 🔵 Biru, 🟠 Orange
+                    # Evaluasi status lingkaran warna: ⚪ Grey, 🟢 Hijau, 🟡 Kuning, 🔵 Biru, 🟠 Orange
                     att_hit = duty_att_map.get((d.location.strip().lower(), d.time_slot.strip().lower(), check_name))
                     
                     slot_start, slot_end = None, None
@@ -675,7 +720,18 @@ def build_school_context(user_message: str, db: Session) -> str:
                     except Exception:
                         pass
 
-                    if att_hit:
+                    if matching_inval:
+                        # Guru yang digantikan tetap tercatat duty (🟢 Lagi Duty saat jam piket, 🔵 Sudah Duty setelah jam piket)
+                        if effective_date < today or (effective_date == today and slot_end and now_time > slot_end):
+                            duty_status_tag = "🔵"
+                        elif effective_date == today and slot_start and slot_end and slot_start <= now_time <= slot_end:
+                            duty_status_tag = "🟢"
+                        else:
+                            duty_status_tag = "⚪"
+
+                        teacher_display = f"{d.teacher_name} - [Digantikan oleh {matching_inval.substitute_teacher}]"
+                        active_teacher = f"{d.teacher_name} - [Digantikan oleh {matching_inval.substitute_teacher}]"
+                    elif att_hit:
                         if effective_date < today:
                             duty_status_tag = "🔵"
                         elif effective_date > today:
@@ -684,6 +740,8 @@ def build_school_context(user_message: str, db: Session) -> str:
                             if slot_start and slot_end:
                                 if now_time > slot_end:
                                     duty_status_tag = "🔵"
+                                elif now_time < slot_start:
+                                    duty_status_tag = "⚪"
                                 else:
                                     duty_status_tag = "🟢"
                             else:
@@ -697,6 +755,8 @@ def build_school_context(user_message: str, db: Session) -> str:
                             if slot_start and slot_end:
                                 if now_time > slot_end:
                                     duty_status_tag = "🟠"
+                                elif slot_start <= now_time <= slot_end:
+                                    duty_status_tag = "🟡"
                                 else:
                                     duty_status_tag = "⚪"
                             else:
@@ -727,6 +787,32 @@ def build_school_context(user_message: str, db: Session) -> str:
             day_str = f" pada hari {', '.join([DAY_TRANS.get(d, d) for d in target_days])}" if target_days else ""
             context_lines.append(f"- Tidak ditemukan jadwal duty{loc_str}{day_str}.")
             context_lines.append("")
+
+    # Jalur 4: Informasi Morning Devotion (07.15 - 07.45 WIB)
+    is_devotion_query = any(w in msg_lower for w in ["devotion", "renungan", "doa pagi", "morning devotion"])
+    if is_devotion_query:
+        context_lines.append("=== INFORMASI MORNING DEVOTION (07.15 - 07.45 WIB) ===")
+        context_lines.append("- Jadwal: Pukul 07.15 - 07.45 WIB setiap hari sekolah.")
+        context_lines.append("- Peserta Devotion: Guru mengajar dan personil yang dikonfirmasi (termasuk Ms. Phoebe, Ms. Agnes, Ms. Ivo, Mr. Hendy, Ms. Joke, Ms. Shenny, Ms. Citra, Mr. Dion, Ms. Sus, Ms. Vita).")
+        context_lines.append("- Pengecualian Guru Part-Time: Mr. Ivan dan Ms. Alitha adalah guru part-time yang tidak memiliki jadwal pagi, sehingga TIDAK IKUT Morning Devotion.")
+        context_lines.append("- Pengecualian Staff: Staff murni non-guru (seperti Mr. Hakim, Mr. Hindra, Mr. Ardhi, Mr. Benu, Ms. Endah) TIDAK HARUS ikut devotion.")
+        context_lines.append("- Pengecualian Duty Pagi: Siapapun yang memiliki jadwal tugas duty pukul 07.15 - 07.45 TIDAK IKUT devotion karena sedang aktif bertugas duty.")
+        
+        # Ambil daftar guru duty 07.15-07.45 hari ini
+        dev_slot = "07.15-07.45"
+        dev_s, dev_e = parse_time_slot_range(dev_slot)
+        target_dev_day = target_days[0] if target_days else current_day
+        morning_duties = db.query(models.TeacherDuty).filter(models.TeacherDuty.day_of_week.ilike(target_dev_day)).all()
+        morning_duty_teachers = []
+        for md in morning_duties:
+            s_s, s_e = parse_time_slot_range(md.time_slot)
+            if (s_s and s_e and dev_s and dev_e and max(s_s, dev_s) < min(s_e, dev_e)) or (md.time_slot.strip().lower() == dev_slot):
+                morning_duty_teachers.append(f"{md.teacher_name} ({md.location})")
+        
+        if morning_duty_teachers:
+            context_lines.append(f"- Guru/Staff yang bertugas duty pagi (07.15-07.45) hari {DAY_TRANS.get(target_dev_day, target_dev_day)}: {', '.join(morning_duty_teachers)}.")
+        context_lines.append("- Seluruh guru mengajar lainnya yang bebas tugas duty pagi WAJIB mengikuti Morning Devotion.")
+        context_lines.append("")
 
     return "\n".join(context_lines)
 
@@ -796,22 +882,116 @@ RULES TO FOLLOW:
    - When asked for Homeroom teacher, only list Homeroom subjects (UoI, BI, Math, etc.). During specialist subjects, they are Free.
 
 7. DUTY SCHEDULE / TEACHER ON DUTY RULES (CRITICAL):
-   - ALWAYS DISPLAY ONLY THE COLOR CIRCLE EMOJI (⚪, 🟢, 🔵, 🟠) NEXT TO THE TEACHER'S NAME.
+   - ALWAYS REPLACE THE ASTERISK (*) OR BULLET WITH THE COLOR CIRCLE EMOJI (⚪, 🟢, 🟡, 🔵, 🟠) AT THE START OF EACH LINE!
+   - NEVER start the line with an asterisk (*), dash (-), or bullet (•). The color ball itself is the bullet!
    - STRICTLY FORBIDDEN TO DISPLAY ANY STATUS TEXT SUCH AS:
-     "Not On Duty", "On Duty", "Belum Duty", "Sudah Duty", "Lagi Duty", "Tidak Duty", "Completed", "Pending", etc.
-   - CORRECT FORMAT EXAMPLES:
-     * **09.10 - 09.35** (Break 1, Grade 3-4): Mr. Dion 🟠
-     * **10.20 - 10.45** (Break 1, Grade 5-6): Ms. Kristiani 🟢
-     * **11.20 - 11.50** (Break 2, Grade 1-2): Mr. Kornelius 🔵
-     * **11.55 - 12.25** (Break 2, Grade 3-4): Ms. Agnes ⚪
+     "Not On Duty", "On Duty", "Belum Duty", "Sudah Duty", "Lagi Duty", "Tidak Duty", "Sedang Jam Piket", "Completed", "Pending", etc.
+     DISPLAY ONLY THE COLOR BALL EMOJI (⚪, 🟢, 🟡, 🔵, 🟠) NEXT TO THE TEACHER'S NAME, WITH NO STATUS TEXT WORDS!
+   - Meaning of the color balls (for your internal reference only, NEVER print these status words):
+     ⚪ = Belum Duty (Jadwal belum mulai)
+     🟢 = Lagi Duty (Sedang bertugas & sudah absen)
+     🟡 = Sedang Jam Piket (Harusnya duty saat ini tapi belum absen)
+     🔵 = Sudah Duty (Selesai piket & sudah absen / terverifikasi)
+     🟠 = Tidak Duty (Jam piket sudah lewat tapi tidak absen)
+   - If a duty has a substitute teacher (Inval) (e.g. Mr. Kornelius digantikan oleh Mr. Nano):
+     The original teacher STILL counts as DUTY (🟢 Lagi Duty during duty hours, 🔵 Sudah Duty after duty hours).
+     Display clearly:
+     🟢 Mr. Kornelius (ESE Backyard) - [Digantikan oleh Mr. Nano]
+     (Or after session ends: 🔵 Mr. Kornelius (ESE Backyard) - [Digantikan oleh Mr. Nano])
+     NEVER mark the original teacher as 🟠 Tidak Duty if there is someone substituting them!
+   - CORRECT FORMAT EXAMPLES (ONLY COLOR BALL, ABSOLUTELY NO STATUS TEXT):
+     🟠 Ms. Meitha (2nd floor lobby)
+     🟡 Ms. Phoebe (Canteen)
+     🟢 Ms. Kristiani (1st floor lobby)
+     🔵 Mr. Dion (Gate)
+     ⚪ Ms. Agnes (Gate)
    - INCORRECT FORMAT EXAMPLES (NEVER DO THIS):
-     * Mr. Dion [🟠 Not On Duty]   <-- WRONG! Remove the text "[Not On Duty]"!
-     * Ms. Kristiani [🟢 On Duty]  <-- WRONG! Remove the text "[On Duty]"!
-   - Just output the emoji directly after or next to the teacher's name!
+     * Ms. Meitha 🟠 (2nd floor lobby)   <-- WRONG! Replace * with 🟠 at the start of the line!
+     * Mr. Dion [🟠 Not On Duty]         <-- WRONG! Do NOT write text "[Not On Duty]"!
+     🟡 Ms. Phoebe (Sedang Jam Piket)    <-- WRONG! Do NOT write status words "(Sedang Jam Piket)"!
 
 8. REPORT SCHEDULE DISCREPANCIES:
    - If asked where to report schedule errors: "If you notice any schedule discrepancies or errors, please contact Mr. Kornel for system updates."
+
+9. MORNING DEVOTION (07.15 - 07.45 WIB) RULES:
+   - Morning Devotion is attended by teaching teachers and confirmed personnel:
+     Including Ms. Phoebe, Ms. Agnes, Ms. Ivo, Mr. Hendy, Ms. Joke, Ms. Shenny, Ms. Citra, Mr. Dion, Ms. Sus, Ms. Vita (they can join devotion unless they have a duty scheduled at 07.15 - 07.45 WIB).
+   - Part-Time Teacher Exceptions:
+     * Mr. Ivan and Ms. Alitha are part-time teachers who do NOT have a morning schedule. Therefore, they do NOT attend Morning Devotion.
+   - Duty Exceptions for Morning Devotion (07.15 - 07.45 WIB):
+     * Ms. Sus has Morning Duty at Canteen (07.15 - 07.45 WIB) every day (Mon-Fri), so she is actively on duty and does NOT join devotion.
+     * Ms. Shenny has Morning Duty on Monday & Tuesday (07.15 - 07.45 at 4th floor lobby), so she does NOT join devotion on Monday & Tuesday, but CAN join on Wednesday, Thursday, Friday.
+     * Mr. Dion and Ms. Vita have NO duty at 07.15 - 07.45 WIB, so they CAN join Morning Devotion every day (Mon-Fri).
+     * Ms. Phoebe, Ms. Agnes, Ms. Ivo, Mr. Hendy, Ms. Joke, and Ms. Citra also have NO duty at 07.15 - 07.45 WIB, so they attend Morning Devotion every day.
+   - Non-teaching staff (Mr. Hakim, Mr. Hindra, Mr. Ardhi, Mr. Benu, Ms. Endah) are NOT required to join devotion.
+   - Any person who has duty at 07.15 - 07.45 WIB is exempt from devotion because they are actively on duty.
 """
+
+
+def clean_duty_bullets(text: str) -> str:
+    """
+    Mengubah format bullet point duty dari '* Ms. Meitha 🟠' menjadi '🟠 Ms. Meitha'.
+    Memastikan:
+    1. Bola warna (⚪, 🟢, 🟡, 🔵, 🟠) selalu menggantikan bintang/bullet di awal baris.
+    2. Seluruh teks keterangan status (Lagi Duty, Tidak Duty, Sudah Duty, Belum Duty, Sedang Jam Piket, dll)
+       dibersihkan sehingga HANYA bola emoji yang ditampilkan sesuai instruksi pengguna.
+    """
+    if not text:
+        return text
+
+    ball_pattern = re.compile(r"[⚪🟢🔵🟠🟡]")
+    status_terms = r"(?:Lagi Duty|Sudah Duty|Tidak Duty|Belum Duty|Sedang Jam Piket|Not On Duty|On Duty|Completed|Pending)"
+    bracket_status_pattern = re.compile(
+        rf"[\(\[]\s*(?:[⚪🟢🔵🟠🟡]\s*)?{status_terms}\s*[\)\]]",
+        re.IGNORECASE,
+    )
+    prefix_status_pattern = re.compile(
+        rf"(?:[-–:]\s*){status_terms}",
+        re.IGNORECASE,
+    )
+    standalone_status_pattern = re.compile(
+        rf"\b{status_terms}\b",
+        re.IGNORECASE,
+    )
+
+    lines = text.split("\n")
+    new_lines = []
+
+    for line in lines:
+        balls = ball_pattern.findall(line)
+        if balls:
+            target_ball = balls[0]
+            # Bersihkan status dalam kurung / kurung siku
+            cleaned = bracket_status_pattern.sub("", line)
+            # Bersihkan status setelah tanda strip/titik dua
+            cleaned = prefix_status_pattern.sub("", cleaned)
+            # Bersihkan status kata yang berdiri sendiri
+            cleaned = standalone_status_pattern.sub("", cleaned)
+            # Hapus semua emoji bola dari dalam teks
+            cleaned = ball_pattern.sub("", cleaned)
+
+            # Simpan indentasi baris asli
+            indent_m = re.match(r"^(\s*)", line)
+            indent = indent_m.group(1) if indent_m else ""
+
+            # Hapus bullet awal (*, -, •, dsb)
+            cleaned = re.sub(r"^\s*[\*\-•]\s*", "", cleaned)
+
+            # Bersihkan kurung kosong hasil pembersihan status: (), [], ( - )
+            cleaned = re.sub(r"\(\s*[-–:]?\s*\)", "", cleaned)
+            cleaned = re.sub(r"\[\s*[-–:]?\s*\]", "", cleaned)
+
+            # Bersihkan sisa tanda strip / titik dua yang menggantung
+            cleaned = re.sub(r"\s+[-–:]\s*$", "", cleaned)
+            cleaned = re.sub(r"\s+[-–:]\s*(?=\()", " ", cleaned)
+
+            # Rapikan spasi ganda
+            cleaned = re.sub(r" {2,}", " ", cleaned).strip()
+            new_lines.append(f"{indent}{target_ball} {cleaned}")
+        else:
+            new_lines.append(line)
+
+    return "\n".join(new_lines)
 
 
 def call_gemini(
@@ -833,7 +1013,7 @@ def call_gemini(
     req = urllib.request.Request(
         url, data=payload, headers={"Content-Type": "application/json"}
     )
-    with urllib.request.urlopen(req, timeout=8) as resp:
+    with urllib.request.urlopen(req, timeout=4) as resp:
         res = json.loads(resp.read().decode("utf-8"))
         candidates = res.get("candidates", [])
         if candidates:
@@ -888,7 +1068,7 @@ def call_groq(user_message: str, context: str) -> str:
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
                 },
             )
-            with urllib.request.urlopen(req, timeout=10) as resp:
+            with urllib.request.urlopen(req, timeout=4) as resp:
                 res = json.loads(resp.read().decode("utf-8"))
                 choices = res.get("choices", [])
                 if choices:
@@ -940,7 +1120,7 @@ def call_openrouter(user_message: str, context: str) -> str:
                     "X-Title": "ESE Internal Announcement Assistant"
                 }
             )
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            with urllib.request.urlopen(req, timeout=5) as resp:
                 res = json.loads(resp.read().decode("utf-8"))
                 choices = res.get("choices", [])
                 if choices:
@@ -957,38 +1137,55 @@ def call_openrouter(user_message: str, context: str) -> str:
 async def chat_with_ai(data: schemas.ChatRequest, db: Session = Depends(get_db)):
     """
     Endpoint interaktif chat asisten informasi sekolah.
-    Menerapkan Dual AI Auto-Fallback:
-    1. Gemini 2.5 Flash
-    2. Gemini 2.5 Flash Lite
-    3. Gemini 3.6 Flash
-    4. Groq Fallback
+    Dioptimalkan dengan:
+    1. In-Memory Fast Cache untuk pertanyaan populer (< 10 ms).
+    2. Asynchronous Non-Blocking I/O (asyncio.to_thread) agar worker server tidak membeku.
+    3. Multi-Tier Fallback urutan model cepat & teruji.
     """
     if not data.message or not data.message.strip():
         raise HTTPException(
             status_code=400, detail="Pesan pertanyaan tidak boleh kosong."
         )
 
-    # 1. Siapkan konteks data yang relevan
+    # 1. Cek In-Memory Cache (Respons Instan < 10 ms)
+    cache_key = _get_chat_cache_key(data.message)
+    now_mono = time.monotonic()
+    if cache_key in _chat_response_cache:
+        cached_reply, cached_provider, exp_time = _chat_response_cache[cache_key]
+        if now_mono < exp_time:
+            return schemas.ChatResponse(
+                reply=cached_reply,
+                provider_used=f"{cached_provider} (Fast Cache)",
+                status="success",
+            )
+
+    # 2. Siapkan konteks data yang relevan
     context = build_school_context(data.message, db)
 
-    # 2. AI Waterfall Providers List (Multi-Tier Fallback)
-    # Jika model pertama terkena kuota limit (HTTP 429), timeout, atau error,
-    # sistem otomatis mencoba model berikutnya secara berurutan.
+    # 3. AI Waterfall Providers List (Model tercepat dan teruji di awal)
     providers = [
         ("Gemini 3.5 Flash Lite", lambda: call_gemini(data.message, context, "gemini-3.5-flash-lite")),
-        ("Groq AI", lambda: call_groq(data.message, context)),
-        ("Gemini 3.5 Flash", lambda: call_gemini(data.message, context, "gemini-3.5-flash")),
         ("Gemini Flash Lite Latest", lambda: call_gemini(data.message, context, "gemini-flash-lite-latest")),
         ("Gemini 2.5 Flash Lite", lambda: call_gemini(data.message, context, "gemini-2.5-flash-lite")),
         ("Gemini 2.5 Flash", lambda: call_gemini(data.message, context, "gemini-2.5-flash")),
+        ("Groq AI", lambda: call_groq(data.message, context)),
     ]
 
     for provider_name, func in providers:
         try:
-            reply = func()
+            # NON-BLOCKING: Jalankan panggilan network di thread terpisah
+            # agar worker FastAPI / event loop tidak terkunci (free)
+            reply = await asyncio.to_thread(func)
             if reply:
+                cleaned_reply = clean_duty_bullets(reply)
+                # Simpan ke cache untuk pertanyaan serupa berikutnya
+                _chat_response_cache[cache_key] = (
+                    cleaned_reply,
+                    provider_name,
+                    now_mono + _CHAT_CACHE_TTL,
+                )
                 return schemas.ChatResponse(
-                    reply=reply, provider_used=provider_name, status="success"
+                    reply=cleaned_reply, provider_used=provider_name, status="success"
                 )
         except Exception as e:
             print(

@@ -26,7 +26,7 @@ engine = create_engine(
     max_overflow=50,
     pool_recycle=1800,
     pool_pre_ping=True,
-    pool_timeout=15,
+    pool_timeout=25,
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

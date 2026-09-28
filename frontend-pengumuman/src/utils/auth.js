@@ -90,7 +90,7 @@ export function getSessionRemainingTime(token) {
 /**
  * Eksekusi pengalihan ketika sesi berakhir
  */
-export function handleSessionExpired(navigate, message = "Sesi login Anda telah berakhir (masa berlaku 12 jam telah habis). Silakan login kembali.") {
+export function handleSessionExpired(navigate, message = "For your security, your 12-hour login session has ended. Please log in again to continue.") {
   clearAdminSession();
   if (message) {
     try {

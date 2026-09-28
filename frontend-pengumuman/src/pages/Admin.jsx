@@ -25,7 +25,7 @@ export default function Admin() {
     if (!tokenJWT || isTokenExpired(tokenJWT)) {
       handleSessionExpired(
         navigate,
-        "Sesi login Anda telah berakhir (12 jam). Silakan login kembali."
+        "For your security, your 12-hour login session has ended. Please log in again to continue."
       );
       return;
     }
@@ -34,7 +34,7 @@ export default function Admin() {
       if (isTokenExpired(tokenJWT)) {
         handleSessionExpired(
           navigate,
-          "Sesi login Anda telah berakhir (12 jam). Silakan login kembali."
+          "For your security, your 12-hour login session has ended. Please log in again to continue."
         );
       }
     };
@@ -61,9 +61,9 @@ export default function Admin() {
       if (!tokenJWT || isTokenExpired(tokenJWT)) {
         handleSessionExpired(
           navigate,
-          "Sesi login Anda telah berakhir (12 jam). Silakan login kembali."
+          "For your security, your 12-hour login session has ended. Please log in again to continue."
         );
-        throw new Error("Sesi token kedaluwarsa (12 jam).");
+        throw new Error("Token session expired (12 hours).");
       }
 
       // 2. Kirim request ke backend
@@ -73,9 +73,9 @@ export default function Admin() {
       if (res.status === 401) {
         handleSessionExpired(
           navigate,
-          "Sesi login Anda telah berakhir (12 jam). Silakan login kembali."
+          "For your security, your 12-hour login session has ended. Please log in again to continue."
         );
-        throw new Error("Sesi login Anda telah kedaluwarsa (12 jam).");
+        throw new Error("Your login session has expired (12 hours).");
       }
 
       return res;
@@ -132,6 +132,22 @@ export default function Admin() {
   const [dutyAttendanceLocations, setDutyAttendanceLocations] = useState([]);
   const [selectedQrLocation, setSelectedQrLocation] = useState(null);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
+  const [filterAttStatus, setFilterAttStatus] = useState("all");
+  const [showLocationLinks, setShowLocationLinks] = useState(true);
+  const [isExportingExcel, setIsExportingExcel] = useState(false);
+
+  // State untuk Tab Available Teachers (Guru Kosong Berdasarkan Hari & Jam)
+  const currentDayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
+  const [freeTeacherDay, setFreeTeacherDay] = useState(
+    ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].includes(currentDayName)
+      ? currentDayName
+      : "Monday"
+  );
+  const [freeTeacherSlot, setFreeTeacherSlot] = useState("all");
+  const [freeTeachersList, setFreeTeachersList] = useState([]);
+  const [searchFreeTeacher, setSearchFreeTeacher] = useState("");
+  const [isLoadingFreeTeachers, setIsLoadingFreeTeachers] = useState(false);
+  const [showInvalHistory, setShowInvalHistory] = useState(false);
 
   const handleOpenQrModal = async (loc) => {
     setSelectedQrLocation(loc);
@@ -261,7 +277,24 @@ export default function Admin() {
     a.download = `QR_Duty_${selectedQrLocation.replace(/\s+/g, "_")}.png`;
     a.click();
   };
-  const [filterAttDate, setFilterAttDate] = useState(today);
+
+  const [filterAttDate, setFilterAttDate] = useState("");
+  const [filterAttEndDate, setFilterAttEndDate] = useState("");
+  const [filterAttPeriod, setFilterAttPeriod] = useState("all");
+
+  const [editAttModal, setEditAttModal] = useState(null);
+  const [editAttTeacher, setEditAttTeacher] = useState("");
+  const [editAttLocation, setEditAttLocation] = useState("");
+  const [editAttTimeSlot, setEditAttTimeSlot] = useState("");
+  const [editAttCategory, setEditAttCategory] = useState("");
+  const [editAttDate, setEditAttDate] = useState("");
+  const [editAttScheduled, setEditAttScheduled] = useState(true);
+  const [editAttStatus, setEditAttStatus] = useState("Sudah Duty");
+  const [editAttNotes, setEditAttNotes] = useState("");
+
+  const [invalFreeTeachers, setInvalFreeTeachers] = useState([]);
+  const [isLoadingInvalFreeTeachers, setIsLoadingInvalFreeTeachers] = useState(false);
+
   const [filterAttLoc, setFilterAttLoc] = useState("");
   const [filterAttScheduled, setFilterAttScheduled] = useState("all");
   const [searchAttTeacher, setSearchAttTeacher] = useState("");
@@ -442,7 +475,7 @@ export default function Admin() {
       if (resInvals.ok) setDutyInvals(await resInvals.json());
       if (resEvents.ok) setEventSchedules(await resEvents.json());
     } catch (error) {
-      console.error("Gagal mengambil data dari server", error);
+      console.error("Failed to fetch data from the server", error);
     }
   }, [baseUrl, tokenJWT, apiFetch]);
 
@@ -669,7 +702,24 @@ export default function Admin() {
             : filterAttScheduled === "scheduled"
               ? rec.is_scheduled_duty === true
               : rec.is_scheduled_duty === false;
-        return matchTeacher && matchScheduled;
+        const matchLoc = filterAttLoc
+          ? (rec.location || "").toLowerCase() === filterAttLoc.toLowerCase()
+          : true;
+        const matchStatus =
+          !filterAttStatus || filterAttStatus === "all"
+            ? true
+            : filterAttStatus === "tidak_duty"
+              ? rec.status === "Tidak Duty" || rec.status === "tidak_duty" || (rec.status_label && rec.status_label.toLowerCase().includes("tidak"))
+              : filterAttStatus === "sudah_duty"
+                ? rec.status === "Sudah Duty" || rec.status === "sudah_duty" || (rec.status_label && rec.status_label.toLowerCase().includes("sudah"))
+                : filterAttStatus === "lagi_duty"
+                  ? rec.status === "Lagi Duty" || rec.status === "lagi_duty" || (rec.status_label && rec.status_label.toLowerCase().includes("lagi"))
+                  : filterAttStatus === "sedang_jam_piket"
+                    ? rec.status === "Sedang Jam Piket" || (rec.status_label && rec.status_label.toLowerCase().includes("sedang jam piket"))
+                    : filterAttStatus === "belum_duty"
+                      ? rec.status === "Belum Duty" || rec.status === "belum_duty" || (rec.status_label && rec.status_label.toLowerCase().includes("belum"))
+                      : true;
+        return matchTeacher && matchScheduled && matchLoc && matchStatus;
       })
     : [];
   const totalAttPages =
@@ -694,7 +744,7 @@ export default function Admin() {
   useEffect(() => setCurrentEventPage(1), [searchEvent]);
   useEffect(
     () => setCurrentAttPage(1),
-    [searchAttTeacher, filterAttDate, filterAttLoc, filterAttScheduled],
+    [searchAttTeacher, filterAttDate, filterAttLoc, filterAttScheduled, filterAttStatus],
   );
 
   // ==========================================
@@ -702,7 +752,7 @@ export default function Admin() {
   // ==========================================
   const handlePostAnnouncement = async () => {
     if (!newAnnDate || !newAnnouncement.trim())
-      return alert("Isi form dengan lengkap!");
+      return alert("Please fill out the form completely!");
     setIsSubmitting(true);
 
     try {
@@ -722,7 +772,7 @@ export default function Admin() {
         body: formData,
       });
 
-      if (!res.ok) throw new Error("Gagal memposting pengumuman");
+      if (!res.ok) throw new Error("Failed to post announcement");
 
       await fetchSemuaData(); // Refresh tabel setelah sukses
       setPopupData({ title: "Announcement Posted!" });
@@ -742,7 +792,7 @@ export default function Admin() {
   const handlePostBirthday = async (e) => {
     e.preventDefault();
     if (!newBdayName || !newBdayDate || !newBdayGender)
-      return alert("Isi form dengan lengkap!");
+      return alert("Please fill out the form completely!");
     setIsSubmitting(true);
 
     try {
@@ -758,7 +808,7 @@ export default function Admin() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Gagal menambahkan daftar ulang tahun");
+      if (!res.ok) throw new Error("Failed to add birthday record");
 
       await fetchSemuaData();
       setPopupData({ title: "Birthday Record Added!" });
@@ -775,7 +825,7 @@ export default function Admin() {
   const handlePostAdmin = async (e) => {
     e.preventDefault();
     if (!newAdminName || !newAdminPassword || !newAdminLevel)
-      return alert("Isi form dengan lengkap!");
+      return alert("Please fill out the form completely!");
     setIsSubmitting(true);
 
     try {
@@ -791,7 +841,7 @@ export default function Admin() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Gagal membuat admin baru");
+      if (!res.ok) throw new Error("Failed to create new admin");
 
       await fetchSemuaData();
       setPopupData({ title: "Admin Record Added!" });
@@ -807,7 +857,7 @@ export default function Admin() {
 
   const handleLogout = () => {
     const isConfirmed = window.confirm(
-      "Apakah Anda yakin ingin keluar dari halaman Admin?",
+      "Are you sure you want to sign out from the Admin portal?",
     );
     if (isConfirmed) {
       clearAdminSession();
@@ -848,7 +898,7 @@ export default function Admin() {
         throw new Error(
           "Akses ditolak: Hanya Super Admin yang dapat menambah jadwal guru!",
         );
-      if (!res.ok) throw new Error("Gagal menambahkan jadwal guru.");
+      if (!res.ok) throw new Error("Failed to add teacher schedule.");
 
       await fetchSemuaData();
       setPopupData({ title: "Teacher Schedule Added!" });
@@ -909,7 +959,7 @@ export default function Admin() {
         throw new Error(
           "Akses ditolak: Hanya Super Admin yang dapat mengubah jadwal guru!",
         );
-      if (!res.ok) throw new Error("Gagal mengupdate jadwal guru.");
+      if (!res.ok) throw new Error("Failed to update teacher schedule.");
 
       await fetchSemuaData();
       setPopupData({ title: "Teacher Schedule Updated!" });
@@ -923,7 +973,7 @@ export default function Admin() {
 
   const handleDeleteSchedule = async (id_schedule) => {
     const isConfirmed = window.confirm(
-      "Are you sure you want to delete jadwal guru ini?",
+      "Are you sure you want to delete this teacher schedule? This action cannot be undone.",
     );
     if (!isConfirmed) return;
 
@@ -937,7 +987,7 @@ export default function Admin() {
         throw new Error(
           "Akses ditolak: Hanya Super Admin yang dapat menghapus jadwal guru!",
         );
-      if (!res.ok) throw new Error("Gagal menghapus jadwal guru.");
+      if (!res.ok) throw new Error("Failed to delete teacher schedule.");
 
       await fetchSemuaData();
       setPopupData({ title: "Schedule Deleted!" });
@@ -963,7 +1013,7 @@ export default function Admin() {
         throw new Error(
           "Akses ditolak: Hanya Super Admin yang diizinkan sinkronisasi jadwal!",
         );
-      if (!res.ok) throw new Error("Gagal sinkronisasi master CSV.");
+      if (!res.ok) throw new Error("Failed to synchronize master CSV.");
 
       const data = await res.json();
       await fetchSemuaData();
@@ -1012,7 +1062,7 @@ export default function Admin() {
         throw new Error(
           "Akses ditolak: Hanya Super Admin yang dapat menambah jadwal duty!",
         );
-      if (!res.ok) throw new Error("Gagal menambah jadwal duty.");
+      if (!res.ok) throw new Error("Failed to add duty schedule.");
 
       await fetchSemuaData();
       setPopupData({ title: "Teacher Duty Added!" });
@@ -1070,7 +1120,7 @@ export default function Admin() {
         throw new Error(
           "Akses ditolak: Hanya Super Admin yang dapat mengubah jadwal duty!",
         );
-      if (!res.ok) throw new Error("Gagal mengupdate jadwal duty.");
+      if (!res.ok) throw new Error("Failed to update duty schedule.");
 
       await fetchSemuaData();
       setPopupData({ title: "Teacher Duty Updated!" });
@@ -1084,7 +1134,7 @@ export default function Admin() {
 
   const handleDeleteDuty = async (id_duty) => {
     const isConfirmed = window.confirm(
-      "Are you sure you want to delete jadwal duty ini?",
+      "Are you sure you want to delete this duty schedule? This action cannot be undone.",
     );
     if (!isConfirmed) return;
 
@@ -1098,7 +1148,7 @@ export default function Admin() {
         throw new Error(
           "Akses ditolak: Hanya Super Admin yang dapat menghapus jadwal duty!",
         );
-      if (!res.ok) throw new Error("Gagal menghapus jadwal duty.");
+      if (!res.ok) throw new Error("Failed to delete duty schedule.");
 
       await fetchSemuaData();
       setPopupData({ title: "Duty Deleted!" });
@@ -1124,7 +1174,7 @@ export default function Admin() {
         throw new Error(
           "Akses ditolak: Hanya Super Admin yang diizinkan sinkronisasi jadwal duty!",
         );
-      if (!res.ok) throw new Error("Gagal sinkronisasi master CSV duty.");
+      if (!res.ok) throw new Error("Failed to synchronize duty master CSV.");
 
       const data = await res.json();
       await fetchSemuaData();
@@ -1168,7 +1218,7 @@ export default function Admin() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Gagal menambahkan data inval duty.");
+      if (!res.ok) throw new Error("Failed to add inval duty data.");
 
       await fetchSemuaData();
       setPopupData({ title: "Inval Duty Added!" });
@@ -1186,7 +1236,7 @@ export default function Admin() {
 
   const handleDeleteInval = async (id_inval) => {
     const isConfirmed = window.confirm(
-      "Are you sure you want to delete data pergantian piket (inval) ini?",
+      "Are you sure you want to delete this substitute duty record? This action cannot be undone.",
     );
     if (!isConfirmed) return;
 
@@ -1196,7 +1246,7 @@ export default function Admin() {
         headers: authHeaders,
       });
 
-      if (!res.ok) throw new Error("Gagal menghapus data inval duty.");
+      if (!res.ok) throw new Error("Failed to delete inval duty data.");
 
       await fetchSemuaData();
       setPopupData({ title: "Inval Duty Deleted!" });
@@ -1230,7 +1280,7 @@ export default function Admin() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Gagal membuat jadwal event khusus.");
+      if (!res.ok) throw new Error("Failed to create special event schedule.");
 
       await fetchSemuaData();
       setPopupData({ title: "Event Schedule Created!" });
@@ -1282,7 +1332,7 @@ export default function Admin() {
         },
       );
 
-      if (!res.ok) throw new Error("Gagal mengupdate jadwal event.");
+      if (!res.ok) throw new Error("Failed to update event schedule.");
 
       await fetchSemuaData();
       setPopupData({ title: "Event Schedule Updated!" });
@@ -1296,7 +1346,7 @@ export default function Admin() {
 
   const handleDeleteEvent = async (id_event) => {
     const isConfirmed = window.confirm(
-      "Are you sure you want to delete jadwal event khusus ini?",
+      "Are you sure you want to delete this special event schedule? This action cannot be undone.",
     );
     if (!isConfirmed) return;
 
@@ -1306,7 +1356,7 @@ export default function Admin() {
         headers: authHeaders,
       });
 
-      if (!res.ok) throw new Error("Gagal menghapus event schedule.");
+      if (!res.ok) throw new Error("Failed to delete event schedule.");
 
       await fetchSemuaData();
       setPopupData({ title: "Event Schedule Deleted!" });
@@ -1316,13 +1366,24 @@ export default function Admin() {
   };
 
   // ==========================================
-  // HANDLERS ABSENSI DUTY GURU
+  // HANDLERS ABSENSI DUTY GURU & AVAILABLE TEACHERS
   // ==========================================
   const fetchDutyAttendanceData = useCallback(async () => {
     try {
-      let recUrl = `${baseUrl}/duty-attendance/records?tanggal=${filterAttDate}`;
-      if (filterAttLoc) recUrl += `&location=${encodeURIComponent(filterAttLoc)}`;
-      let sessUrl = `${baseUrl}/duty-attendance/sessions?tanggal=${filterAttDate}`;
+      const params = new URLSearchParams();
+      if (filterAttDate && filterAttEndDate) {
+        params.append("start_date", filterAttDate);
+        params.append("end_date", filterAttEndDate);
+      } else if (filterAttDate) {
+        params.append("tanggal", filterAttDate);
+      }
+      if (filterAttLoc) params.append("location", filterAttLoc);
+      if (searchAttTeacher) params.append("teacher_name", searchAttTeacher);
+
+      const recUrl = `${baseUrl}/duty-attendance/comprehensive-records?${params.toString()}`;
+
+      const targetSessDate = filterAttDate || today;
+      let sessUrl = `${baseUrl}/duty-attendance/sessions?tanggal=${targetSessDate}`;
       if (filterAttLoc) sessUrl += `&location=${encodeURIComponent(filterAttLoc)}`;
 
       const [resRec, resSess, resLoc] = await Promise.all([
@@ -1335,25 +1396,227 @@ export default function Admin() {
       if (resSess.ok) setDutyAttendanceSessions(await resSess.json());
       if (resLoc.ok) setDutyAttendanceLocations(await resLoc.json());
     } catch (e) {
-      console.error("Gagal mengambil data absensi duty:", e);
+      console.error("Failed to fetch duty attendance data:", e);
     }
-  }, [baseUrl, tokenJWT, filterAttDate, filterAttLoc, apiFetch]);
+  }, [baseUrl, tokenJWT, filterAttDate, filterAttEndDate, filterAttLoc, searchAttTeacher, filterAttStatus, today, apiFetch]);
 
   useEffect(() => {
     if (activeTab === "Duty Attendance") {
       fetchDutyAttendanceData();
     }
-  }, [activeTab, filterAttDate, filterAttLoc, fetchDutyAttendanceData]);
+  }, [activeTab, filterAttDate, filterAttEndDate, filterAttLoc, searchAttTeacher, filterAttStatus, fetchDutyAttendanceData]);
+
+  // Catalog Guru Kosong (Available Teachers)
+  const fetchFreeTeachersCatalog = useCallback(async () => {
+    setIsLoadingFreeTeachers(true);
+    try {
+      let url = `${baseUrl}/duty-attendance/free-teachers?day_of_week=${encodeURIComponent(freeTeacherDay)}`;
+      if (freeTeacherSlot && freeTeacherSlot !== "all") {
+        url += `&time_slot=${encodeURIComponent(freeTeacherSlot)}`;
+      }
+      const res = await apiFetch(url, { headers: { Authorization: `Bearer ${tokenJWT}` } });
+      if (res.ok) {
+        const data = await res.json();
+        setFreeTeachersList(Array.isArray(data) ? data : []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch free teachers catalog:", e);
+    } finally {
+      setIsLoadingFreeTeachers(false);
+    }
+  }, [baseUrl, tokenJWT, freeTeacherDay, freeTeacherSlot, apiFetch]);
+
+  useEffect(() => {
+    if (activeTab === "Inval Duties") {
+      fetchFreeTeachersCatalog();
+    }
+  }, [activeTab, freeTeacherDay, freeTeacherSlot, fetchFreeTeachersCatalog]);
+
+  const handleAssignFreeTeacher = (teacherName) => {
+    setNewInvalSubstitute(teacherName);
+    if (freeTeacherSlot && freeTeacherSlot !== "all") {
+      setNewInvalTime(freeTeacherSlot);
+    }
+    setIsCreateInvalOpen(true);
+  };
+
+  const handleManualVerifyClick = async (rec) => {
+    if (!window.confirm(`Verifikasi manual kehadiran untuk ${rec.teacher_name} pada tugas ${rec.location} (${rec.time_slot})?`)) {
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        date: rec.date,
+        location: rec.location,
+        time_slot: rec.time_slot,
+        teacher_name: rec.teacher_name,
+        duty_category: rec.duty_category || null,
+        is_scheduled_duty: rec.is_scheduled_duty ?? true,
+        notes: "Manual verification by Admin",
+      };
+      const res = await apiFetch(`${baseUrl}/duty-attendance/manual-verify`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Gagal verifikasi manual");
+      setPopupData({ title: `Berhasil memverifikasi ${rec.teacher_name}!` });
+      fetchDutyAttendanceData();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSelectPeriod = (period) => {
+    setFilterAttPeriod(period);
+    const now = new Date();
+    if (period === "all") {
+      setFilterAttDate("");
+      setFilterAttEndDate("");
+    } else if (period === "today") {
+      setFilterAttDate(today);
+      setFilterAttEndDate(today);
+    } else if (period === "week") {
+      const day = now.getDay();
+      const diffToMon = now.getDate() - day + (day === 0 ? -6 : 1);
+      const mon = new Date(new Date().setDate(diffToMon));
+      const sun = new Date(new Date().setDate(diffToMon + 6));
+      setFilterAttDate(mon.toISOString().split("T")[0]);
+      setFilterAttEndDate(sun.toISOString().split("T")[0]);
+    } else if (period === "month") {
+      const y = now.getFullYear();
+      const m = now.getMonth();
+      const firstD = new Date(y, m, 1);
+      const lastD = new Date(y, m + 1, 0);
+      setFilterAttDate(firstD.toISOString().split("T")[0]);
+      setFilterAttEndDate(lastD.toISOString().split("T")[0]);
+    }
+    setCurrentAttPage(1);
+  };
+
+  const handleOpenEditAttendance = (rec) => {
+    setEditAttModal(rec);
+    setEditAttTeacher(rec.teacher_name);
+    setEditAttLocation(rec.location);
+    setEditAttTimeSlot(rec.time_slot);
+    setEditAttCategory(rec.duty_category || "");
+    setEditAttDate(rec.date);
+    setEditAttScheduled(rec.is_scheduled_duty);
+    setEditAttStatus(
+      rec.status === "Tidak Duty" ? "Tidak Duty" :
+      rec.status === "Lagi Duty" ? "Lagi Duty" : "Sudah Duty"
+    );
+    setEditAttNotes(rec.notes || "");
+  };
+
+  const handleSaveEditAttendance = async (e) => {
+    e.preventDefault();
+    if (!editAttModal) return;
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        teacher_name: editAttTeacher.trim(),
+        location: editAttLocation.trim(),
+        time_slot: editAttTimeSlot.trim(),
+        duty_category: editAttCategory.trim() || null,
+        date: editAttDate,
+        is_scheduled_duty: editAttStatus !== "Tidak Duty",
+        status: editAttStatus,
+        status_label: editAttStatus,
+        notes: editAttNotes.trim() || null,
+      };
+      const res = await apiFetch(`${baseUrl}/duty-attendance/records/${editAttModal.id_attendance}`, {
+        method: "PUT",
+        headers: authHeaders,
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.detail || "Failed to update attendance record");
+      }
+      setPopupData({ title: "Attendance Record Updated Successfully!" });
+      setEditAttModal(null);
+      fetchDutyAttendanceData();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleExportAttendanceExcel = async () => {
+    if (isExportingExcel) return;
+    setIsExportingExcel(true);
+    try {
+      const params = new URLSearchParams();
+      if (filterAttDate && filterAttEndDate) {
+        params.append("start_date", filterAttDate);
+        params.append("end_date", filterAttEndDate);
+      } else if (filterAttDate) {
+        params.append("tanggal", filterAttDate);
+      }
+      if (filterAttLoc) params.append("location", filterAttLoc);
+      if (searchAttTeacher) params.append("teacher_name", searchAttTeacher);
+      if (filterAttStatus && filterAttStatus !== "all") {
+        params.append("status_duty", filterAttStatus);
+      }
+
+      const res = await fetch(`${baseUrl}/duty-attendance/export-excel?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${tokenJWT}` },
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || "Failed to export Excel report");
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Duty_Attendance_Report_${filterAttDate || "All"}_${filterAttEndDate || "Dates"}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Export Excel Error: " + err.message);
+    } finally {
+      setIsExportingExcel(false);
+    }
+  };
+
+  const handleFetchInvalFreeTeachers = async (dateVal, timeVal) => {
+    const targetDate = dateVal || newInvalDate;
+    const targetTime = timeVal || newInvalTime;
+    if (!targetDate || !targetTime) return;
+    setIsLoadingInvalFreeTeachers(true);
+    try {
+      const res = await apiFetch(
+        `${baseUrl}/duty-attendance/free-teachers?date=${targetDate}&time_slot=${encodeURIComponent(targetTime)}`,
+        { headers: { Authorization: `Bearer ${tokenJWT}` } }
+      );
+      if (res.ok) {
+        setInvalFreeTeachers(await res.json());
+      }
+    } catch (e) {
+      console.error("Failed to load free teachers for inval", e);
+    } finally {
+      setIsLoadingInvalFreeTeachers(false);
+    }
+  };
 
   const handleDeleteAttendanceRecord = async (id_attendance) => {
-    if (!window.confirm("Are you sure you want to delete data absensi ini?")) return;
+    if (!window.confirm("Are you sure you want to delete this attendance record? This action cannot be undone.")) return;
     try {
       const res = await apiFetch(`${baseUrl}/duty-attendance/records/${id_attendance}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${tokenJWT}` },
       });
-      if (!res.ok) throw new Error("Gagal menghapus absensi");
-      setPopupData({ title: "Data Absensi Berhasil Dihapus!" });
+      if (!res.ok) throw new Error("Failed to delete attendance record");
+      setPopupData({ title: "Attendance Record Deleted Successfully!" });
       fetchDutyAttendanceData();
     } catch (e) {
       alert(e.message);
@@ -1368,7 +1631,7 @@ export default function Admin() {
         headers: { Authorization: `Bearer ${tokenJWT}` },
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Gagal seed dummy");
+      if (!res.ok) throw new Error(data.detail || "Failed to seed dummy data");
       setPopupData({ title: "Data Dummy Absensi Berhasil Dibuat!" });
       setFilterAttDate(data.date);
       fetchDutyAttendanceData();
@@ -1449,8 +1712,8 @@ export default function Admin() {
     },
     {
       id: "Inval Duties",
-      label: "Substitute Duties (Inval)",
-      icon: "🔄",
+      label: "Available Teachers (Guru Kosong)",
+      icon: "👥",
       allowed: ["Normal", "Super"],
     },
     {
@@ -1495,7 +1758,7 @@ export default function Admin() {
 
   const handleUpdateAnnouncement = async () => {
     if (!editAnnDate || !editAnnouncementText.trim())
-      return alert("Isi form dengan lengkap!");
+      return alert("Please fill out the form completely!");
     setIsSubmitting(true);
 
     try {
@@ -1518,7 +1781,7 @@ export default function Admin() {
         body: formData,
       });
 
-      if (!res.ok) throw new Error("Gagal memperbarui pengumuman");
+      if (!res.ok) throw new Error("Failed to update announcement");
 
       await fetchSemuaData();
       setPopupData({ title: "Announcement Updated!" });
@@ -1539,7 +1802,7 @@ export default function Admin() {
           headers: { Authorization: `Bearer ${tokenJWT}` },
         }
       );
-      if (!res.ok) throw new Error("Gagal mengubah status pin");
+      if (!res.ok) throw new Error("Failed to change pin status");
       await fetchSemuaData();
     } catch (err) {
       alert(err.message);
@@ -1555,7 +1818,7 @@ export default function Admin() {
 
   const handleUpdateBirth = async () => {
     if (!editBirthName || !editBirtGender)
-      return alert("Isi form dengan lengkap!");
+      return alert("Please fill out the form completely!");
     setIsSubmitting(true);
 
     try {
@@ -1571,7 +1834,7 @@ export default function Admin() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Gagal mengupdate ulang tahun");
+      if (!res.ok) throw new Error("Failed to update birthday");
 
       await fetchSemuaData();
       setPopupData({ title: "Birthday List Updated!" });
@@ -1592,7 +1855,7 @@ export default function Admin() {
 
   const handleupdateAdmin = async () => {
     if (!newAdminNameUpdate || !newAdminLevelUpdate)
-      return alert("Isi form dengan lengkap!");
+      return alert("Please fill out the form completely!");
     setIsSubmitting(true);
 
     try {
@@ -1612,7 +1875,7 @@ export default function Admin() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Gagal mengupdate list admin");
+      if (!res.ok) throw new Error("Failed to update admin list");
 
       await fetchSemuaData();
       setPopupData({ title: "List Admin sudah dirubah" });
@@ -1629,7 +1892,7 @@ export default function Admin() {
   // ==========================================
   const handleDelete = async (id_announcement) => {
     const isConfirmed = window.confirm(
-      "Apakah kamu yakin ingin menghapus pengumuman ini?",
+      "Are you sure you want to delete this announcement? This action cannot be undone.",
     );
     if (!isConfirmed) return;
 
@@ -1639,10 +1902,10 @@ export default function Admin() {
         headers: authHeaders,
       });
 
-      if (!res.ok) throw new Error("Gagal menghapus data");
+      if (!res.ok) throw new Error("Failed to delete announcement data");
 
       await fetchSemuaData();
-      setPopupData({ title: "Announcement Deleted!" });
+      setPopupData({ title: "Announcement Deleted Successfully!" });
     } catch (error) {
       alert(error.message);
     }
@@ -1650,7 +1913,7 @@ export default function Admin() {
 
   const handleDeleteBirh = async (id_birthday) => {
     const isConfirmed = window.confirm(
-      "Apakah kamu yakin ingin menghapus List ini?",
+      "Are you sure you want to delete this birthday record? This action cannot be undone.",
     );
     if (!isConfirmed) return;
 
@@ -1660,10 +1923,10 @@ export default function Admin() {
         headers: authHeaders,
       });
 
-      if (!res.ok) throw new Error("Gagal menghapus data");
+      if (!res.ok) throw new Error("Failed to delete birthday data");
 
       await fetchSemuaData();
-      setPopupData({ title: "List Deleted!" });
+      setPopupData({ title: "Birthday Record Deleted Successfully!" });
     } catch (error) {
       alert(error.message);
     }
@@ -1671,7 +1934,7 @@ export default function Admin() {
 
   const handleDeleteAdmin = async (id_admin) => {
     const isConfirmed = window.confirm(
-      "Apakah kamu yakin ingin menghapus admin ini?",
+      "Are you sure you want to delete this admin account? This action cannot be undone.",
     );
     if (!isConfirmed) return;
 
@@ -1681,7 +1944,7 @@ export default function Admin() {
         headers: authHeaders,
       });
 
-      if (!res.ok) throw new Error("Gagal menghapus data admin");
+      if (!res.ok) throw new Error("Failed to delete data admin");
 
       await fetchSemuaData();
       setPopupData({ title: "Admin Deleted!" });
@@ -2360,9 +2623,9 @@ export default function Admin() {
                   >
                     <option value="ESE Backyard">ESE Backyard</option>
                     <option value="Canteen">Canteen</option>
-                    <option value="2nd floor lobby and corridors">2nd floor lobby and corridors</option>
-                    <option value="3rd floor lobby and corridors">3rd floor lobby and corridors</option>
-                    <option value="4th floor lobby and corridors">4th floor lobby and corridors</option>
+                    <option value="2nd floor lobby">2nd floor lobby</option>
+                    <option value="3rd floor lobby">3rd floor lobby</option>
+                    <option value="4th floor lobby">4th floor lobby</option>
                     <option value="Announcer (front gate)">Announcer (front gate)</option>
                     <option value="Announcer (back gate)">Announcer (back gate)</option>
                   </select>
@@ -2520,9 +2783,9 @@ export default function Admin() {
                   >
                     <option value="ESE Backyard">ESE Backyard</option>
                     <option value="Canteen">Canteen</option>
-                    <option value="2nd floor lobby and corridors">2nd floor lobby and corridors</option>
-                    <option value="3rd floor lobby and corridors">3rd floor lobby and corridors</option>
-                    <option value="4th floor lobby and corridors">4th floor lobby and corridors</option>
+                    <option value="2nd floor lobby">2nd floor lobby</option>
+                    <option value="3rd floor lobby">3rd floor lobby</option>
+                    <option value="4th floor lobby">4th floor lobby</option>
                     <option value="Announcer (front gate)">Announcer (front gate)</option>
                     <option value="Announcer (back gate)">Announcer (back gate)</option>
                   </select>
@@ -3454,10 +3717,10 @@ export default function Admin() {
                                 </span>
                               </td>
                               <td className="px-8 py-5">
-                                <div className="flex justify-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex justify-center gap-2 opacity-100">
                                   <button
                                     onClick={() => handleTogglePin(item.id_announcement)}
-                                    title={item.is_pinned ? "Unpin from Top (Unpin)" : "Pin to Top (Pin)"}
+                                    title={item.is_pinned ? "Unpin from Top" : "Pin to Top"}
                                     className={`px-3 py-2 text-xs font-bold rounded-xl transition-colors ${
                                       item.is_pinned
                                         ? "bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200"
@@ -3468,17 +3731,19 @@ export default function Admin() {
                                   </button>
                                   <button
                                     onClick={() => handleEditClick(item)}
-                                    className="px-4 py-2 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
+                                    className="px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors inline-flex items-center gap-1 shadow-2xs"
+                                    title="Edit Announcement"
                                   >
-                                    Edit
+                                    ✏️ Edit
                                   </button>
                                   <button
                                     onClick={() =>
                                       handleDelete(item.id_announcement)
                                     }
-                                    className="px-4 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
+                                    className="px-3.5 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors inline-flex items-center gap-1 shadow-2xs"
+                                    title="Delete Announcement"
                                   >
-                                    Delete
+                                    🗑️ Delete
                                   </button>
                                 </div>
                               </td>
@@ -3658,20 +3923,22 @@ export default function Admin() {
                                 </span>
                               </td>
                               <td className="px-8 py-5">
-                                <div className="flex justify-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex justify-center gap-2 opacity-100">
                                   <button
                                     onClick={() => handleEditClickBirth(item)}
-                                    className="px-4 py-2 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
+                                    className="px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors inline-flex items-center gap-1 shadow-2xs"
+                                    title="Edit Birthday Record"
                                   >
-                                    Edit
+                                    ✏️ Edit
                                   </button>
                                   <button
                                     onClick={() =>
                                       handleDeleteBirh(item.id_birthday)
                                     }
-                                    className="px-4 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
+                                    className="px-3.5 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors inline-flex items-center gap-1 shadow-2xs"
+                                    title="Delete Birthday Record"
                                   >
-                                    Delete
+                                    🗑️ Delete
                                   </button>
                                 </div>
                               </td>
@@ -3852,20 +4119,22 @@ export default function Admin() {
                                 </span>
                               </td>
                               <td className="px-8 py-5">
-                                <div className="flex justify-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex justify-center gap-2 opacity-100">
                                   <button
                                     onClick={() => handleEditAdmin(item)}
-                                    className="px-4 py-2 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
+                                    className="px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors inline-flex items-center gap-1 shadow-2xs"
+                                    title="Edit Admin Account"
                                   >
-                                    Edit
+                                    ✏️ Edit
                                   </button>
                                   <button
                                     onClick={() =>
                                       handleDeleteAdmin(item.id_admin)
                                     }
-                                    className="px-4 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
+                                    className="px-3.5 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors inline-flex items-center gap-1 shadow-2xs"
+                                    title="Delete Admin Account"
                                   >
-                                    Delete
+                                    🗑️ Delete
                                   </button>
                                 </div>
                               </td>
@@ -4043,17 +4312,19 @@ export default function Admin() {
                                     onClick={() =>
                                       handleEditScheduleClick(item)
                                     }
-                                    className="px-3 py-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
+                                    className="px-3.5 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors inline-flex items-center gap-1 shadow-2xs"
+                                    title="Edit Schedule"
                                   >
-                                    Edit
+                                    ✏️ Edit
                                   </button>
                                   <button
                                     onClick={() =>
                                       handleDeleteSchedule(item.id_schedule)
                                     }
-                                    className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
+                                    className="px-3.5 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors inline-flex items-center gap-1 shadow-2xs"
+                                    title="Delete Schedule"
                                   >
-                                    Delete
+                                    🗑️ Delete
                                   </button>
                                 </div>
                               </td>
@@ -4326,12 +4597,16 @@ export default function Admin() {
                             <div className="flex gap-2 pt-1">
                               <button
                                 onClick={() => handleEditDutyClick(item)}
-                                className="flex-1 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors"
-                              >Edit</button>
+                                className="flex-1 py-2 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors shadow-2xs"
+                              >
+                                ✏️ Edit
+                              </button>
                               <button
                                 onClick={() => handleDeleteDuty(item.id_duty)}
-                                className="flex-1 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
-                              >Delete</button>
+                                className="flex-1 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors shadow-2xs"
+                              >
+                                🗑️ Delete
+                              </button>
                             </div>
                           </div>
                         );
@@ -4402,15 +4677,17 @@ export default function Admin() {
                                 <div className="flex justify-center gap-2">
                                   <button
                                     onClick={() => handleEditDutyClick(item)}
-                                    className="px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors"
+                                    className="px-3.5 py-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors inline-flex items-center gap-1 shadow-2xs"
+                                    title="Edit Duty Schedule"
                                   >
-                                    Edit
+                                    ✏️ Edit
                                   </button>
                                   <button
                                     onClick={() => handleDeleteDuty(item.id_duty)}
-                                    className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
+                                    className="px-3.5 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors inline-flex items-center gap-1 shadow-2xs"
+                                    title="Delete Duty Schedule"
                                   >
-                                    Delete
+                                    🗑️ Delete
                                   </button>
                                 </div>
                               </td>
@@ -4514,245 +4791,162 @@ export default function Admin() {
                   <div>
                     <h3 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
                       <span className="p-2 bg-indigo-50 text-indigo-600 rounded-xl text-lg">
-                        🔄
+                        👥
                       </span>
-                      Jadwal Inval Duty (Pergantian Sementara)
+                      Available Teachers (Guru Kosong Berdasarkan Hari & Jam)
                     </h3>
                     <p className="text-xs text-slate-500 mt-1">
-                      Catat pergantian guru piket harian sementara yang terhubung dengan AI Chatbot.
+                      Pencarian guru yang kosong (tidak memiliki jadwal piket dan tidak memiliki jadwal mengajar) untuk penugasan pengganti (inval).
                     </p>
                   </div>
-                  <button
-                    onClick={() => setIsCreateInvalOpen(true)}
-                    className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-6 py-3.5 rounded-2xl transition-all shadow-md shadow-indigo-600/20 active:scale-95"
-                  >
-                    <span>➕</span> Tambah Inval Guru
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setShowInvalHistory(!showInvalHistory)}
+                      className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-3 rounded-2xl transition-all shadow-sm"
+                    >
+                      <span>📋</span> {showInvalHistory ? "Tutup Riwayat Inval" : "Lihat Riwayat Inval"}
+                    </button>
+                    <button
+                      onClick={() => setIsCreateInvalOpen(true)}
+                      className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-5 py-3 rounded-2xl transition-all shadow-md shadow-indigo-600/20 active:scale-95"
+                    >
+                      <span>➕</span> Catat Inval Manual
+                    </button>
+                  </div>
                 </div>
 
-                {/* Table Card */}
-                <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                  <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50/50">
-                    <div>
-                      <h3 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
-                        <span className="text-xl">📋</span> Daftar Pergantian Piket
-                      </h3>
-                      <div className="flex flex-wrap items-center gap-2 mt-3">
+                {/* AVAILABLE TEACHERS SEARCH & CATALOG */}
+                <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-6 space-y-6">
+                  {/* Pilih Hari (Day of Week) */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      📅 Pilih Hari (Day of Week):
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { id: "Monday", label: "Senin (Monday)" },
+                        { id: "Tuesday", label: "Selasa (Tuesday)" },
+                        { id: "Wednesday", label: "Rabu (Wednesday)" },
+                        { id: "Thursday", label: "Kamis (Thursday)" },
+                        { id: "Friday", label: "Jumat (Friday)" },
+                      ].map((d) => (
                         <button
+                          key={d.id}
                           type="button"
-                          onClick={() => {
-                            setFilterInvalStatus("all");
-                            setCurrentInvalPage(1);
-                          }}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                            filterInvalStatus === "all"
-                              ? "bg-indigo-600 text-white shadow-sm"
-                              : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
+                          onClick={() => setFreeTeacherDay(d.id)}
+                          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                            freeTeacherDay === d.id
+                              ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                           }`}
                         >
-                          Semua ({dutyInvals.length})
+                          {d.label}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFilterInvalStatus("active");
-                            setCurrentInvalPage(1);
-                          }}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                            filterInvalStatus === "active"
-                              ? "bg-emerald-600 text-white shadow-sm"
-                              : "bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50"
-                          }`}
-                        >
-                          <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                          Aktif / Mendatang ({activeInvalCount})
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFilterInvalStatus("history");
-                            setCurrentInvalPage(1);
-                          }}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                            filterInvalStatus === "history"
-                              ? "bg-slate-700 text-white shadow-sm"
-                              : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
-                          }`}
-                        >
-                          <span>📁</span>
-                          Riwayat Selesai ({historyInvalCount})
-                        </button>
-                      </div>
+                      ))}
                     </div>
-                    <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
+                  </div>
+
+                  {/* Pilih Jam / Sesi & Search Teacher */}
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
+                    <div className="flex items-center gap-3 w-full md:w-auto flex-wrap">
+                      <label className="text-xs font-bold text-slate-500 whitespace-nowrap">
+                        🕒 Pilih Jam / Sesi Piket:
+                      </label>
+                      <select
+                        value={freeTeacherSlot}
+                        onChange={(e) => setFreeTeacherSlot(e.target.value)}
+                        className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        <option value="all">Semua Jam (Sepanjang Hari Kosong)</option>
+                        <option value="07.15-07.45">07.15-07.45 (Morning Duty / Devotion)</option>
+                        <option value="09.10-09.35">09.10-09.35 (Recess 1)</option>
+                        <option value="09.30-09.45">09.30-09.45</option>
+                        <option value="10.20-10.45">10.20-10.45</option>
+                        <option value="11.20-11.50">11.20-11.50 (Lunch / Recess 2)</option>
+                        <option value="11.55-12.25">11.55-12.25</option>
+                        <option value="12.05-12.25">12.05-12.25</option>
+                        <option value="13.00-13.35">13.00-13.35</option>
+                        <option value="13.25-13.50">13.25-13.50</option>
+                        <option value="13.35-14.00">13.35-14.00</option>
+                        <option value="14.00-15.00">14.00-15.00 (Dismissal)</option>
+                        <option value="14.10-14.35">14.10-14.35</option>
+                        <option value="14.30-15.00">14.30-15.00</option>
+                      </select>
+                    </div>
+
+                    <div className="relative w-full md:w-72">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
+                        🔍
+                      </span>
                       <input
-                        type="date"
-                        value={filterInvalDate}
-                        onChange={(e) => {
-                          setFilterInvalDate(e.target.value);
-                          setCurrentInvalPage(1);
-                        }}
-                        className="w-full md:w-auto px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-indigo-600 outline-none shadow-sm transition-all text-slate-600"
-                        title="Filter tanggal spesifik"
+                        type="text"
+                        placeholder="Cari nama guru kosong..."
+                        value={searchFreeTeacher}
+                        onChange={(e) => setSearchFreeTeacher(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
                       />
-                      {filterInvalDate && (
-                        <button
-                          onClick={() => {
-                            setFilterInvalDate("");
-                            setCurrentInvalPage(1);
-                          }}
-                          className="text-xs text-indigo-600 font-bold hover:underline px-2"
-                        >
-                          Reset
-                        </button>
-                      )}
-                      <div className="relative w-full md:w-80">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                          🔍
-                        </span>
-                        <input
-                          type="text"
-                          placeholder="Cari guru asli, pengganti, lokasi..."
-                          value={searchInval}
-                          onChange={(e) => {
-                            setSearchInval(e.target.value);
-                            setCurrentInvalPage(1);
-                          }}
-                          className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-indigo-600 outline-none shadow-sm transition-all"
-                        />
-                      </div>
                     </div>
                   </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                      <thead className="bg-white text-slate-400 font-bold text-[10px] uppercase tracking-widest border-b border-slate-100">
-                        <tr>
-                          <th className="px-6 py-5">Status</th>
-                          <th className="px-6 py-5">Tanggal</th>
-                          <th className="px-6 py-5">Guru Asli</th>
-                          <th className="px-6 py-5">Guru Pengganti (Inval)</th>
-                          <th className="px-6 py-5">Lokasi</th>
-                          <th className="px-6 py-5">Jam / Sesi</th>
-                          <th className="px-6 py-5">Alasan / Notes</th>
-                          <th className="px-6 py-5 text-center">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-50 text-sm">
-                        {currentInvalData.length > 0 ? (
-                          currentInvalData.map((item) => (
-                            <tr
-                              key={item.id_inval}
-                              className="hover:bg-slate-50/80 transition-colors group"
-                            >
-                              <td className="px-6 py-5 whitespace-nowrap">
-                                {item.date >= today ? (
-                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-lg border border-emerald-200">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                    Aktif
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-500 text-xs font-semibold rounded-lg border border-slate-200">
-                                    ✓ Selesai
-                                  </span>
-                                )}
-                              </td>
-                              <td className="px-6 py-5 font-bold text-slate-800 whitespace-nowrap">
-                                📅 {item.date}
-                              </td>
-                              <td className="px-6 py-5 font-semibold text-rose-700">
-                                {item.original_teacher}
-                              </td>
-                              <td className="px-6 py-5 font-bold text-emerald-700">
-                                👤 {item.substitute_teacher}
-                              </td>
-                              <td className="px-6 py-5 text-slate-600 font-medium">
-                                <span className="inline-block px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200">
-                                  {item.location}
-                                </span>
-                              </td>
-                              <td className="px-6 py-5 font-mono text-xs font-bold text-slate-600">
-                                🕒 {item.time_slot}
-                              </td>
-                              <td className="px-6 py-5 text-xs text-slate-500 max-w-xs">
-                                {item.reason && (
-                                  <div className="font-semibold text-slate-700">
-                                    Alasan: {item.reason}
-                                  </div>
-                                )}
-                                {item.note && (
-                                  <div className="text-slate-400 italic">
-                                    Notes: {item.note}
-                                  </div>
-                                )}
-                                {!item.reason && !item.note && (
-                                  <span className="text-slate-400">-</span>
-                                )}
-                              </td>
-                              <td className="px-6 py-5 text-center">
-                                <button
-                                  onClick={() => handleDeleteInval(item.id_inval)}
-                                  className="p-2 text-rose-500 hover:text-white hover:bg-rose-500 rounded-xl transition-colors shadow-sm"
-                                  title="Delete Inval"
-                                >
-                                  🗑️
-                                </button>
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td
-                              colSpan="8"
-                              className="p-12 text-center text-slate-400 font-medium italic"
-                            >
-                              No data available pergantian piket (inval) tercatat.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Pagination */}
-                  {totalInvalPages > 1 && (
-                    <div className="p-6 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                      <p className="text-xs text-slate-500 font-medium">
-                        Halaman{" "}
-                        <span className="font-bold text-slate-800">
-                          {currentInvalPage}
-                        </span>{" "}
-                        dari{" "}
-                        <span className="font-bold text-slate-800">
-                          {totalInvalPages}
-                        </span>{" "}
-                        ({filteredInvals.length} hasil)
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <button
-                          disabled={currentInvalPage === 1}
-                          onClick={() =>
-                            setCurrentInvalPage((p) => Math.max(1, p - 1))
-                          }
-                          className="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                        >
-                          ◀ Prev
-                        </button>
-                        <button
-                          disabled={currentInvalPage === totalInvalPages}
-                          onClick={() =>
-                            setCurrentInvalPage((p) =>
-                              Math.min(totalInvalPages, p + 1),
-                            )
-                          }
-                          className="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                        >
-                          Next ▶
-                        </button>
-                      </div>
+                  {/* Available Teachers Grid */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-bold text-slate-600">
+                        Guru yang Kosong pada hari <strong className="text-indigo-600 font-extrabold">{freeTeacherDay}</strong> {freeTeacherSlot !== "all" ? `jam ${freeTeacherSlot}` : "(sepanjang hari)"}:
+                      </span>
+                      <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-black rounded-lg border border-emerald-200">
+                        {freeTeachersList.filter((t) => !searchFreeTeacher || t.toLowerCase().includes(searchFreeTeacher.toLowerCase())).length} Guru Tersedia
+                      </span>
                     </div>
-                  )}
+
+                    {isLoadingFreeTeachers ? (
+                      <div className="py-12 text-center text-slate-400 animate-pulse text-xs font-bold">
+                        Memuat daftar guru yang kosong...
+                      </div>
+                    ) : freeTeachersList.length === 0 ? (
+                      <div className="py-10 text-center text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                        <p className="text-sm font-medium">Tidak ada guru kosong yang sesuai kriteria ini.</p>
+                        <p className="text-xs text-slate-400 mt-1">Coba pilih slot jam lain atau hari lain.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[420px] overflow-y-auto pr-1">
+                        {freeTeachersList
+                          .filter((t) => !searchFreeTeacher || t.toLowerCase().includes(searchFreeTeacher.toLowerCase()))
+                          .map((teacher, idx) => (
+                            <div
+                              key={idx}
+                              className="p-3.5 bg-slate-50/70 hover:bg-indigo-50/50 border border-slate-200 hover:border-indigo-300 rounded-2xl transition-all flex flex-col justify-between gap-3 group"
+                            >
+                              <div>
+                                <div className="flex items-center gap-2 font-bold text-slate-800 text-xs">
+                                  <span className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-[11px] font-black">
+                                    ✓
+                                  </span>
+                                  <span className="truncate" title={teacher}>{teacher}</span>
+                                </div>
+                                <div className="mt-2 space-y-1 text-[10px]">
+                                  <div className="text-emerald-700 font-semibold flex items-center gap-1">
+                                    <span>🟢</span> Bebas Jadwal Mengajar
+                                  </div>
+                                  <div className="text-emerald-700 font-semibold flex items-center gap-1">
+                                    <span>🟢</span> Bebas Jadwal Piket
+                                  </div>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleAssignFreeTeacher(teacher)}
+                                className="w-full py-1.5 px-2 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-1 active:scale-95"
+                              >
+                                <span>➕</span> Tugaskan Inval
+                              </button>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {/* Daftar Pergantian Piket (Inval) dihilangkan sesuai permintaan user */}
               </div>
             )}
 
@@ -4858,17 +5052,17 @@ export default function Admin() {
                               <td className="px-6 py-5 text-center whitespace-nowrap">
                                 <button
                                   onClick={() => handleEditClickEvent(item)}
-                                  className="p-2 text-amber-600 hover:text-white hover:bg-amber-500 rounded-xl transition-colors shadow-sm mr-2"
-                                  title="Edit Event"
+                                  className="px-3.5 py-1.5 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 rounded-xl transition-colors shadow-2xs mr-2 inline-flex items-center gap-1"
+                                  title="Edit Event Schedule"
                                 >
-                                  ✏️
+                                  ✏️ Edit
                                 </button>
                                 <button
                                   onClick={() => handleDeleteEvent(item.id_event)}
-                                  className="p-2 text-rose-500 hover:text-white hover:bg-rose-500 rounded-xl transition-colors shadow-sm"
-                                  title="Delete Event"
+                                  className="px-3.5 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors shadow-2xs inline-flex items-center gap-1"
+                                  title="Delete Event Schedule"
                                 >
-                                  🗑️
+                                  🗑️ Delete
                                 </button>
                               </td>
                             </tr>
@@ -4959,10 +5153,12 @@ export default function Admin() {
                       <span>🧪</span> {isSeedingAttDummy ? "Generating Dummy..." : "Test Dummy Data"}
                     </button>
                     <button
-                      onClick={handleExportAttendanceCSV}
-                      className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-3 rounded-2xl transition-all shadow-md shadow-emerald-600/20 active:scale-95"
+                      onClick={handleExportAttendanceExcel}
+                      disabled={isExportingExcel}
+                      className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-3 rounded-2xl transition-all shadow-md shadow-emerald-600/20 active:scale-95 disabled:opacity-50"
+                      title="Export report to Excel (.xlsx) with detail logs & duty calculation"
                     >
-                      <span>📥</span> Export CSV
+                      <span>📊</span> {isExportingExcel ? "Generating Excel..." : "Export to Excel (.xlsx)"}
                     </button>
                     <a
                       href="/duty-attendance"
@@ -4975,113 +5171,112 @@ export default function Admin() {
                   </div>
                 </div>
 
-                {/* KPI Status Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {/* Belum Duty */}
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-slate-400 text-base">⚪</span>
-                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Belum Duty</span>
-                      </div>
-                      <div className="text-2xl font-black text-slate-700">
-                        {dutyAttendanceSessions.reduce(
-                          (acc, sess) => acc + (sess.scheduled_teachers || []).filter((t) => t.status === "Belum Duty").length,
-                          0
-                        )}
-                      </div>
-                      <p className="text-[11px] text-slate-400 mt-1">Schedule not started</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-bold">
-                      ⚪
-                    </div>
-                  </div>
-
-                  {/* Lagi Duty */}
-                  <div className="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100 shadow-sm flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-emerald-500 text-base">🟢</span>
-                        <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Lagi Duty</span>
-                      </div>
-                      <div className="text-2xl font-black text-emerald-700">
-                        {dutyAttendanceSessions.reduce(
-                          (acc, sess) => acc + (sess.scheduled_teachers || []).filter((t) => t.status === "Lagi Duty").length,
-                          0
-                        )}
-                      </div>
-                      <p className="text-[11px] text-emerald-600 mt-1">Active duty session</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold animate-pulse">
-                      🟢
-                    </div>
-                  </div>
-
-                  {/* Sudah Duty */}
-                  <div className="bg-blue-50/50 p-5 rounded-2xl border border-blue-100 shadow-sm flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-blue-500 text-base">🔵</span>
-                        <span className="text-xs font-semibold text-blue-700 uppercase tracking-wider">Sudah Duty</span>
-                      </div>
-                      <div className="text-2xl font-black text-blue-700">
-                        {dutyAttendanceRecords.length}
-                      </div>
-                      <p className="text-[11px] text-blue-600 mt-1">Verified attendances</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
-                      🔵
-                    </div>
-                  </div>
-
-                  {/* Tidak Duty */}
-                  <div className="bg-amber-50/50 p-5 rounded-2xl border border-amber-100 shadow-sm flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-amber-500 text-base">🟠</span>
-                        <span className="text-xs font-semibold text-amber-700 uppercase tracking-wider">Tidak Duty</span>
-                      </div>
-                      <div className="text-2xl font-black text-amber-700">
-                        {dutyAttendanceSessions.reduce(
-                          (acc, sess) => acc + (sess.scheduled_teachers || []).filter((t) => t.status === "Tidak Duty").length,
-                          0
-                        )}
-                      </div>
-                      <p className="text-[11px] text-amber-600 mt-1">Ended without check-in</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-bold">
-                      🟠
-                    </div>
-                  </div>
-                </div>
-
-                {/* Filter & Search Bar */}
+                {/* Filter & Search Bar (Ditaruh di atas verifikasi & memuat filter Siapa Tidak Duty) */}
                 <div className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm space-y-4">
-                  <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                    {/* Tanggal & Hari Ini */}
-                    <div className="flex items-center gap-2 w-full md:w-auto">
-                      <label className="text-xs font-bold text-slate-500 whitespace-nowrap">Tanggal:</label>
+                  {/* Period Presets */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-bold text-slate-500 mr-2">Filter Periode:</span>
+                      {[
+                        { id: "all", label: "All Records (Semua)" },
+                        { id: "today", label: "Hari Ini (Today)" },
+                        { id: "week", label: "Minggu Ini (This Week)" },
+                        { id: "month", label: "Bulan Ini (This Month)" },
+                        { id: "custom", label: "Rentang Kustom (Custom)" },
+                      ].map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => handleSelectPeriod(p.id)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                            filterAttPeriod === p.id
+                              ? "bg-indigo-600 text-white shadow-sm"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Quick Reset All Filters */}
+                    {(filterAttStatus !== "all" || filterAttLoc || filterAttScheduled !== "all" || searchAttTeacher || filterAttPeriod !== "all") && (
+                      <button
+                        onClick={() => {
+                          setFilterAttStatus("all");
+                          setFilterAttLoc("");
+                          setFilterAttScheduled("all");
+                          setSearchAttTeacher("");
+                          handleSelectPeriod("all");
+                        }}
+                        className="text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1"
+                      >
+                        <span>✕</span> Reset Filter
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+                    {/* Tanggal Mulai & Akhir */}
+                    <div className="flex items-center gap-2 w-full lg:w-auto flex-wrap">
+                      <label className="text-xs font-bold text-slate-500 whitespace-nowrap">From:</label>
                       <input
                         type="date"
                         value={filterAttDate}
-                        onChange={(e) => setFilterAttDate(e.target.value)}
+                        onChange={(e) => {
+                          setFilterAttDate(e.target.value);
+                          setFilterAttPeriod("custom");
+                        }}
                         className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
                       />
-                      <button
-                        onClick={() => setFilterAttDate(today)}
-                        className="px-3 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl text-xs font-bold transition-all"
+                      <label className="text-xs font-bold text-slate-500 whitespace-nowrap">To:</label>
+                      <input
+                        type="date"
+                        value={filterAttEndDate}
+                        onChange={(e) => {
+                          setFilterAttEndDate(e.target.value);
+                          setFilterAttPeriod("custom");
+                        }}
+                        className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+
+                    {/* Filter Status Duty (Siapa Tidak Duty / Sudah / Lagi / Belum) */}
+                    <div className="flex items-center gap-2 w-full lg:w-auto">
+                      <label className="text-xs font-bold text-slate-500 whitespace-nowrap">Status Duty:</label>
+                      <select
+                        value={filterAttStatus}
+                        onChange={(e) => setFilterAttStatus(e.target.value)}
+                        className={`w-full lg:w-56 px-3 py-2 border rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
+                          filterAttStatus === "tidak_duty"
+                            ? "bg-amber-100/70 border-amber-400 text-amber-900 font-extrabold"
+                            : filterAttStatus === "sudah_duty"
+                              ? "bg-blue-100/70 border-blue-400 text-blue-900 font-extrabold"
+                              : filterAttStatus === "lagi_duty"
+                                ? "bg-emerald-100/70 border-emerald-400 text-emerald-900 font-extrabold"
+                                : filterAttStatus === "sedang_jam_piket"
+                                  ? "bg-yellow-100/70 border-yellow-400 text-yellow-900 font-extrabold"
+                                  : filterAttStatus === "belum_duty"
+                                    ? "bg-slate-200 border-slate-400 text-slate-900 font-extrabold"
+                                    : "bg-slate-50 border-slate-200 text-slate-700"
+                        }`}
                       >
-                        Hari Ini
-                      </button>
+                        <option value="all">Semua Status Duty</option>
+                        <option value="tidak_duty">🟠 Tidak Duty (Terlewat / Belum Absen)</option>
+                        <option value="sudah_duty">🔵 Sudah Duty (Hadir / Terverifikasi)</option>
+                        <option value="lagi_duty">🟢 Lagi Duty (Sedang Berlangsung)</option>
+                        <option value="sedang_jam_piket">🟡 Sedang Jam Piket (Harusnya Duty / Belum Absen)</option>
+                        <option value="belum_duty">⚪ Belum Duty (Jadwal Belum Mulai)</option>
+                      </select>
                     </div>
 
                     {/* Lokasi Dropdown */}
-                    <div className="flex items-center gap-2 w-full md:w-auto">
+                    <div className="flex items-center gap-2 w-full lg:w-auto">
                       <label className="text-xs font-bold text-slate-500 whitespace-nowrap">Lokasi:</label>
                       <select
                         value={filterAttLoc}
                         onChange={(e) => setFilterAttLoc(e.target.value)}
-                        className="w-full md:w-56 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full lg:w-44 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
                       >
                         <option value="">All Duty Locations</option>
                         {dutyAttendanceLocations.map((loc) => (
@@ -5092,28 +5287,14 @@ export default function Admin() {
                       </select>
                     </div>
 
-                    {/* Schedule Status */}
-                    <div className="flex items-center gap-2 w-full md:w-auto">
-                      <label className="text-xs font-bold text-slate-500 whitespace-nowrap">Kategori:</label>
-                      <select
-                        value={filterAttScheduled}
-                        onChange={(e) => setFilterAttScheduled(e.target.value)}
-                        className="w-full md:w-48 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
-                      >
-                        <option value="all">All Teacher Statuses</option>
-                        <option value="scheduled">🛡️ Terjadwal Duty</option>
-                        <option value="unscheduled">⚠️ Substitute / Unscheduled</option>
-                      </select>
-                    </div>
-
                     {/* Search Teacher */}
-                    <div className="relative w-full md:w-64">
+                    <div className="relative w-full lg:w-56">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
                         🔍
                       </span>
                       <input
                         type="text"
-                        placeholder="Search teacher name..."
+                        placeholder="Cari nama guru..."
                         value={searchAttTeacher}
                         onChange={(e) => setSearchAttTeacher(e.target.value)}
                         className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
@@ -5122,12 +5303,140 @@ export default function Admin() {
                   </div>
                 </div>
 
-{/* GENERATOR LINK ABSENSI DUTY */}
+                {/* KPI Status Cards (Interaktif: Klik untuk menyaring status) */}
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
+                  {/* Belum Duty */}
+                  <div
+                    onClick={() => setFilterAttStatus(filterAttStatus === "belum_duty" ? "all" : "belum_duty")}
+                    className={`p-4 rounded-2xl border shadow-sm flex items-center justify-between cursor-pointer transition-all ${
+                      filterAttStatus === "belum_duty"
+                        ? "bg-slate-100 border-slate-400 ring-2 ring-slate-400 scale-[1.02]"
+                        : "bg-white border-slate-200/80 hover:bg-slate-50"
+                    }`}
+                    title="Klik untuk filter guru yang Belum Duty"
+                  >
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-slate-400 text-base">⚪</span>
+                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Belum Duty</span>
+                      </div>
+                      <div className="text-2xl font-black text-slate-700">
+                        {dutyAttendanceRecords.filter((r) => r.status === "Belum Duty").length}
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-1">Schedule not started</p>
+                    </div>
+                    <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-bold">
+                      ⚪
+                    </div>
+                  </div>
+
+                  {/* Lagi Duty */}
+                  <div
+                    onClick={() => setFilterAttStatus(filterAttStatus === "lagi_duty" ? "all" : "lagi_duty")}
+                    className={`p-4 rounded-2xl border shadow-sm flex items-center justify-between cursor-pointer transition-all ${
+                      filterAttStatus === "lagi_duty"
+                        ? "bg-emerald-100/70 border-emerald-500 ring-2 ring-emerald-500 scale-[1.02]"
+                        : "bg-emerald-50/50 border-emerald-100 hover:bg-emerald-100/40"
+                    }`}
+                    title="Klik untuk filter guru yang Lagi Duty (Sedang Bertugas)"
+                  >
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-emerald-500 text-base">🟢</span>
+                        <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Lagi Duty</span>
+                      </div>
+                      <div className="text-2xl font-black text-emerald-700">
+                        {dutyAttendanceRecords.filter((r) => r.status === "Lagi Duty").length}
+                      </div>
+                      <p className="text-[10px] text-emerald-600 mt-1">Active / Check-in</p>
+                    </div>
+                    <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold animate-pulse">
+                      🟢
+                    </div>
+                  </div>
+
+                  {/* Sedang Jam Piket */}
+                  <div
+                    onClick={() => setFilterAttStatus(filterAttStatus === "sedang_jam_piket" ? "all" : "sedang_jam_piket")}
+                    className={`p-4 rounded-2xl border shadow-sm flex items-center justify-between cursor-pointer transition-all ${
+                      filterAttStatus === "sedang_jam_piket"
+                        ? "bg-yellow-100/90 border-yellow-500 ring-2 ring-yellow-500 scale-[1.02]"
+                        : "bg-yellow-50/50 border-yellow-200/90 hover:bg-yellow-100/40"
+                    }`}
+                    title="Klik untuk filter guru Sedang Jam Piket (Harusnya duty namun belum absen)"
+                  >
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-yellow-600 text-base">🟡</span>
+                        <span className="text-[11px] font-bold text-yellow-800 uppercase tracking-wider">Jam Piket</span>
+                      </div>
+                      <div className="text-2xl font-black text-yellow-800">
+                        {dutyAttendanceRecords.filter((r) => r.status === "Sedang Jam Piket").length}
+                      </div>
+                      <p className="text-[10px] text-yellow-700 mt-1">Harusnya duty / blm absen</p>
+                    </div>
+                    <div className="w-9 h-9 rounded-xl bg-yellow-100 text-yellow-700 flex items-center justify-center font-bold animate-pulse">
+                      🟡
+                    </div>
+                  </div>
+
+                  {/* Sudah Duty */}
+                  <div
+                    onClick={() => setFilterAttStatus(filterAttStatus === "sudah_duty" ? "all" : "sudah_duty")}
+                    className={`p-4 rounded-2xl border shadow-sm flex items-center justify-between cursor-pointer transition-all ${
+                      filterAttStatus === "sudah_duty"
+                        ? "bg-blue-100/70 border-blue-500 ring-2 ring-blue-500 scale-[1.02]"
+                        : "bg-blue-50/50 border-blue-100 hover:bg-blue-100/40"
+                    }`}
+                    title="Klik untuk filter guru yang Sudah Duty"
+                  >
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-blue-500 text-base">🔵</span>
+                        <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Sudah Duty</span>
+                      </div>
+                      <div className="text-2xl font-black text-blue-700">
+                        {dutyAttendanceRecords.filter((r) => r.status === "Sudah Duty").length}
+                      </div>
+                      <p className="text-[10px] text-blue-600 mt-1">Verified attendances</p>
+                    </div>
+                    <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                      🔵
+                    </div>
+                  </div>
+
+                  {/* Tidak Duty */}
+                  <div
+                    onClick={() => setFilterAttStatus(filterAttStatus === "tidak_duty" ? "all" : "tidak_duty")}
+                    className={`p-4 rounded-2xl border shadow-sm flex items-center justify-between cursor-pointer transition-all ${
+                      filterAttStatus === "tidak_duty"
+                        ? "bg-amber-100/80 border-amber-500 ring-2 ring-amber-500 scale-[1.02]"
+                        : "bg-amber-50/50 border-amber-100 hover:bg-amber-100/40"
+                    }`}
+                    title="Klik untuk filter: Siapa Tidak Duty"
+                  >
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-amber-500 text-base">🟠</span>
+                        <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Tidak Duty</span>
+                      </div>
+                      <div className="text-2xl font-black text-amber-700">
+                        {dutyAttendanceRecords.filter((r) => r.status === "Tidak Duty").length}
+                      </div>
+                      <p className="text-[10px] text-amber-600 mt-1">Ended without check-in</p>
+                    </div>
+                    <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-bold">
+                      🟠
+                    </div>
+                  </div>
+                </div>
+
+                  {/* GENERATOR LINK ABSENSI DUTY & QR CODES (Selalu Tampil) */}
                   {dutyAttendanceLocations.length > 0 && (
-                    <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-6">
+                    <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-6 animate-in fade-in duration-200">
                       <div className="flex items-center justify-between mb-4">
                         <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                          <span>🔗</span> Duty Attendance Access Links by Location
+                          <span>🔗</span> Duty Attendance Access Links & QR Codes
                         </h4>
                         <span className="text-xs text-slate-400 font-medium">
                           Share this link with teachers on duty
@@ -5264,17 +5573,158 @@ export default function Admin() {
                     </div>
                   )}
 
+                  {/* MODAL EDIT ATTENDANCE RECORD */}
+                  {editAttModal && (
+                    <div className="fixed inset-0 z-[110] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+                      <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
+                        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                          <h3 className="text-base font-black text-slate-800 flex items-center gap-2">
+                            <span>✏️</span> Edit Attendance Record #{editAttModal.id_attendance}
+                          </h3>
+                          <button
+                            onClick={() => setEditAttModal(null)}
+                            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold flex items-center justify-center"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <form onSubmit={handleSaveEditAttendance} className="space-y-4 my-4">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                              Teacher Name *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={editAttTeacher}
+                              onChange={(e) => setEditAttTeacher(e.target.value)}
+                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                Location *
+                              </label>
+                              <input
+                                type="text"
+                                required
+                                value={editAttLocation}
+                                onChange={(e) => setEditAttLocation(e.target.value)}
+                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                Time Slot *
+                              </label>
+                              <input
+                                type="text"
+                                required
+                                value={editAttTimeSlot}
+                                onChange={(e) => setEditAttTimeSlot(e.target.value)}
+                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                Date *
+                              </label>
+                              <input
+                                type="date"
+                                required
+                                value={editAttDate}
+                                onChange={(e) => setEditAttDate(e.target.value)}
+                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                Duty Category
+                              </label>
+                              <input
+                                type="text"
+                                value={editAttCategory}
+                                onChange={(e) => setEditAttCategory(e.target.value)}
+                                placeholder="e.g. Break 1 / Morning Devotion"
+                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                              Duty Status *
+                            </label>
+                            <select
+                              value={editAttStatus}
+                              onChange={(e) => setEditAttStatus(e.target.value)}
+                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500"
+                            >
+                              <option value="Tidak Duty">🟠 Tidak Duty</option>
+                              <option value="Sudah Duty">🔵 Sudah Duty</option>
+                              <option value="Lagi Duty">🟢 Lagi Duty</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                              Notes
+                            </label>
+                            <textarea
+                              rows={2}
+                              value={editAttNotes}
+                              onChange={(e) => setEditAttNotes(e.target.value)}
+                              placeholder="Tambahkan catatan jika ada"
+                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                          </div>
+                          <div className="flex gap-3 pt-3">
+                            <button
+                              type="button"
+                              onClick={() => setEditAttModal(null)}
+                              className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition-colors"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="submit"
+                              disabled={isSubmitting}
+                              className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition-colors shadow-md disabled:opacity-50"
+                            >
+                              {isSubmitting ? "Saving..." : "Save Changes"}
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Table Log Absensi Card */}
                 <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
                   <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
                     <h3 className="text-base font-bold text-slate-800 tracking-tight flex items-center gap-2">
-                      <span className="text-lg">📜</span> Verified Attendance Records ({filteredAttendanceRecords.length})
+                      <span className="text-lg">📜</span> Attendance & Verification Records ({filteredAttendanceRecords.length})
                     </h3>
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <span>Password:</span>
-                      <span className="font-mono font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
-                        citahati
-                      </span>
+                    <div className="flex items-center gap-3">
+                      {filterAttStatus !== "all" && (
+                        <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-lg text-xs font-bold flex items-center gap-1.5">
+                          <span>Status:</span>
+                          <span className="capitalize">{filterAttStatus.replace("_", " ")}</span>
+                          <button
+                            onClick={() => setFilterAttStatus("all")}
+                            className="ml-1 text-amber-900 hover:text-rose-600 font-bold"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      )}
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span>Password:</span>
+                        <span className="font-mono font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
+                          citahati
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -5288,7 +5738,8 @@ export default function Admin() {
                           <th className="py-4 px-6">Location</th>
                           <th className="py-4 px-6">Time Slot</th>
                           <th className="py-4 px-6">Kategori</th>
-                          <th className="py-4 px-6">Schedule Status</th>
+                          <th className="py-4 px-6">Status Verifikasi</th>
+                          <th className="py-4 px-6">Jadwal / Inval</th>
                           <th className="py-4 px-6">Validation</th>
                           <th className="py-4 px-6">Notes</th>
                           <th className="py-4 px-6 text-center">Action</th>
@@ -5297,14 +5748,14 @@ export default function Admin() {
                       <tbody className="divide-y divide-slate-100 text-xs">
                         {currentAttData.length === 0 ? (
                           <tr>
-                            <td colSpan={10} className="py-12 text-center text-slate-400">
+                            <td colSpan={11} className="py-12 text-center text-slate-400">
                               <div className="flex flex-col items-center justify-center gap-2">
                                 <span className="text-3xl">📋</span>
                                 <p className="font-medium text-sm">
                                   Belum ada catatan absensi duty untuk filter ini.
                                 </p>
                                 <p className="text-xs text-slate-400">
-                                  Klik tombol <strong className="text-amber-600 font-bold">"Test Dummy Data"</strong> di atas untuk membuat data tes hari ini.
+                                  Gunakan filter di atas atau klik tombol reset filter.
                                 </p>
                               </div>
                             </td>
@@ -5312,24 +5763,37 @@ export default function Admin() {
                         ) : (
                           currentAttData.map((rec, index) => (
                             <tr
-                              key={rec.id_attendance}
+                              key={rec.id_attendance || `${rec.date}-${rec.location}-${rec.time_slot}-${rec.teacher_name}-${index}`}
                               className="hover:bg-slate-50/70 transition-colors"
                             >
                               <td className="py-4 px-6 text-center text-slate-400 font-mono">
                                 {(currentAttPage - 1) * itemsPerPage + index + 1}
                               </td>
                               <td className="py-4 px-6">
-                                <div className="font-bold text-slate-800">
-                                  {new Date(rec.check_in_time).toLocaleTimeString("id-ID", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    second: "2-digit",
-                                  })}{" "}
-                                  WIB
-                                </div>
-                                <div className="text-[11px] text-slate-400 font-mono">
-                                  {rec.date}
-                                </div>
+                                {rec.check_in_time ? (
+                                  <>
+                                    <div className="font-bold text-slate-800">
+                                      {new Date(rec.check_in_time).toLocaleTimeString("id-ID", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        second: "2-digit",
+                                      })}{" "}
+                                      WIB
+                                    </div>
+                                    <div className="text-[11px] text-slate-400 font-mono">
+                                      {rec.date}
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="font-bold text-amber-600/90 italic">
+                                      Belum Absen
+                                    </div>
+                                    <div className="text-[11px] text-slate-400 font-mono">
+                                      {rec.date}
+                                    </div>
+                                  </>
+                                )}
                               </td>
                               <td className="py-4 px-6 font-bold text-slate-800">
                                 {rec.teacher_name}
@@ -5346,32 +5810,81 @@ export default function Admin() {
                                 {rec.duty_category || "-"}
                               </td>
                               <td className="py-4 px-6">
-                                {rec.is_scheduled_duty ? (
-                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                {rec.status === "Sudah Duty" ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                    🔵 Sudah Duty
+                                  </span>
+                                ) : rec.status === "Lagi Duty" ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 animate-pulse">
+                                    🟢 Lagi Duty
+                                  </span>
+                                ) : rec.status === "Sedang Jam Piket" ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-yellow-100 text-yellow-900 border border-yellow-300 animate-pulse">
+                                    🟡 Sedang Jam Piket
+                                  </span>
+                                ) : rec.status === "Tidak Duty" ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                    🟠 Tidak Duty
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                    ⚪ Belum Duty
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-4 px-6">
+                                {rec.is_inval ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-200" title={rec.notes || "Inval"}>
+                                    👥 Inval {rec.teacher_name === rec.original_teacher ? `(Digantikan ${rec.substitute_teacher || ""})` : `(Pengganti ${rec.original_teacher || ""})`}
+                                  </span>
+                                ) : rec.is_scheduled_duty ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                     🛡️ Terjadwal Duty
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                                    ⚠️ Bukan Jadwal / Pengganti
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                    ⚠️ Luar Jadwal
                                   </span>
                                 )}
                               </td>
                               <td className="py-4 px-6 font-mono font-bold text-slate-700">
                                 <span className="px-2 py-0.5 bg-slate-100 rounded text-[11px]">
-                                  {rec.verified_code}
+                                  {rec.verified_code || "-"}
                                 </span>
                               </td>
                               <td className="py-4 px-6 text-slate-500 max-w-xs truncate" title={rec.notes}>
                                 {rec.notes || "-"}
                               </td>
                               <td className="py-4 px-6 text-center">
-                                <button
-                                  onClick={() => handleDeleteAttendanceRecord(rec.id_attendance)}
-                                  className="px-2.5 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl text-xs font-bold transition-all"
-                                  title="Delete rekaman absensi ini"
-                                >
-                                  🗑️ Delete
-                                </button>
+                                <div className="flex items-center justify-center gap-1.5">
+                                  {rec.id_attendance ? (
+                                    <>
+                                      <button
+                                        onClick={() => handleOpenEditAttendance(rec)}
+                                        className="px-2.5 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl text-xs font-bold transition-all"
+                                        title="Edit rekaman absensi ini"
+                                      >
+                                        ✏️ Edit
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteAttendanceRecord(rec.id_attendance)}
+                                        className="px-2.5 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl text-xs font-bold transition-all"
+                                        title="Delete rekaman absensi ini"
+                                      >
+                                        🗑️ Delete
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleManualVerifyClick(rec)}
+                                      disabled={isSubmitting}
+                                      className="px-2.5 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white rounded-xl text-xs font-bold transition-all shadow-sm border border-indigo-200 flex items-center gap-1"
+                                      title="Verifikasi manual kehadiran guru ini"
+                                    >
+                                      <span>✏️</span> Verifikasi
+                                    </button>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           ))

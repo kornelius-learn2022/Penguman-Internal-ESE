@@ -20,10 +20,26 @@ function Announcements() {
 
   // State Management
   const [selectedDate, setSelectedDate] = useState(today);
+  const [largeText, setLargeText] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [announcements, setAnnouncements] = useState([]);
   const [birthdays, setBirthdays] = useState([]);
   const [activeEvents, setActiveEvents] = useState([]);
+
+  // Date Shift Shortcuts
+  const handleShiftDate = (days) => {
+    const parts = selectedDate.split("-");
+    const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    d.setDate(d.getDate() + days);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const dt = String(d.getDate()).padStart(2, "0");
+    setSelectedDate(`${y}-${m}-${dt}`);
+  };
+
+  const handleSetToday = () => {
+    setSelectedDate(today);
+  };
 
   // State untuk Image Modal
   const [selectedImage, setSelectedImage] = useState(null);
@@ -127,14 +143,22 @@ function Announcements() {
             <button
               onClick={() => setSelectedImage(null)}
               className="absolute -top-12 right-0 md:-right-12 bg-white text-slate-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-slate-100 font-bold transition-colors"
+              title="Close Image Modal"
             >
               ✕
             </button>
             <img
               src={selectedImage}
               alt="Announcement Detail"
-              className="w-full h-auto max-h-[85vh] object-contain rounded-2xl shadow-2xl bg-white"
+              className="w-full h-auto max-h-[80vh] object-contain rounded-2xl shadow-2xl bg-white"
             />
+            <button
+              type="button"
+              onClick={() => setSelectedImage(null)}
+              className="mt-3 w-full py-3 bg-white text-slate-800 hover:bg-slate-100 rounded-xl font-extrabold text-sm shadow-md flex items-center justify-center gap-2 border border-slate-200 transition-colors"
+            >
+              <span>✕</span> Close / Back
+            </button>
           </div>
         </div>
       )}
@@ -166,23 +190,69 @@ function Announcements() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Quick Date Shift Buttons */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl shadow-2xs">
+              <button
+                type="button"
+                onClick={() => handleShiftDate(-1)}
+                className="px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-white rounded-lg transition-colors"
+                title="View Yesterday's Announcements"
+              >
+                ◀ Yesterday
+              </button>
+              <button
+                type="button"
+                onClick={handleSetToday}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                  selectedDate === today
+                    ? "bg-[#1e3a8a] text-white shadow-xs"
+                    : "text-slate-700 hover:bg-white"
+                }`}
+                title="Go to Today"
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                onClick={() => handleShiftDate(1)}
+                className="px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-white rounded-lg transition-colors"
+                title="View Tomorrow's Announcements"
+              >
+                Tomorrow ▶
+              </button>
+            </div>
+
+            {/* Date Input */}
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 transition-all outline-none"
+              title="Select custom date"
+            />
+
+            {/* Text Size Accessibility Toggle */}
+            <button
+              type="button"
+              onClick={() => setLargeText(!largeText)}
+              className={`px-3 py-2 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 ${
+                largeText
+                  ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+              }`}
+              title="Toggle larger reading font size"
+            >
+              <span>{largeText ? "🔍 Standard Font" : "🔍 Larger Font (A+)"}</span>
+            </button>
+
             <Link
               to="/duty-attendance"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all active:scale-95"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all active:scale-95"
             >
               <span>🛡️</span>
               <span>Duty Attendance</span>
             </Link>
-
-            <div className="relative group">
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="bg-slate-100 border-none rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 transition-all outline-none"
-              />
-            </div>
           </div>
         </div>
       </header>
@@ -297,7 +367,9 @@ function Announcements() {
                           : item.date}
                       </span>
                     </div>
-                    <p className="mt-3 text-slate-700 font-semibold leading-relaxed whitespace-pre-line w-full break-words">
+                    <p className={`mt-3 text-slate-800 font-semibold leading-relaxed whitespace-pre-line w-full break-words transition-all ${
+                      largeText ? "text-lg sm:text-xl" : "text-sm sm:text-base"
+                    }`}>
                       {item.announcement}
                     </p>
 

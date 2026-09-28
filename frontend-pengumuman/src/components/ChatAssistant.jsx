@@ -8,7 +8,7 @@ export default function ChatAssistant() {
   const [messages, setMessages] = useState([
     {
       sender: "ai",
-      text: "Hello! Welcome! 欢迎! 🤖\n\nI am the Cita Hati East Surabaya AI Assistant. Teachers and staff can ask me about:\n• 📚 Class schedules (Homeroom & Specialists)\n• 🛡️ Duty rosters (Backyard, Canteen, Lobby, Gate)\n• 📢 School announcements & calendar\n• ☕ Break times & teaching periods\n\n• 🇬🇧 Ask me in English\n• 🇨🇳 用中文向我提问\n• 🇮🇩 Tanya dalam Bahasa Indonesia\n\n📌 *Note: If you notice any schedule errors or discrepancies, please contact Mr. Kornel.*",
+      text: "Hello and welcome! 👋\n\nI am the Cita Hati East Surabaya AI Assistant. You can ask me anytime about:\n• 📚 Class schedules (Homeroom & Specialists)\n• 🛡️ Teacher duty rosters (Backyard, Canteen, Lobby, Gate)\n• 📢 Today's school announcements & special events\n• ☕ Recess, break times & bell schedules\n\n💡 Feel free to tap any quick question button below or type your question.\n\n📌 *Note: If you notice any schedule errors or discrepancies, please contact Mr. Kornel.*",
       provider: "Cita Hati AI",
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
@@ -106,7 +106,7 @@ export default function ChatAssistant() {
       const data = await response.json();
       const aiMessage = {
         sender: "ai",
-        text: data.reply || "Maaf, tidak ada respon.",
+        text: data.reply || "Sorry, no response.",
         provider: data.provider_used || "AI Assistant",
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
@@ -142,6 +142,28 @@ export default function ChatAssistant() {
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       },
     ]);
+  };
+
+  const formatAiText = (text) => {
+    if (!text) return "";
+    const ballPattern = /[⚪🟢🔵🟠]/;
+    return text
+      .split("\n")
+      .map((line) => {
+        const match = line.match(/^(\s*)[\*\-•]\s*(.*)$/);
+        if (match) {
+          const indent = match[1];
+          const content = match[2];
+          const ballMatch = content.match(ballPattern);
+          if (ballMatch) {
+            const ball = ballMatch[0];
+            const cleaned = content.replace(/[⚪🟢🔵🟠]/g, "").replace(/\s{2,}/g, " ").trim();
+            return `${indent}${ball} ${cleaned}`;
+          }
+        }
+        return line;
+      })
+      .join("\n");
   };
 
   return (
@@ -230,11 +252,11 @@ export default function ChatAssistant() {
                     <span>🤖</span> What Can You Ask?
                   </p>
                   <ul className="list-disc pl-4 space-y-1 text-slate-700">
-                    <li><strong>Jadwal Kelas:</strong> <em>"Jadwal kelas 3A hari Senin"</em> atau <em>"Class 1B schedule"</em> (lengkap Homeroom & Spesialis).</li>
-                    <li><strong>Jadwal Piket (Duty):</strong> <em>"Siapa yang jaga backyard sekarang?"</em> atau <em>"Who is on duty in the backyard on Monday at 09.10?"</em></li>
-                    <li><strong>Pengumuman:</strong> <em>"Pengumuman hari ini"</em> atau <em>"What are today's school announcements?"</em></li>
-                    <li><strong>Jam Istirahat:</strong> <em>"Kapan saja jam break sekolah?"</em></li>
-                    <li><strong>Ulang Tahun:</strong> <em>"Siapa yang berulang tahun hari ini?"</em></li>
+                    <li><strong>Class Schedule:</strong> <em>"Class 3A schedule on Monday"</em> or <em>"Class 1B schedule"</em> (includes Homeroom & Specialists).</li>
+                    <li><strong>Duty Schedule:</strong> <em>"Who is on duty in the backyard now?"</em> or <em>"Who is on duty in the backyard on Monday at 09.10?"</em></li>
+                    <li><strong>Announcements:</strong> <em>"Today's announcements"</em> or <em>"What are today's school announcements?"</em></li>
+                    <li><strong>Break Time:</strong> <em>"When are the school breaks?"</em></li>
+                    <li><strong>Birthdays:</strong> <em>"Who is celebrating a birthday today?"</em></li>
                   </ul>
                 </div>
 
@@ -243,7 +265,7 @@ export default function ChatAssistant() {
                     <span>🌐</span> Trilingual Support (EN / ZH / ID):
                   </p>
                   <p className="text-slate-700 leading-relaxed">
-                    Gunakan tab <strong>EN</strong> / <strong>中文</strong> / <strong>ID</strong> di atas kolom ketik untuk pertanyaan instan, atau ketik langsung dalam bahasa Anda. AI akan merespons dalam bahasa yang sama.
+                    Tap the <strong>EN</strong> / <strong>中文</strong> / <strong>ID</strong> buttons above the chat input for quick questions, or type freely in English. The AI will assist you immediately.
                   </p>
                 </div>
 
@@ -252,7 +274,7 @@ export default function ChatAssistant() {
                     <span>⚠️</span> Schedule Correction Contact:
                   </p>
                   <p className="text-amber-800 leading-relaxed font-medium">
-                    Jika rekan guru menemukan <strong>ketidaksesuaian, kesalahan jadwal, atau perubahan sesi mengajar/duty</strong>, silakan langsung menghubungi <strong>Mr. Kornel</strong> agar database jadwal segera disesuaikan.
+                    If teachers find any <strong>discrepancies, schedule errors, or changes to teaching/duty sessions</strong>, please contact <strong>Mr. Kornel</strong> directly to update the schedule database.
                   </p>
                 </div>
               </div>
@@ -295,7 +317,7 @@ export default function ChatAssistant() {
                       : "bg-white text-slate-800 border border-slate-200/70 rounded-bl-xs whitespace-pre-line"
                   }`}
                 >
-                  {msg.text}
+                  {msg.sender === "ai" ? formatAiText(msg.text) : msg.text}
                 </div>
                 <div className="flex items-center gap-2 mt-1 px-1">
                   {msg.sender === "ai" && (
@@ -318,7 +340,7 @@ export default function ChatAssistant() {
                   <span className="w-2 h-2 rounded-full bg-blue-600 animate-bounce [animation-delay:0.2s]"></span>
                   <span className="w-2 h-2 rounded-full bg-blue-600 animate-bounce [animation-delay:0.4s]"></span>
                   <span className="text-xs text-slate-400 ml-2 font-medium">
-                    Menghubungkan AI...
+                    Connecting to AI...
                   </span>
                 </div>
               </div>
@@ -376,7 +398,7 @@ export default function ChatAssistant() {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask question / Ketik pertanyaan (EN / 中文 / ID)..."
+              placeholder="Ask a question (e.g., Who is on duty right now?)..."
               disabled={isLoading}
               className="flex-1 bg-slate-100 hover:bg-slate-50 focus:bg-white text-sm text-slate-800 placeholder-slate-400 px-4 py-2.5 rounded-2xl border border-transparent focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
             />
@@ -401,12 +423,12 @@ export default function ChatAssistant() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="pointer-events-auto relative group flex items-center justify-center p-0.5 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95"
-        title="Tanya Asisten AI Cita Hati"
+        title="Ask Cita Hati AI Assistant"
       >
         {/* Glowing Background Pulse */}
         <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 rounded-full blur-sm opacity-70 group-hover:opacity-100 animate-pulse transition duration-500"></div>
 
-        <div className="relative flex items-center gap-2.5 px-5 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full font-bold text-sm shadow-inner">
+        <div className="relative flex items-center gap-2.5 px-4 sm:px-5 py-3 sm:py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full font-bold text-xs sm:text-sm shadow-inner">
           <div className="relative">
             <span className="text-xl">🤖</span>
             <span className="absolute -top-1 -right-1 flex h-3 w-3">
@@ -414,7 +436,7 @@ export default function ChatAssistant() {
               <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-400"></span>
             </span>
           </div>
-          <span className="hidden sm:inline tracking-tight">Tanya AI Cita Hati</span>
+          <span className="tracking-tight whitespace-nowrap">Ask Schedules & Duty</span>
         </div>
       </button>
     </div>

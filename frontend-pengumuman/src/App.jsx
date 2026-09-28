@@ -36,6 +36,8 @@ function App() {
         {/* RUTE KHUSUS ABSENSI DUTY GURU */}
         <Route path="/duty" element={<DutyAttendance />} />
         <Route path="/duty/:locationParam" element={<DutyAttendance />} />
+        <Route path="/duty-attendance" element={<DutyAttendance />} />
+        <Route path="/duty-attendance/:locationParam" element={<DutyAttendance />} />
 
         <Route
           path="/admin"
