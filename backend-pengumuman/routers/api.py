@@ -1120,12 +1120,13 @@ _DUTY_SESSIONS_TTL = 15  # seconds
 @router.get("/duty-attendance/teachers", response_model=List[str])
 def get_all_duty_teachers(db: Session = Depends(get_db)):
     """
-    Mengambil daftar seluruh guru untuk dropdown pemilihan guru.
+    Mengambil daftar seluruh guru untuk dropdown pemilihan guru (termasuk seluruh guru & staf di master teachers).
     """
     now_m = time_mod.monotonic()
     if _duty_teachers_cache["data"] is not None and now_m < _duty_teachers_cache["exp"]:
         return _duty_teachers_cache["data"]
 
+    teacher_records = db.query(models.Teacher.db_name).distinct().all()
     duty_teachers = (
         db.query(models.TeacherDuty.teacher_name).distinct().all()
     )
@@ -1133,7 +1134,8 @@ def get_all_duty_teachers(db: Session = Depends(get_db)):
         db.query(models.TeacherSchedule.teacher_name).distinct().all()
     )
     all_names = set(
-        [r[0].strip() for r in duty_teachers if r[0] and r[0].strip()]
+        [r[0].strip() for r in teacher_records if r[0] and r[0].strip()]
+        + [r[0].strip() for r in duty_teachers if r[0] and r[0].strip()]
         + [r[0].strip() for r in schedule_teachers if r[0] and r[0].strip()]
     )
     result = sorted(list(all_names))
@@ -1168,9 +1170,10 @@ def get_free_duty_teachers(
         if now_m < exp_m:
             return cached_res
 
+    teacher_records = [r[0].strip() for r in db.query(models.Teacher.db_name).distinct().all() if r[0]]
     duty_teachers = [r[0].strip() for r in db.query(models.TeacherDuty.teacher_name).distinct().all() if r[0]]
     sched_teachers = [r[0].strip() for r in db.query(models.TeacherSchedule.teacher_name).distinct().all() if r[0]]
-    all_names = sorted(list(set(duty_teachers + sched_teachers)))
+    all_names = sorted(list(set(teacher_records + duty_teachers + sched_teachers)))
 
     busy_duty = set()
     day_duties = db.query(models.TeacherDuty).filter(models.TeacherDuty.day_of_week.ilike(resolved_day)).all()
@@ -1712,7 +1715,7 @@ def submit_duty_attendance(
         check_in_time=now_wib,
         is_scheduled_duty=is_scheduled,
         status_label=status_label,
-        verified_code="citahati",
+        verified_code=data.password.strip() if data.password else (teacher_record.pin_code if teacher_record else "verified"),
         notes=notes_to_save,
         created_at=now_wib,
     )

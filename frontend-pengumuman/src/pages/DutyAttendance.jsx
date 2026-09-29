@@ -85,7 +85,7 @@ export default function DutyAttendance() {
       }
       if (resTeach.ok) {
         const data = await resTeach.json();
-        const names = Array.from(new Set(data.map((t) => t.teacher_name || t))).sort();
+        const names = Array.from(new Set(data.map((t) => (typeof t === "string" ? t : t.db_name || t.teacher_name)))).filter(Boolean).sort();
         setAllTeachers(names);
       }
     } catch (err) {
