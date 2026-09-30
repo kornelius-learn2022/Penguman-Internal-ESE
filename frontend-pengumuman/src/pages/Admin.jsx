@@ -2656,7 +2656,15 @@ export default function Admin() {
                   </label>
                   <select
                     value={newDutyLocation}
-                    onChange={(e) => setNewDutyLocation(e.target.value)}
+                    onChange={(e) => {
+                      const loc = e.target.value;
+                      setNewDutyLocation(loc);
+                      if (loc === "Morning Devotion") {
+                        setNewDutyCategory("Morning Devotion");
+                        setNewDutyTime("07.15-07.45");
+                        setNewDutyGradeScope("All Teachers");
+                      }
+                    }}
                     className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 text-sm font-semibold text-slate-700"
                   >
                     <option value="ESE Backyard">ESE Backyard</option>
@@ -2666,6 +2674,7 @@ export default function Admin() {
                     <option value="4th floor lobby">4th floor lobby</option>
                     <option value="Announcer (front gate)">Announcer (front gate)</option>
                     <option value="Announcer (back gate)">Announcer (back gate)</option>
+                    <option value="Morning Devotion">Morning Devotion</option>
                   </select>
                 </div>
               </div>
@@ -2680,7 +2689,11 @@ export default function Admin() {
                     onChange={(e) => {
                       const val = e.target.value;
                       setNewDutyCategory(val);
-                      if (val.includes("Grade 1-2")) setNewDutyGradeScope("Grade 1-2");
+                      if (val === "Morning Devotion") {
+                        setNewDutyLocation("Morning Devotion");
+                        setNewDutyTime("07.15-07.45");
+                        setNewDutyGradeScope("All Teachers");
+                      } else if (val.includes("Grade 1-2")) setNewDutyGradeScope("Grade 1-2");
                       else if (val.includes("Grade 3-4")) setNewDutyGradeScope("Grade 3-4");
                       else if (val.includes("Grade 5-6")) setNewDutyGradeScope("Grade 5-6");
                       else setNewDutyGradeScope("All Grades (Schoolwide)");
@@ -2688,6 +2701,7 @@ export default function Admin() {
                     className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 text-sm font-semibold text-slate-700"
                   >
                     <option value="Morning Duty">Morning Duty</option>
+                    <option value="Morning Devotion">Morning Devotion</option>
                     <option value="Break 1 (Grade 1-2)">Break 1 (Grade 1-2)</option>
                     <option value="Break 1 (Grade 3-4)">Break 1 (Grade 3-4)</option>
                     <option value="Break 1 (Grade 5-6)">Break 1 (Grade 5-6)</option>
@@ -2816,7 +2830,15 @@ export default function Admin() {
                   </label>
                   <select
                     value={editDutyLocation}
-                    onChange={(e) => setEditDutyLocation(e.target.value)}
+                    onChange={(e) => {
+                      const loc = e.target.value;
+                      setEditDutyLocation(loc);
+                      if (loc === "Morning Devotion") {
+                        setEditDutyCategory("Morning Devotion");
+                        setEditDutyTime("07.15-07.45");
+                        setEditDutyGradeScope("All Teachers");
+                      }
+                    }}
                     className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 text-sm font-semibold text-slate-700"
                   >
                     <option value="ESE Backyard">ESE Backyard</option>
@@ -2826,6 +2848,7 @@ export default function Admin() {
                     <option value="4th floor lobby">4th floor lobby</option>
                     <option value="Announcer (front gate)">Announcer (front gate)</option>
                     <option value="Announcer (back gate)">Announcer (back gate)</option>
+                    <option value="Morning Devotion">Morning Devotion</option>
                   </select>
                 </div>
               </div>
@@ -2840,7 +2863,11 @@ export default function Admin() {
                     onChange={(e) => {
                       const val = e.target.value;
                       setEditDutyCategory(val);
-                      if (val.includes("Grade 1-2")) setEditDutyGradeScope("Grade 1-2");
+                      if (val === "Morning Devotion") {
+                        setEditDutyLocation("Morning Devotion");
+                        setEditDutyTime("07.15-07.45");
+                        setEditDutyGradeScope("All Teachers");
+                      } else if (val.includes("Grade 1-2")) setEditDutyGradeScope("Grade 1-2");
                       else if (val.includes("Grade 3-4")) setEditDutyGradeScope("Grade 3-4");
                       else if (val.includes("Grade 5-6")) setEditDutyGradeScope("Grade 5-6");
                       else setEditDutyGradeScope("All Grades (Schoolwide)");
@@ -2848,6 +2875,7 @@ export default function Admin() {
                     className="w-full border border-slate-200 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 text-sm font-semibold text-slate-700"
                   >
                     <option value="Morning Duty">Morning Duty</option>
+                    <option value="Morning Devotion">Morning Devotion</option>
                     <option value="Break 1 (Grade 1-2)">Break 1 (Grade 1-2)</option>
                     <option value="Break 1 (Grade 3-4)">Break 1 (Grade 3-4)</option>
                     <option value="Break 1 (Grade 5-6)">Break 1 (Grade 5-6)</option>
@@ -4766,7 +4794,7 @@ export default function Admin() {
                 </div>
 
                 {/* Quick Stats Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                   <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl">
                       🌳
@@ -4811,6 +4839,18 @@ export default function Admin() {
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Gates / Announcer</p>
                       <p className="text-xl font-black text-slate-800">
                         {duties.filter((d) => (d.location || "").toLowerCase().includes("gate")).length}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl">
+                      🙏
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Morning Devotion</p>
+                      <p className="text-xl font-black text-slate-800">
+                        {duties.filter((d) => (d.location || "").toLowerCase().includes("devotion")).length}
                       </p>
                     </div>
                   </div>
@@ -4869,6 +4909,7 @@ export default function Admin() {
                           <option value="3rd floor">3rd Floor Lobby</option>
                           <option value="4th floor">4th Floor Lobby</option>
                           <option value="gate">Gates / Announcer</option>
+                          <option value="Devotion">Morning Devotion</option>
                         </select>
                       </div>
                     </div>
@@ -4886,8 +4927,10 @@ export default function Admin() {
                           ? "bg-amber-50 text-amber-700 border-amber-200"
                           : loc.includes("lobby")
                           ? "bg-purple-50 text-purple-700 border-purple-200"
+                          : loc.includes("devotion")
+                          ? "bg-indigo-50 text-indigo-700 border-indigo-200"
                           : "bg-blue-50 text-blue-700 border-blue-200";
-                        const locIcon = loc.includes("backyard") ? "🌳" : loc.includes("canteen") ? "☕" : loc.includes("lobby") ? "🏢" : "🚪";
+                        const locIcon = loc.includes("backyard") ? "🌳" : loc.includes("canteen") ? "☕" : loc.includes("lobby") ? "🏢" : loc.includes("devotion") ? "🙏" : "🚪";
                         return (
                           <div key={item.id_duty} className="p-4 flex flex-col gap-2">
                             <div className="flex items-start justify-between gap-2">
@@ -4961,10 +5004,12 @@ export default function Admin() {
                                         ? "bg-amber-50 text-amber-700 border border-amber-200"
                                         : (item.location || "").toLowerCase().includes("lobby")
                                           ? "bg-purple-50 text-purple-700 border border-purple-200"
-                                          : "bg-blue-50 text-blue-700 border border-blue-200"
+                                          : (item.location || "").toLowerCase().includes("devotion")
+                                            ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                                            : "bg-blue-50 text-blue-700 border border-blue-200"
                                   }`}
                                 >
-                                  {(item.location || "").toLowerCase().includes("backyard") ? "🌳" : (item.location || "").toLowerCase().includes("canteen") ? "☕" : (item.location || "").toLowerCase().includes("lobby") ? "🏢" : "🚪"}{" "}
+                                  {(item.location || "").toLowerCase().includes("backyard") ? "🌳" : (item.location || "").toLowerCase().includes("canteen") ? "☕" : (item.location || "").toLowerCase().includes("lobby") ? "🏢" : (item.location || "").toLowerCase().includes("devotion") ? "🙏" : "🚪"}{" "}
                                   {item.location}
                                 </span>
                               </td>

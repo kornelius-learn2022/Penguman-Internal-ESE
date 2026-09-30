@@ -1505,6 +1505,8 @@ def get_duty_sessions(
             "Mr. Dion",
             "Sus Veronika",
             "Ms. Vita",
+            "Ms. Endah",
+            "Ms. Pinta",
         ]
         for ct in confirmed_devotion_teachers:
             teaching_teachers_set.add(ct)
@@ -1869,6 +1871,8 @@ def build_comprehensive_records(
         "Mr. Dion",
         "Sus Veronika",
         "Ms. Vita",
+        "Ms. Endah",
+        "Ms. Pinta",
     ]
     for ct in confirmed_devotion_teachers:
         teaching_teachers_set.add(ct)
