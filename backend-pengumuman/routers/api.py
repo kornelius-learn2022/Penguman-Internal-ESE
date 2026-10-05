@@ -1282,6 +1282,11 @@ def get_duty_sessions(
         attendance_by_session.setdefault(sess_key, []).append(att)
         t_key = (att.location.strip().lower(), att.time_slot.strip().lower(), att.teacher_name.strip().lower())
         attendance_map[t_key] = att
+        if att.substitute_name:
+            sub_key = (att.location.strip().lower(), att.time_slot.strip().lower(), att.substitute_name.strip().lower())
+            attendance_map[sub_key] = att
+            if t_key not in inval_map:
+                inval_map[t_key] = att.substitute_name.strip()
 
     # Group duties by (location, time_slot)
     grouped_sessions = {}
@@ -1487,11 +1492,25 @@ def get_duty_sessions(
         ).all()
         for md in day_morning_duties:
             s_s, s_e = parse_time_slot_range(md.time_slot)
+            is_overlap = False
             if s_s and s_e and dev_start_t and dev_end_t:
                 if max(s_s, dev_start_t) < min(s_e, dev_end_t):
-                    morning_duty_teachers.add(md.teacher_name.strip().lower())
+                    is_overlap = True
             elif md.time_slot.strip().lower() == devotion_slot:
-                morning_duty_teachers.add(md.teacher_name.strip().lower())
+                is_overlap = True
+
+            if is_overlap:
+                orig_t = md.teacher_name.strip()
+                inv_k = (md.location.strip().lower(), md.time_slot.strip().lower(), orig_t.lower())
+                eff_t = inval_map.get(inv_k)
+                if not eff_t:
+                    for (ik_loc, ik_slot, ik_orig), ik_sub in inval_map.items():
+                        if ik_loc == md.location.strip().lower() and ik_slot == md.time_slot.strip().lower():
+                            if ik_orig in orig_t.lower() or orig_t.lower() in ik_orig:
+                                eff_t = ik_sub
+                                break
+                effective_duty_teacher = eff_t if eff_t else orig_t
+                morning_duty_teachers.add(effective_duty_teacher.strip().lower())
 
         # Guru yang wajib mengikuti Morning Devotion (kecuali sedang bertugas duty pagi 07.15-07.45)
         raw_sched_teachers = [r[0].strip() for r in db.query(models.TeacherSchedule.teacher_name).distinct().all() if r[0]]
@@ -1538,8 +1557,26 @@ def get_duty_sessions(
 
         dev_scheduled_statuses = []
         for dt in devotion_teachers:
-            att_k = ("morning devotion", devotion_slot.lower(), dt.lower())
+            inv_k = ("morning devotion", devotion_slot.lower(), dt.lower())
+            is_inval = inv_k in inval_map
+            effective_teacher = inval_map[inv_k] if is_inval else dt
+            if not is_inval:
+                for (ik_loc, ik_slot, ik_orig), ik_sub in inval_map.items():
+                    if ik_loc == "morning devotion" and ik_slot == devotion_slot.lower():
+                        if ik_orig in dt.lower() or dt.lower() in ik_orig:
+                            is_inval = True
+                            effective_teacher = ik_sub
+                            break
+
+            att_k = ("morning devotion", devotion_slot.lower(), effective_teacher.lower())
             att_rec = attendance_map.get(att_k)
+            if not att_rec:
+                att_k_orig = ("morning devotion", devotion_slot.lower(), dt.lower())
+                att_rec = attendance_map.get(att_k_orig)
+                if att_rec and att_rec.substitute_name:
+                    is_inval = True
+                    effective_teacher = att_rec.substitute_name
+
             if att_rec:
                 is_att = True
                 chk_str = att_rec.check_in_time.strftime("%H:%M:%S")
@@ -1576,21 +1613,67 @@ def get_duty_sessions(
                     col = "grey"
                     ico = "⚪"
 
-            dev_scheduled_statuses.append(
-                schemas.DutyTeacherStatus(
-                    teacher_name=dt,
-                    status=stat,
-                    color=col,
-                    icon=ico,
-                    is_attended=is_att,
-                    check_in_time=chk_str,
-                    is_scheduled=True,
-                    task="Morning Devotion (07.15-07.45)",
-                    original_teacher=None,
-                    substitute_teacher=None,
-                    is_inval=False,
+            if is_inval:
+                if target_date < today_wib or (target_date == today_wib and dev_end_t and current_time_wib > dev_end_t):
+                    k_stat = "Sudah Duty"
+                    k_col = "blue"
+                    k_ico = "🔵"
+                elif target_date == today_wib and dev_start_t and dev_end_t and dev_start_t <= current_time_wib <= dev_end_t:
+                    k_stat = "Lagi Duty"
+                    k_col = "green"
+                    k_ico = "🟢"
+                else:
+                    k_stat = "Belum Duty"
+                    k_col = "grey"
+                    k_ico = "⚪"
+
+                dev_scheduled_statuses.append(
+                    schemas.DutyTeacherStatus(
+                        teacher_name=dt,
+                        status=k_stat,
+                        color=k_col,
+                        icon=k_ico,
+                        is_attended=True if att_rec else False,
+                        check_in_time=chk_str,
+                        is_scheduled=True,
+                        task=f"Digantikan oleh {effective_teacher}. Morning Devotion (07.15-07.45)",
+                        original_teacher=dt,
+                        substitute_teacher=effective_teacher,
+                        is_inval=True,
+                    )
                 )
-            )
+
+                dev_scheduled_statuses.append(
+                    schemas.DutyTeacherStatus(
+                        teacher_name=effective_teacher,
+                        status=k_stat if is_att else stat,
+                        color=k_col if is_att else col,
+                        icon=k_ico if is_att else ico,
+                        is_attended=is_att,
+                        check_in_time=chk_str,
+                        is_scheduled=False,
+                        task=f"Inval pengganti dari {dt}. Morning Devotion (07.15-07.45)",
+                        original_teacher=dt,
+                        substitute_teacher=effective_teacher,
+                        is_inval=True,
+                    )
+                )
+            else:
+                dev_scheduled_statuses.append(
+                    schemas.DutyTeacherStatus(
+                        teacher_name=dt,
+                        status=stat,
+                        color=col,
+                        icon=ico,
+                        is_attended=is_att,
+                        check_in_time=chk_str,
+                        is_scheduled=True,
+                        task="Morning Devotion (07.15-07.45)",
+                        original_teacher=None,
+                        substitute_teacher=None,
+                        is_inval=False,
+                    )
+                )
 
         dev_sess_key = "Morning Devotion_07.15-07.45"
         dev_attended_list = attendance_by_session.get(dev_sess_key, [])
@@ -1697,11 +1780,25 @@ def submit_duty_attendance(
 
     if is_devotion:
         is_scheduled = True
-        status_label = "Terjadwal Devotion"
         cat = "Morning Devotion"
+        if substitute_clean:
+            status_label = f"Inval ({substitute_clean})"
+            inval_note = f"Inval pengganti {teacher_clean}"
+            notes_to_save = f"{inval_note} - {notes_to_save}" if notes_to_save else inval_note
+        elif inval_record:
+            status_label = f"Inval ({inval_record.original_teacher})"
+            inval_note = f"Inval pengganti {inval_record.original_teacher}"
+            notes_to_save = f"{inval_note} - {notes_to_save}" if notes_to_save else inval_note
+        else:
+            status_label = "Terjadwal Devotion"
     elif scheduled_duty:
         is_scheduled = True
-        status_label = "Terjadwal Duty"
+        if substitute_clean:
+            status_label = f"Inval ({substitute_clean})"
+            inval_note = f"Inval pengganti {teacher_clean}"
+            notes_to_save = f"{inval_note} - {notes_to_save}" if notes_to_save else inval_note
+        else:
+            status_label = "Terjadwal Duty"
         cat = data.duty_category or (scheduled_duty.category if scheduled_duty else None)
     elif inval_record:
         is_scheduled = True
@@ -1923,6 +2020,11 @@ def build_comprehensive_records(
         for a in attendances:
             k = (a.location.strip().lower(), a.time_slot.strip().lower(), a.teacher_name.strip().lower())
             att_map[k] = a
+            if a.substitute_name:
+                sub_k = (a.location.strip().lower(), a.time_slot.strip().lower(), a.substitute_name.strip().lower())
+                att_map[sub_k] = a
+                if k not in inval_map:
+                    inval_map[k] = a.substitute_name.strip()
 
         matched_att_ids = set()
 
@@ -2126,75 +2228,156 @@ def build_comprehensive_records(
                     devotion_teachers.append(dt)
 
             for dt in devotion_teachers:
-                att_k = ("morning devotion", dev_slot.lower(), dt.lower())
+                inv_k = ("morning devotion", dev_slot.lower(), dt.lower())
+                is_inv = inv_k in inval_map
+                eff_t = inval_map[inv_k] if is_inv else dt
+                if not is_inv:
+                    for (ik_loc, ik_slot, ik_orig), ik_sub in inval_map.items():
+                        if ik_loc == "morning devotion" and ik_slot == dev_slot.lower():
+                            if ik_orig in dt.lower() or dt.lower() in ik_orig:
+                                is_inv = True
+                                eff_t = ik_sub
+                                break
+
+                att_k = ("morning devotion", dev_slot.lower(), eff_t.lower())
                 att_rec = att_map.get(att_k)
-                if att_rec:
-                    matched_att_ids.add(att_rec.id_attendance)
-                    st_dev = att_rec.status_label if att_rec.status_label in ["Tidak Duty", "Sudah Duty", "Lagi Duty"] else "Sudah Duty"
+                if not att_rec:
+                    att_k_orig = ("morning devotion", dev_slot.lower(), dt.lower())
+                    att_rec = att_map.get(att_k_orig)
+                    if att_rec and att_rec.substitute_name:
+                        is_inv = True
+                        eff_t = att_rec.substitute_name
+
+                if is_inv:
+                    if cur_date < today_wib or (cur_date == today_wib and current_time_wib > time(7, 45)):
+                        st = "Sudah Duty"
+                        st_lbl = f"Sudah Duty (Digantikan oleh {eff_t})"
+                    elif cur_date == today_wib and time(7, 15) <= current_time_wib <= time(7, 45):
+                        st = "Lagi Duty"
+                        st_lbl = f"Lagi Duty (Digantikan oleh {eff_t})"
+                    else:
+                        st = "Belum Duty"
+                        st_lbl = f"Jadwal Belum Mulai (Digantikan oleh {eff_t})"
+
                     records.append(schemas.ComprehensiveAttendanceRecord(
-                        id_attendance=att_rec.id_attendance,
+                        id_attendance=att_rec.id_attendance if att_rec else None,
                         date=cur_date,
                         location="Morning Devotion",
                         time_slot=dev_slot,
                         duty_category="Morning Devotion",
                         teacher_name=dt,
-                        check_in_time=att_rec.check_in_time,
+                        check_in_time=att_rec.check_in_time if att_rec else None,
                         is_scheduled_duty=True,
-                        status=st_dev,
-                        status_label=f"{st_dev} (Devotion)" if att_rec.status_label in ["Tidak Duty", "Sudah Duty", "Lagi Duty"] else "Sudah Diverifikasi (Devotion)",
-                        is_verified=True,
-                        verified_code=att_rec.verified_code,
-                        notes=att_rec.notes
+                        status=st,
+                        status_label=st_lbl,
+                        is_verified=True if att_rec else False,
+                        verified_code=att_rec.verified_code if att_rec else "INVAL",
+                        notes=f"Digantikan oleh {eff_t}",
+                        original_teacher=dt,
+                        substitute_teacher=eff_t,
+                        is_inval=True,
                     ))
-                else:
-                    if cur_date < today_wib or (cur_date == today_wib and current_time_wib > time(7, 45)):
+
+                    if att_rec:
+                        matched_att_ids.add(att_rec.id_attendance)
                         records.append(schemas.ComprehensiveAttendanceRecord(
-                            id_attendance=None,
+                            id_attendance=att_rec.id_attendance,
                             date=cur_date,
                             location="Morning Devotion",
                             time_slot=dev_slot,
                             duty_category="Morning Devotion",
-                            teacher_name=dt,
-                            check_in_time=None,
-                            is_scheduled_duty=True,
-                            status="Tidak Duty",
-                            status_label="Tidak Hadir Devotion",
-                            is_verified=False,
-                            verified_code="-",
-                            notes="Tidak ada absensi devotion"
+                            teacher_name=eff_t,
+                            check_in_time=att_rec.check_in_time,
+                            is_scheduled_duty=False,
+                            status=st,
+                            status_label=f"Inval Pengganti {dt} (Hadir Devotion)",
+                            is_verified=True,
+                            verified_code=att_rec.verified_code,
+                            notes=f"Inval menggantikan {dt}",
+                            original_teacher=dt,
+                            substitute_teacher=eff_t,
+                            is_inval=True,
                         ))
-                    elif cur_date == today_wib and time(7, 15) <= current_time_wib <= time(7, 45):
+                else:
+                    if att_rec:
+                        matched_att_ids.add(att_rec.id_attendance)
+                        st_dev = att_rec.status_label if att_rec.status_label in ["Tidak Duty", "Sudah Duty", "Lagi Duty"] else "Sudah Duty"
                         records.append(schemas.ComprehensiveAttendanceRecord(
-                            id_attendance=None,
+                            id_attendance=att_rec.id_attendance,
                             date=cur_date,
                             location="Morning Devotion",
                             time_slot=dev_slot,
                             duty_category="Morning Devotion",
                             teacher_name=dt,
-                            check_in_time=None,
+                            check_in_time=att_rec.check_in_time,
                             is_scheduled_duty=True,
-                            status="Sedang Jam Piket",
-                            status_label="Sedang Jam Piket (Devotion - Belum Absen)",
-                            is_verified=False,
-                            verified_code="-",
-                            notes="Belum absensi devotion"
+                            status=st_dev,
+                            status_label=f"{st_dev} (Devotion)" if att_rec.status_label in ["Tidak Duty", "Sudah Duty", "Lagi Duty"] else "Sudah Diverifikasi (Devotion)",
+                            is_verified=True,
+                            verified_code=att_rec.verified_code,
+                            notes=att_rec.notes,
+                            original_teacher=None,
+                            substitute_teacher=None,
+                            is_inval=False,
                         ))
                     else:
-                        records.append(schemas.ComprehensiveAttendanceRecord(
-                            id_attendance=None,
-                            date=cur_date,
-                            location="Morning Devotion",
-                            time_slot=dev_slot,
-                            duty_category="Morning Devotion",
-                            teacher_name=dt,
-                            check_in_time=None,
-                            is_scheduled_duty=True,
-                            status="Belum Duty",
-                            status_label="Jadwal Devotion Belum Mulai",
-                            is_verified=False,
-                            verified_code="-",
-                            notes=None
-                        ))
+                        if cur_date < today_wib or (cur_date == today_wib and current_time_wib > time(7, 45)):
+                            records.append(schemas.ComprehensiveAttendanceRecord(
+                                id_attendance=None,
+                                date=cur_date,
+                                location="Morning Devotion",
+                                time_slot=dev_slot,
+                                duty_category="Morning Devotion",
+                                teacher_name=dt,
+                                check_in_time=None,
+                                is_scheduled_duty=True,
+                                status="Tidak Duty",
+                                status_label="Tidak Hadir Devotion",
+                                is_verified=False,
+                                verified_code="-",
+                                notes="Tidak ada absensi devotion",
+                                original_teacher=None,
+                                substitute_teacher=None,
+                                is_inval=False,
+                            ))
+                        elif cur_date == today_wib and time(7, 15) <= current_time_wib <= time(7, 45):
+                            records.append(schemas.ComprehensiveAttendanceRecord(
+                                id_attendance=None,
+                                date=cur_date,
+                                location="Morning Devotion",
+                                time_slot=dev_slot,
+                                duty_category="Morning Devotion",
+                                teacher_name=dt,
+                                check_in_time=None,
+                                is_scheduled_duty=True,
+                                status="Sedang Jam Piket",
+                                status_label="Sedang Jam Piket (Devotion - Belum Absen)",
+                                is_verified=False,
+                                verified_code="-",
+                                notes="Belum absensi devotion",
+                                original_teacher=None,
+                                substitute_teacher=None,
+                                is_inval=False,
+                            ))
+                        else:
+                            records.append(schemas.ComprehensiveAttendanceRecord(
+                                id_attendance=None,
+                                date=cur_date,
+                                location="Morning Devotion",
+                                time_slot=dev_slot,
+                                duty_category="Morning Devotion",
+                                teacher_name=dt,
+                                check_in_time=None,
+                                is_scheduled_duty=True,
+                                status="Belum Duty",
+                                status_label="Jadwal Devotion Belum Mulai",
+                                is_verified=False,
+                                verified_code="-",
+                                notes=None,
+                                original_teacher=None,
+                                substitute_teacher=None,
+                                is_inval=False,
+                            ))
 
         # Unmatched attendances (substitutes / additional attendances)
         for a in attendances:

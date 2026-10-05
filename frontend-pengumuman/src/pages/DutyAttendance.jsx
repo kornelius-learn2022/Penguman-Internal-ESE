@@ -124,14 +124,17 @@ export default function DutyAttendance() {
 
       const data = await res.json();
       if (res.ok) {
-        showToast(`Great! Attendance for ${form.teacherName} has been successfully recorded in the system.`, "success");
-        const recordedTeacherName = form.teacherName;
-        setSubmittedSessions(prev => ({ ...prev, [session.session_key]: recordedTeacherName }));
+        const displayName = form.substituteName
+          ? `${form.substituteName} (covering for ${form.teacherName})`
+          : form.teacherName;
+        showToast(`Great! Attendance for ${displayName} has been successfully recorded in the system.`, "success");
+        setSubmittedSessions(prev => ({ ...prev, [session.session_key]: displayName }));
         try {
-          localStorage.setItem(`duty_attended_${session.session_key}_${todayStr}`, recordedTeacherName);
+          localStorage.setItem(`duty_attended_${session.session_key}_${todayStr}`, displayName);
         } catch (e) {}
 
         setSessionFormField(session.session_key, "teacherName", "");
+        setSessionFormField(session.session_key, "substituteName", "");
         setSessionFormField(session.session_key, "password", "");
         fetchData();
       } else {
@@ -422,7 +425,7 @@ export default function DutyAttendance() {
                                   <p className="leading-relaxed font-medium">
                                     {isDevotion ? (
                                       <>
-                                        <strong>How to check in:</strong> Select your name from the scheduled teacher list below, then enter the passcode to record your Morning Devotion attendance.
+                                        <strong>How to check in:</strong> Select your name from the scheduled list below (or choose a substitute if covering/swapping), then enter the passcode to record your Morning Devotion attendance.
                                       </>
                                     ) : (
                                       <>
@@ -447,7 +450,7 @@ export default function DutyAttendance() {
                                         className="w-full bg-white border border-slate-300 text-sm font-bold text-slate-800 px-3.5 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
                                       >
                                         <option value="">
-                                          {isDevotion ? "-- Select Teacher Name --" : "-- Select Scheduled Teacher (Today) --"}
+                                          {isDevotion ? "-- Select Scheduled Teacher (Devotion) --" : "-- Select Scheduled Teacher (Today) --"}
                                         </option>
                                         {availableScheduled.map((st, idx) => (
                                           <option key={idx} value={st.teacher_name}>
@@ -458,8 +461,7 @@ export default function DutyAttendance() {
                                         ))}
                                       </select>
 
-                                      {/* Opsi Pengganti / Substitute: Ditiadakan khusus untuk Morning Devotion */}
-                                      {!isDevotion && (
+
                                         <select
                                           value={currentForm.substituteName || ""}
                                           onChange={(e) => {
@@ -474,7 +476,6 @@ export default function DutyAttendance() {
                                             </option>
                                           ))}
                                         </select>
-                                      )}
                                     </div>
                                   </div>
 
@@ -522,7 +523,11 @@ export default function DutyAttendance() {
                                       {currentForm.isSubmitting
                                         ? "Processing Attendance..."
                                         : `Confirm Attendance ${
-                                            currentForm.teacherName ? `(${currentForm.teacherName})` : ""
+                                            currentForm.substituteName
+                                              ? `(${currentForm.substituteName} covering for ${currentForm.teacherName})`
+                                              : currentForm.teacherName
+                                              ? `(${currentForm.teacherName})`
+                                              : ""
                                           }`}
                                     </span>
                                   </button>
