@@ -21,8 +21,8 @@ load_dotenv()
 router = APIRouter(prefix="/api")
 
 # Inisialisasi API Keys
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or "").strip()
+GROQ_API_KEY = (os.getenv("GROQ_API_KEY") or "").strip()
 
 # ============================================================
 # IN-MEMORY CACHE UNTUK CSV JADWAL KELAS
@@ -88,7 +88,7 @@ _chat_response_cache = {}
 def _get_chat_cache_key(msg: str) -> str:
     cleaned = re.sub(r"[^\w\s]", "", msg.lower()).strip()
     cleaned = re.sub(r"\s+", " ", cleaned)
-    now_wib = datetime.datetime.utcnow() + datetime.timedelta(hours=7)
+    now_wib = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=7)
     today_str = now_wib.strftime("%Y-%m-%d")
     return f"{today_str}:{cleaned}"
 
@@ -245,7 +245,7 @@ def build_school_context(user_message: str, db: Session) -> str:
     context_lines = []
     
     # 1. Waktu Real-Time WIB (UTC+7)
-    now_wib = datetime.datetime.utcnow() + datetime.timedelta(hours=7)
+    now_wib = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=7)
     today = now_wib.date()
     current_day = DAYS_NAME[now_wib.weekday()]
     now_time = now_wib.time()
@@ -995,14 +995,15 @@ def clean_duty_bullets(text: str) -> str:
 
 
 def call_gemini(
-    user_message: str, context: str, model_name: str = "gemini-2.5-flash"
+    user_message: str, context: str, model_name: str = "gemini-3.8-flash"
 ) -> str:
-    if not GEMINI_API_KEY:
+    key = (os.getenv("GEMINI_API_KEY") or GEMINI_API_KEY or "").strip()
+    if not key:
         raise Exception("GEMINI_API_KEY not configured")
     import urllib.request
     import json
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={key}"
     lang_directive = get_language_directive(user_message)
     full_prompt = f"{SYSTEM_PROMPT}\n\nKONTEKS DATA DARI SEKOLAH:\n{context}\n\nPERTANYAAN PENGGUNA:\n{user_message}{lang_directive}"
 
@@ -1013,7 +1014,7 @@ def call_gemini(
     req = urllib.request.Request(
         url, data=payload, headers={"Content-Type": "application/json"}
     )
-    with urllib.request.urlopen(req, timeout=4) as resp:
+    with urllib.request.urlopen(req, timeout=10) as resp:
         res = json.loads(resp.read().decode("utf-8"))
         candidates = res.get("candidates", [])
         if candidates:
@@ -1164,10 +1165,11 @@ async def chat_with_ai(data: schemas.ChatRequest, db: Session = Depends(get_db))
 
     # 3. AI Waterfall Providers List (Model tercepat dan teruji di awal)
     providers = [
+        ("Gemini 3.8 Flash", lambda: call_gemini(data.message, context, "gemini-3.8-flash")),
+        ("Gemini 3.5 Flash", lambda: call_gemini(data.message, context, "gemini-3.5-flash")),
         ("Gemini 3.5 Flash Lite", lambda: call_gemini(data.message, context, "gemini-3.5-flash-lite")),
-        ("Gemini Flash Lite Latest", lambda: call_gemini(data.message, context, "gemini-flash-lite-latest")),
-        ("Gemini 2.5 Flash Lite", lambda: call_gemini(data.message, context, "gemini-2.5-flash-lite")),
         ("Gemini 2.5 Flash", lambda: call_gemini(data.message, context, "gemini-2.5-flash")),
+        ("Gemini 2.5 Flash Lite", lambda: call_gemini(data.message, context, "gemini-2.5-flash-lite")),
         ("Groq AI", lambda: call_groq(data.message, context)),
     ]
 

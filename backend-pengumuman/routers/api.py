@@ -18,6 +18,12 @@ from helpers import save_image_locally
 router = APIRouter(prefix="/api")
 
 
+def get_now_wib():
+    utc_now = datetime.datetime.now(datetime.timezone.utc)
+    wib_now = utc_now + datetime.timedelta(hours=7)
+    return wib_now
+
+
 @router.post("/feedback")
 async def submit_feedback(data: schemas.FeedbackCreate, db: Session = Depends(get_db)):
     try:
@@ -808,7 +814,8 @@ async def track_visit(request: Request, db: Session = Depends(get_db)):
 
         user_agent = request.headers.get("User-Agent", "")[:250]
         ip_hash = hashlib.sha256(client_ip.encode("utf-8")).hexdigest()
-        today = datetime.date.today()
+        wib_now = get_now_wib()
+        today = wib_now.date()
 
         exists = (
             db.query(models.VisitorLog)
@@ -824,7 +831,7 @@ async def track_visit(request: Request, db: Session = Depends(get_db)):
                 ip_hash=ip_hash,
                 user_agent=user_agent,
                 visit_date=today,
-                visited_at=datetime.datetime.utcnow(),
+                visited_at=wib_now,
             )
             db.add(log)
             db.commit()
@@ -843,7 +850,7 @@ def get_visitor_stats(
     """
     Mengambil ringkasan statistik kunjungan website khusus untuk Admin dashboard.
     """
-    today = datetime.date.today()
+    today = get_now_wib().date()
     total_visits = db.query(models.VisitorLog).count()
     today_visits = (
         db.query(models.VisitorLog)
@@ -1279,6 +1286,8 @@ def get_duty_sessions(
     # Group duties by (location, time_slot)
     grouped_sessions = {}
     for duty in duties:
+        if (duty.location or "").strip().lower() == "morning devotion":
+            continue
         sess_key = f"{duty.location}_{duty.time_slot}"
         if sess_key not in grouped_sessions:
             grouped_sessions[sess_key] = {
@@ -1919,6 +1928,8 @@ def build_comprehensive_records(
 
         if not location or location.strip().lower() != "morning devotion":
             for d in duties:
+                if (d.location or "").strip().lower() == "morning devotion":
+                    continue
                 orig_t = d.teacher_name.strip()
                 inv_k = (d.location.strip().lower(), d.time_slot.strip().lower(), orig_t.lower())
                 is_inv = inv_k in inval_map
@@ -2245,6 +2256,7 @@ def get_comprehensive_duty_records(
     teacher_name: Optional[str] = None,
     is_scheduled_duty: Optional[bool] = None,
     db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
 ):
     """
     Mengambil SELURUH rekaman piket guru:
@@ -2320,6 +2332,7 @@ def export_duty_attendance_excel(
     teacher_name: Optional[str] = None,
     status_duty: Optional[str] = None,
     db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
 ):
     """
     Export laporan absensi guru ke Excel (.xlsx) dengan Sheet Detail dan Sheet Kalkulasi Summary,
@@ -2497,6 +2510,7 @@ def delete_duty_attendance_record(
 @router.post("/duty-attendance/seed-dummy")
 def seed_dummy_duty_attendance(
     db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
 ):
     """
     Membuat 1 set data dummy absensi untuk hari ini agar dapat memverifikasi
@@ -2584,14 +2598,21 @@ def get_all_teachers_public(db: Session = Depends(get_db)):
     return db.query(models.Teacher).order_by(models.Teacher.db_name.asc()).all()
 
 @router.get("/admin/teachers", response_model=List[schemas.TeacherResponse])
-def get_all_teachers_admin(db: Session = Depends(get_db)):
+def get_all_teachers_admin(
+    db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
+):
     """
     Mengambil daftar semua guru beserta PIN mereka (Untuk admin).
     """
     return db.query(models.Teacher).order_by(models.Teacher.db_name.asc()).all()
 
 @router.post("/admin/teachers", response_model=schemas.TeacherResponse)
-def create_teacher(teacher_data: schemas.TeacherCreate, db: Session = Depends(get_db)):
+def create_teacher(
+    teacher_data: schemas.TeacherCreate,
+    db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
+):
     """
     Admin dapat menambahkan guru baru beserta PIN.
     """
@@ -2610,7 +2631,12 @@ def create_teacher(teacher_data: schemas.TeacherCreate, db: Session = Depends(ge
     return new_t
 
 @router.put("/admin/teachers/{id_teacher}/pin")
-def update_teacher_pin(id_teacher: int, update_data: schemas.TeacherUpdate, db: Session = Depends(get_db)):
+def update_teacher_pin(
+    id_teacher: int,
+    update_data: schemas.TeacherUpdate,
+    db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
+):
     """
     Admin dapat mengupdate PIN guru.
     """
@@ -2623,7 +2649,12 @@ def update_teacher_pin(id_teacher: int, update_data: schemas.TeacherUpdate, db: 
     return {"message": "PIN updated successfully", "teacher": teacher.db_name}
 
 @router.put("/admin/teachers/{id_teacher}", response_model=schemas.TeacherResponse)
-def update_teacher_full(id_teacher: int, update_data: schemas.TeacherUpdateFull, db: Session = Depends(get_db)):
+def update_teacher_full(
+    id_teacher: int,
+    update_data: schemas.TeacherUpdateFull,
+    db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
+):
     """
     Admin dapat mengupdate data lengkap guru.
     """
@@ -2643,7 +2674,11 @@ def update_teacher_full(id_teacher: int, update_data: schemas.TeacherUpdateFull,
     return teacher
 
 @router.delete("/admin/teachers/{id_teacher}")
-def delete_teacher(id_teacher: int, db: Session = Depends(get_db)):
+def delete_teacher(
+    id_teacher: int,
+    db: Session = Depends(get_db),
+    user_aktif: dict = Depends(get_current_user),
+):
     """
     Admin dapat menghapus guru dari sistem PIN/database.
     """

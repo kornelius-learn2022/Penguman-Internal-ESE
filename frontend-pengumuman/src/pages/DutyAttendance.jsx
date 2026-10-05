@@ -71,17 +71,6 @@ export default function DutyAttendance() {
       if (resSess.ok) {
         const data = await resSess.json();
         setSessions(data);
-        // Pre-fetch unique free teacher slots only (except Morning Devotion)
-        const uniqueSlots = Array.from(
-          new Set(
-            data
-              .filter((s) => s.time_slot && !s.location?.toLowerCase().includes("devotion"))
-              .map((s) => s.time_slot)
-          )
-        );
-        for (const slot of uniqueSlots) {
-          fetchFreeTeachers(slot);
-        }
       }
       if (resTeach.ok) {
         const data = await resTeach.json();
@@ -470,22 +459,22 @@ export default function DutyAttendance() {
                                       </select>
 
                                       {/* Opsi Pengganti / Substitute: Ditiadakan khusus untuk Morning Devotion */}
-                                      {/* Opsi Pengganti / Substitute */}
-                                      <select
-                                        onFocus={() => fetchFreeTeachers(session.time_slot)}
-                                        value={currentForm.substituteName || ""}
-                                        onChange={(e) => {
-                                          setSessionFormField(session.session_key, "substituteName", e.target.value);
-                                        }}
-                                        className="w-full bg-white border border-slate-300 text-sm font-medium text-slate-700 px-3.5 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
-                                      >
-                                        <option value="">Or Select Substitute (Covering for someone)...</option>
-                                        {allTeachers.map((t, idx) => (
-                                          <option key={`sub-${idx}`} value={t}>
-                                            {t}
-                                          </option>
-                                        ))}
-                                      </select>
+                                      {!isDevotion && (
+                                        <select
+                                          value={currentForm.substituteName || ""}
+                                          onChange={(e) => {
+                                            setSessionFormField(session.session_key, "substituteName", e.target.value);
+                                          }}
+                                          className="w-full bg-white border border-slate-300 text-sm font-medium text-slate-700 px-3.5 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
+                                        >
+                                          <option value="">Or Select Substitute (Covering for someone)...</option>
+                                          {allTeachers.map((t, idx) => (
+                                            <option key={`sub-${idx}`} value={t}>
+                                              {t}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      )}
                                     </div>
                                   </div>
 
