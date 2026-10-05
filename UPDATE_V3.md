@@ -137,3 +137,17 @@ Berikut rincian seluruh bug dan perbaikan yang telah diterapkan:
    ```bash
    systemctl restart fastapi_pengumuman_ese.service
    ```
+
+---
+
+## 🔄 4. Pembaruan Fitur: Substitusi / Swap Guru Morning Devotion & Duty
+
+Sesuai kebutuhan operasional:
+1. **Dukungan Pengganti (Substitute) di Form Morning Devotion:**
+   - Dropdown pemilihan guru pengganti dibuka untuk sesi Morning Devotion di `DutyAttendance.jsx`.
+   - Validasi PIN memeriksa kode PIN milik guru pengganti yang sedang melakukan absensi.
+2. **Sinkronisasi Swap Duty Pagi & Morning Devotion:**
+   - Pada `get_duty_sessions` dan `build_comprehensive_records`, perhitungan guru yang bertugas duty pagi (07.15–07.45) kini memperhitungkan tabel inval (`inval_map`) dan absensi pengganti.
+   - Jika guru devotion bertukar tugas menggantikan guru duty pagi: guru pengganti otomatis ditandai sibuk bertugas duty, sementara guru duty yang digantikan menjadi tersedia untuk Morning Devotion.
+   - Status log absensi dan rekap otomatis menampilkan badge `Inval (<nama guru>)` dan keterangan riwayat swap/inval.
+
