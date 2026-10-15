@@ -343,6 +343,29 @@ export default function DutyAttendance() {
           </div>
         ) : (
           <div className="space-y-6">
+            {activeSessions.length > 1 && (
+              <div className="bg-white rounded-2xl p-4 border border-blue-200 shadow-sm space-y-2.5">
+                <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <span className="text-base">🔔</span>
+                  <span>
+                    Terdapat <strong>{activeSessions.length} sesi duty</strong> yang aktif bersamaan di lokasi ini. Silakan pilih sesi Anda:
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {activeSessions.map((s, idx) => (
+                    <a
+                      key={idx}
+                      href={`#session-${s.session_key}`}
+                      className="px-3.5 py-2 bg-blue-50 hover:bg-[#1e3a8a] text-[#1e3a8a] hover:text-white rounded-xl text-xs font-extrabold border border-blue-200 transition-all flex items-center gap-1.5 shadow-2xs active:scale-95"
+                    >
+                      <span>👉</span>
+                      <span>{s.duty_category} ({s.time_slot})</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {activeSessions.map((session, sIdx) => {
               const currentForm = forms[session.session_key] || {
                 teacherName: "",
@@ -353,7 +376,8 @@ export default function DutyAttendance() {
               return (
                 <div
                   key={sIdx}
-                  className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden"
+                  id={`session-${session.session_key}`}
+                  className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden scroll-mt-20"
                 >
                   {/* Card Header (Dark Blue) */}
                   <div className="bg-[#1b2744] p-6 text-white relative overflow-hidden">
