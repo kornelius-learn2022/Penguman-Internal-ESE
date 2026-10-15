@@ -9,6 +9,7 @@ export default function DutyAttendance() {
   const [sessions, setSessions] = useState([]);
   const [allTeachers, setAllTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
   // Forms state keyed by session_key
   const [forms, setForms] = useState({});
@@ -62,6 +63,7 @@ export default function DutyAttendance() {
 
   const fetchData = async () => {
     setLoading(true);
+    setFetchError(false);
     try {
       const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
       const [resSess, resTeach] = await Promise.all([
@@ -71,6 +73,8 @@ export default function DutyAttendance() {
       if (resSess.ok) {
         const data = await resSess.json();
         setSessions(data);
+      } else {
+        setFetchError(true);
       }
       if (resTeach.ok) {
         const data = await resTeach.json();
@@ -79,6 +83,7 @@ export default function DutyAttendance() {
       }
     } catch (err) {
       console.error(err);
+      setFetchError(true);
     }
     setLoading(false);
   };
@@ -159,15 +164,21 @@ export default function DutyAttendance() {
   };
 
   const isOutsideDuty = (timeSlot, now) => {
-    const parts = timeSlot.replace(" ", "").replace("–", "-").split("-");
-    if (parts.length === 2) {
-      const startT = parseTime(parts[0]);
-      const endT = parseTime(parts[1]);
-      if (startT && endT) {
-        const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startT.h, startT.m, 0);
-        const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endT.h, endT.m, 0);
-        return now < startTime || now > endTime;
+    try {
+      const clean = (timeSlot || "").replace(/\s+/g, "").replace("–", "-");
+      const parts = clean.split("-");
+      if (parts.length === 2) {
+        const startT = parseTime(parts[0]);
+        const endT = parseTime(parts[1]);
+        if (startT && endT && !isNaN(startT.h) && !isNaN(startT.m) && !isNaN(endT.h) && !isNaN(endT.m)) {
+          // Allow buffer: 30 minutes before duty starts, 30 minutes after duty ends
+          const startWithBuffer = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startT.h, startT.m - 30, 0);
+          const endWithBuffer = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endT.h, endT.m + 30, 0);
+          return now < startWithBuffer || now > endWithBuffer;
+        }
       }
+    } catch (e) {
+      console.error("Error in isOutsideDuty:", e);
     }
     return false;
   };
@@ -233,13 +244,16 @@ export default function DutyAttendance() {
     );
   }
 
-  // Filter sessions by the URL param
-  const decodedLocation = decodeURIComponent(locationParam);
-  const locationSessions = sessions.filter(
-    (s) => s.location.toLowerCase() === decodedLocation.toLowerCase()
-  );
+  // Filter sessions by URL param (supports both exact location and duty category like "Morning Duty")
+  const decodedLocation = decodeURIComponent(locationParam || "");
+  const locationSessions = sessions.filter((s) => {
+    const loc = (s.location || "").toLowerCase().trim();
+    const cat = (s.duty_category || "").toLowerCase().trim();
+    const target = decodedLocation.toLowerCase().trim();
+    return loc === target || cat === target || loc.includes(target) || target.includes(loc);
+  });
 
-  // Strictly filter only sessions that are active RIGHT NOW
+  // Filter only sessions that are currently active (within time window + 30min buffer)
   const activeSessions = locationSessions.filter((s) => !isOutsideDuty(s.time_slot, currentDate));
 
   return (
@@ -285,13 +299,47 @@ export default function DutyAttendance() {
           <div className="flex justify-center py-20">
             <div className="animate-spin rounded-full h-10 w-10 border-4 border-[#1e3a8a] border-t-transparent"></div>
           </div>
-        ) : activeSessions.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-3xl border border-slate-200 shadow-sm">
-            <div className="text-4xl mb-3">🔒</div>
-            <h3 className="text-lg font-bold text-slate-700">No Active Duty Schedule at This Time</h3>
-            <p className="text-slate-500 text-sm mt-1 max-w-md mx-auto">
-              Duty attendance forms are only accessible during active duty hours.
+        ) : fetchError ? (
+          <div className="text-center py-16 bg-white rounded-3xl border border-red-200 shadow-sm p-6 space-y-3">
+            <div className="text-4xl">⚠️</div>
+            <h3 className="text-lg font-bold text-slate-800">Gagal Memuat Jadwal Duty</h3>
+            <p className="text-slate-500 text-sm max-w-md mx-auto">
+              Koneksi ke server sempat terputus atau server sedang sibuk. Silakan coba muat ulang.
             </p>
+            <button
+              type="button"
+              onClick={fetchData}
+              className="bg-[#1e3a8a] text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-800 shadow-md transition-all active:scale-95"
+            >
+              🔄 Coba Muat Ulang
+            </button>
+          </div>
+        ) : activeSessions.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
+            <div className="text-4xl">🕒</div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-800">Belum Ada Sesi Duty yang Aktif Saat Ini</h3>
+              <p className="text-slate-500 text-sm mt-1 max-w-md mx-auto">
+                Form presensi dibuka 30 menit sebelum jadwal duty dimulai hingga 30 menit setelahnya.
+              </p>
+            </div>
+            {locationSessions.length > 0 && (
+              <div className="max-w-md mx-auto bg-slate-50 rounded-2xl p-4 border border-slate-200 text-left">
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  Jadwal Duty di Lokasi Ini Hari Ini:
+                </div>
+                <div className="space-y-2">
+                  {locationSessions.map((ls, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-xs bg-white p-2.5 rounded-xl border border-slate-200">
+                      <span className="font-bold text-slate-700">{ls.time_slot} ({ls.duty_category})</span>
+                      <span className="text-slate-500 font-medium">
+                        {(ls.scheduled_teachers || []).map(t => t.teacher_name).join(", ") || "-"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-6">
