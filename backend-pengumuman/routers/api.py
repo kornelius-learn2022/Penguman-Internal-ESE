@@ -1282,7 +1282,7 @@ def get_duty_sessions(
         attendance_by_session.setdefault(sess_key, []).append(att)
         t_key = (att.location.strip().lower(), att.time_slot.strip().lower(), att.teacher_name.strip().lower())
         attendance_map[t_key] = att
-        if att.substitute_name:
+        if att.substitute_name and att.substitute_name.strip().lower() != att.teacher_name.strip().lower():
             sub_key = (att.location.strip().lower(), att.time_slot.strip().lower(), att.substitute_name.strip().lower())
             attendance_map[sub_key] = att
             if t_key not in inval_map:
@@ -1573,7 +1573,7 @@ def get_duty_sessions(
             if not att_rec:
                 att_k_orig = ("morning devotion", devotion_slot.lower(), dt.lower())
                 att_rec = attendance_map.get(att_k_orig)
-                if att_rec and att_rec.substitute_name:
+                if att_rec and att_rec.substitute_name and att_rec.substitute_name.strip().lower() != dt.strip().lower():
                     is_inval = True
                     effective_teacher = att_rec.substitute_name
 
@@ -1708,6 +1708,10 @@ def submit_duty_attendance(
     """
     teacher_clean = data.teacher_name.strip()
     substitute_clean = data.substitute_name.strip() if data.substitute_name else None
+
+    # Normalization: If teacher selects themselves as substitute, treat as normal attendance
+    if substitute_clean and substitute_clean.strip().lower() == teacher_clean.strip().lower():
+        substitute_clean = None
 
     # Check who is checking in (if substitute is provided, check substitute's PIN)
     checking_in_name = substitute_clean if substitute_clean else teacher_clean
@@ -2020,7 +2024,7 @@ def build_comprehensive_records(
         for a in attendances:
             k = (a.location.strip().lower(), a.time_slot.strip().lower(), a.teacher_name.strip().lower())
             att_map[k] = a
-            if a.substitute_name:
+            if a.substitute_name and a.substitute_name.strip().lower() != a.teacher_name.strip().lower():
                 sub_k = (a.location.strip().lower(), a.time_slot.strip().lower(), a.substitute_name.strip().lower())
                 att_map[sub_k] = a
                 if k not in inval_map:
@@ -2244,7 +2248,7 @@ def build_comprehensive_records(
                 if not att_rec:
                     att_k_orig = ("morning devotion", dev_slot.lower(), dt.lower())
                     att_rec = att_map.get(att_k_orig)
-                    if att_rec and att_rec.substitute_name:
+                    if att_rec and att_rec.substitute_name and att_rec.substitute_name.strip().lower() != dt.strip().lower():
                         is_inv = True
                         eff_t = att_rec.substitute_name
 

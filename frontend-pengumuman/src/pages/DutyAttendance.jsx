@@ -105,6 +105,9 @@ export default function DutyAttendance() {
       return;
     }
     
+    const subClean = form.substituteName && form.substituteName.trim().toLowerCase() !== form.teacherName.trim().toLowerCase()
+      ? form.substituteName.trim()
+      : null;
 
     setSessionFormField(session.session_key, "isSubmitting", true);
     try {
@@ -118,14 +121,14 @@ export default function DutyAttendance() {
           location: session.location,
           time_slot: session.time_slot,
           password: form.password.trim(),
-          substitute_name: form.substituteName || null,
+          substitute_name: subClean,
         }),
       });
 
       const data = await res.json();
       if (res.ok) {
-        const displayName = form.substituteName
-          ? `${form.substituteName} (covering for ${form.teacherName})`
+        const displayName = subClean
+          ? `${subClean} (covering for ${form.teacherName})`
           : form.teacherName;
         showToast(`Great! Attendance for ${displayName} has been successfully recorded in the system.`, "success");
         setSubmittedSessions(prev => ({ ...prev, [session.session_key]: displayName }));
@@ -351,44 +354,82 @@ export default function DutyAttendance() {
 
                       return (
                         <>
-                          {/* Success Banner */}
+                          {/* Success Banner & Attended Section */}
                           {isDevotion ? (
-                            mySubmittedTeacher ? (
-                              <div className="p-4 bg-emerald-50/90 border border-emerald-200 rounded-2xl shadow-sm flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-3">
-                                  <img
-                                    src="/252-SMA_CITA_HATI_EAST_SURABAYA.png"
-                                    alt="Cita Hati Logo"
-                                    className="h-10 w-auto object-contain flex-shrink-0"
-                                  />
-                                  <div className="text-sm font-bold text-emerald-950">
-                                    <span className="font-extrabold text-[#1e3a8a] text-base">{mySubmittedTeacher}</span> has been recorded in the system
+                            <div className="space-y-3">
+                              {mySubmittedTeacher && (
+                                <div className="p-4 bg-emerald-50/90 border border-emerald-200 rounded-2xl shadow-sm flex items-center justify-between gap-3">
+                                  <div className="flex items-center gap-3">
+                                    <img
+                                      src="/252-SMA_CITA_HATI_EAST_SURABAYA.png"
+                                      alt="Cita Hati Logo"
+                                      className="h-10 w-auto object-contain flex-shrink-0"
+                                    />
+                                    <div className="text-sm font-bold text-emerald-950">
+                                      <span className="font-extrabold text-[#1e3a8a] text-base">{mySubmittedTeacher}</span> has been recorded in the system
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSubmittedSessions((prev) => {
+                                        const next = { ...prev };
+                                        delete next[session.session_key];
+                                        return next;
+                                      });
+                                      try {
+                                        localStorage.removeItem(`duty_attended_${session.session_key}_${todayDateStr}`);
+                                      } catch (e) {}
+                                    }}
+                                    className="text-xs font-semibold text-slate-500 hover:text-slate-700 underline flex-shrink-0"
+                                  >
+                                    Check in another
+                                  </button>
+                                </div>
+                              )}
+
+                              {session.attended_list && session.attended_list.length > 0 && (
+                                <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl shadow-sm space-y-2.5">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-xs font-bold text-emerald-950">
+                                      <span>✅</span>
+                                      <span>
+                                        Sudah Hadir Devotion ({session.attended_list.length} / {session.total_scheduled || (session.scheduled_teachers || []).length}):
+                                      </span>
+                                    </div>
+                                    <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100/90 px-2.5 py-0.5 rounded-full">
+                                      {session.attended_list.length} Guru Hadir
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
+                                    {session.attended_list.map((att) => (
+                                      <span
+                                        key={att.id_attendance}
+                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-emerald-200 rounded-lg text-xs font-medium text-slate-800 shadow-2xs"
+                                        title={`Presensi pukul ${att.check_in_time ? (typeof att.check_in_time === 'string' ? att.check_in_time.slice(11, 16) || att.check_in_time : '') : ''}`}
+                                      >
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                                        <span className="font-bold text-slate-900">{att.teacher_name}</span>
+                                        {att.substitute_name && att.substitute_name.trim().toLowerCase() !== att.teacher_name.trim().toLowerCase() && (
+                                          <span className="text-[10px] text-blue-600 font-semibold">(Inval: {att.substitute_name})</span>
+                                        )}
+                                        {att.check_in_time && (
+                                          <span className="text-[10px] text-slate-400">
+                                            {typeof att.check_in_time === 'string' ? (att.check_in_time.slice(11, 16) || att.check_in_time.slice(0, 5)) : ''}
+                                          </span>
+                                        )}
+                                      </span>
+                                    ))}
                                   </div>
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setSubmittedSessions((prev) => {
-                                      const next = { ...prev };
-                                      delete next[session.session_key];
-                                      return next;
-                                    });
-                                    try {
-                                      localStorage.removeItem(`duty_attended_${session.session_key}_${todayDateStr}`);
-                                    } catch (e) {}
-                                  }}
-                                  className="text-xs font-semibold text-slate-500 hover:text-slate-700 underline flex-shrink-0"
-                                >
-                                  Check in another
-                                </button>
-                              </div>
-                            ) : (
-                              availableScheduled.length === 0 && (session.scheduled_teachers || []).length > 0 && (
+                              )}
+
+                              {availableScheduled.length === 0 && (session.scheduled_teachers || []).length > 0 && !mySubmittedTeacher && (
                                 <div className="p-4 bg-blue-50/90 border border-blue-200 rounded-2xl text-center text-sm font-bold text-[#1e3a8a]">
                                   All scheduled teachers for Morning Devotion have completed attendance.
                                 </div>
-                              )
-                            )
+                              )}
+                            </div>
                           ) : (
                             session.attended_list && session.attended_list.length > 0 && (
                               <div className="space-y-3">
@@ -441,12 +482,16 @@ export default function DutyAttendance() {
                                     <label className="block text-xs font-bold text-slate-600 mb-1.5">
                                       Select Teacher Name *
                                     </label>
-                                    <div className="grid grid-cols-1 gap-2.5">
+                                    <div className="space-y-2.5">
                                       <select
                                         value={currentForm.teacherName}
-                                        onChange={(e) =>
-                                          setSessionFormField(session.session_key, "teacherName", e.target.value)
-                                        }
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          setSessionFormField(session.session_key, "teacherName", val);
+                                          if (currentForm.substituteName && currentForm.substituteName.trim().toLowerCase() === val.trim().toLowerCase()) {
+                                            setSessionFormField(session.session_key, "substituteName", "");
+                                          }
+                                        }}
                                         className="w-full bg-white border border-slate-300 text-sm font-bold text-slate-800 px-3.5 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
                                       >
                                         <option value="">
@@ -461,21 +506,35 @@ export default function DutyAttendance() {
                                         ))}
                                       </select>
 
-
+                                      <div>
+                                        <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                                          🔄 Guru Pengganti / Inval (Opsional — Hanya jika guru di atas digantikan)
+                                        </label>
                                         <select
                                           value={currentForm.substituteName || ""}
                                           onChange={(e) => {
                                             setSessionFormField(session.session_key, "substituteName", e.target.value);
                                           }}
-                                          className="w-full bg-white border border-slate-300 text-sm font-medium text-slate-700 px-3.5 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
+                                          className="w-full bg-white border border-slate-300 text-sm font-medium text-slate-700 px-3.5 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
                                         >
-                                          <option value="">Or Select Substitute (Covering for someone)...</option>
-                                          {allTeachers.map((t, idx) => (
-                                            <option key={`sub-${idx}`} value={t}>
-                                              {t}
-                                            </option>
-                                          ))}
+                                          <option value="">-- Tidak ada pengganti (Hadir sendiri) --</option>
+                                          {allTeachers
+                                            .filter((t) => t.trim().toLowerCase() !== (currentForm.teacherName || "").trim().toLowerCase())
+                                            .map((t, idx) => (
+                                              <option key={`sub-${idx}`} value={t}>
+                                                Digantikan oleh: {t}
+                                              </option>
+                                            ))}
                                         </select>
+                                        {currentForm.substituteName && currentForm.substituteName.trim().toLowerCase() !== (currentForm.teacherName || "").trim().toLowerCase() && (
+                                          <div className="mt-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-xs font-medium text-amber-800 flex items-center gap-1.5">
+                                            <span>🔄</span>
+                                            <span>
+                                              <strong>{currentForm.substituteName}</strong> akan presensi menggantikan <strong>{currentForm.teacherName || "guru terpilih"}</strong>. Masukkan PIN milik {currentForm.substituteName}.
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
 
