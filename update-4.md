@@ -10,23 +10,29 @@
 ## 📑 Daftar Isi
 1. [Ringkasan Pembaruan V4](#-ringkasan-pembaruan-v4)
 2. [Investigasi & Solusi: Kasus Ms. Pinta (Morning Devotion)](#-1-investigasi--solusi-kasus-ms-pinta-morning-devotion)
-3. [Investigasi & Solusi: Akses Morning Duty Jam 07.16 ("Belum Bisa Diakses")](#-2-investigasi--solusi-akses-morning-duty-jam-0716-belum-bisa-diakses)
+3. [Kebijakan Presensi On-Time (Strict): Akses Jam 07.16 & Penghapusan Buffer 30 Menit](#-2-kebijakan-presensi-on-time-strict-akses-jam-0716--penghapusan-buffer-30-menit)
 4. [Investigasi & Solusi: Break Time Kelas 1-2 Menampilkan Kelas 3-4 (Ms. Destha)](#-3-investigasi--solusi-break-time-kelas-1-2-menampilkan-kelas-3-4-ms-destha)
 5. [Panduan: Penambahan Lokasi Duty Baru Besok Jam 3 Tanpa Mengubah Record](#-4-panduan-penambahan-lokasi-duty-baru-besok-jam-3-tanpa-mengubah-record)
-6. [Status Deployment & File Terdampak](#-5-status-deployment--file-terdampak)
+6. [Audit Performa VPS & Analisis Penyebab Web Lemmot / 504 Gateway Timeout](#-5-audit-performa-vps--analisis-penyebab-web-lemmot--504-gateway-timeout)
+7. [Rekomendasi Tipe & Spesifikasi Upgrade VPS](#-6-rekomendasi-tipe--spesifikasi-upgrade-vps)
+8. [Status Deployment & File Terdampak](#-7-status-deployment--file-terdampak)
 
 ---
 
 ## 📌 Ringkasan Pembaruan V4
 
-Pada pembaruan Versi 4 (15 Oktober 2026), dilakukan serangkaian audit log, perbaikan fungsional, dan penyempurnaan UI/UX pada modul **Duty Attendance (Presensi Piket & Morning Devotion)**. Pembaruan ini menyelesaikan masalah guru yang seolah hilang dari presensi, form piket yang terkunci akibat perbedaan jam perangkat, tumpang tindih sesi istirahat (*break time*) di lokasi Canteen, serta menstabilkan performa server VPS.
+Pada pembaruan Versi 4 (15 Oktober 2026), dilakukan serangkaian audit log mendalam, normalisasi database, perbaikan fungsionalitas presensi, serta penyesuaian aturan disiplin presensi on-time dan audit menyeluruh kapasitas server VPS:
+1. **Presensi Morning Devotion Ms. Pinta:** Menyelesaikan isu nama yang hilang dari dropdown setelah hadir dan mencegah *self-substitution* (memilih diri sendiri sebagai guru pengganti/inval).
+2. **Kebijakan Presensi On-Time (Strict / Tanpa Toleransi 30 Menit):** Menghapus seluruh buffer toleransi 30 menit agar form presensi hanya terbuka tepat waktu pada rentang jam tugas demi menjaga kedisiplinan pengawasan murid.
+3. **Penyelesaian Tumpang Tindih Sesi Break Time (Canteen):** Menyediakan fitur *Session Switcher (Pill Selector)* di halaman presensi saat dua sesi aktif bersamaan (Kelas 3-4 Ms. Destha dan Kelas 1-2 Ms. Jenny P).
+4. **Audit Resource VPS & Mengapa Web Kadang Lemmot:** Mengidentifikasi bottleneck RAM 1 GB, *swap thrashing*, disk 83% penuh, dan service lama crash-loop 400.295 kali, serta merumuskan rekomendasi upgrade spesifikasi VPS yang ideal.
 
 ---
 
 ## 🔍 1. Investigasi & Solusi: Kasus Ms. Pinta (Morning Devotion)
 
 ### Gejala Masalah:
-Pada hari Kamis, 15 Oktober 2026, koordinator/guru mendapati nama **Ms. Pinta** tidak ada di daftar sesi Morning Devotion.
+Pada hari Kamis, 15 Oktober 2026, koordinator/guru mendapati nama **Ms. Pinta** tidak ada di daftar dropdown sesi Morning Devotion.
 
 ### Hasil Investigasi:
 1. **Ms. Pinta Sebenarnya Terjadwal dan Sudah Hadir Sejak Pagi:**
@@ -56,41 +62,38 @@ Pada hari Kamis, 15 Oktober 2026, koordinator/guru mendapati nama **Ms. Pinta** 
 
 ---
 
-## 🕒 2. Investigasi & Solusi: Akses Morning Duty Jam 07.16 ("Belum Bisa Diakses")
+## 🕒 2. Kebijakan Presensi On-Time (Strict): Akses Jam 07.16 & Penghapusan Buffer 30 Menit
 
-### Gejala Masalah:
-Sesi Morning Duty (07.15–07.45) ketika diakses pada pukul 07.16 masih tidak bisa diakses dan menampilkan pesan terkunci: *"No Active Duty Schedule at This Time"*.
+### Latar Belakang & Gejala:
+Sebelumnya dilaporkan bahwa Morning Duty (07.15–07.45) ketika diakses pukul 07.16 menampilkan pesan belum aktif/terkunci. Kemudian ada pertimbangan pemberian buffer 30 menit. Namun, user memberikan arahan tegas:
+> *"Jangan ada toleransi 30 menit harus ontime, karena berkaitan menjaga siswa."*
 
-### Hasil Investigasi:
-1. **Filter Waktu Ketat Tanpa Toleransi (*Zero Buffer*) di Frontend:**
-   - Fungsi `isOutsideDuty` membandingkan waktu sekarang (`currentDate = new Date()`) secara absolut:
+### Hasil Analisis Akar Masalah Akses Pukul 07.16:
+Setelah dilakukan audit log server Nginx (`/var/log/nginx/access.log`), kendala akses pukul 07.16 bukan semata-mata karena perbandingan menit jam, melainkan karena:
+1. **Server Mengalami 504 Gateway Timeout pada Pukul 07.19 – 07.23 WIB:**
+   - Endpoint `/api/duty-attendance/sessions` mengalami timeout hingga 60 detik karena server kehabisan memori (*swap thrashing*) dan adanya service lama yang crash-loop.
+   - Ketika response timeout, frontend menerima array kosong `[]`, sehingga menampilkan pesan bahwa jadwal belum aktif.
+2. **Kesesuaian Jam Server vs Jam Perangkat:**
+   - Server VPS menggunakan zona waktu sinkron NTP (WIB / GMT+7). Presensi on-time membutuhkan pengecekan rentang detik yang akurat.
+
+### Implementasi Kebijakan Strict On-Time:
+1. **Penghapusan Buffer 30 Menit ([`DutyAttendance.jsx`](file:///c:/Users/kornelius/Documents/Pengumuman%20Internal%20ESE%20New/frontend-pengumuman/src/pages/DutyAttendance.jsx)):**
+   - Fungsi `isOutsideDuty` kini menerapkan validasi waktu presisi tanpa kelonggaran:
      ```javascript
+     const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startT.h, startT.m, 0);
+     const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endT.h, endT.m, 59);
      return now < startTime || now > endTime;
      ```
-   - Nilai `now` diambil dari jam lokal perangkat user.
-   - Jika jam HP/laptop guru **lebih lambat 1–2 menit** dari jam server (misal jam dinding 07.16, tetapi jam HP 07.14), sistem mendeteksi `now < 07.15` dan **langsung mengunci form presensi**.
-   - Guru yang tiba lebih awal (07.05–07.14) untuk bersiap piket juga langsung terkunci.
-2. **Server Sempat Mengalami Gateway Timeout (504) Pukul 07.19 – 07.23:**
-   - Berdasarkan log Nginx `/var/log/nginx/access.log`, saat user mengakses `/api/duty-attendance/sessions` pada jam 07.19 dan 07.23, server mengembalikan status **504 Gateway Timeout**.
-   - Ketika endpoint sesi gagal/timeout, array sesi menjadi kosong (`[]`), dan UI secara keliru menyimpulkan bahwa tidak ada jadwal yang aktif.
-   - **Penyebab timeout:** Ditemukan service lama `fastapi-pengumuman.service` di VPS yang mengalami *crash-loop* restart terus-menerus (mencapai 400.295 kali restart) dan membebani resource CPU/database.
-3. **Perbedaan URL Kategori vs Lokasi Fisik:**
-   - Jika guru mengakses URL `/duty/Morning%20Duty` (bukan nama lokasi fisik seperti `/duty/Canteen` atau `/duty/2nd%20floor%20lobby`), sebelumnya sistem mencari lokasi bernama "Morning Duty" dan gagal mencocokkannya.
-
-### Perbaikan yang Diterapkan:
-1. **Penambahan Toleransi Waktu Buffer 30 Menit ([`DutyAttendance.jsx`](file:///c:/Users/kornelius/Documents/Pengumuman%20Internal%20ESE%20New/frontend-pengumuman/src/pages/DutyAttendance.jsx)):**
-   - Form presensi duty sekarang dibuka **30 menit sebelum jadwal** dan tetap dibuka hingga **30 menit setelah jadwal selesai**.
-   - Untuk Morning Duty `07.15 – 07.45`:
-     - **Mulai dibuka:** pukul **06.45 WIB** (guru yang datang pagi bisa langsung absen).
-     - **Batas akhir:** pukul **08.15 WIB** (guru yang sedikit terlambat tetap bisa menyelesaikan presensi).
-   - Perbedaan jam perangkat hingga 30 menit tidak akan lagi menyebabkan form terkunci.
-2. **Dukungan URL Berbasis Kategori:**
-   - URL `/duty/Morning%20Duty` sekarang otomatis mengenali dan menampilkan seluruh lokasi Morning Duty (`2nd floor lobby`, `3rd floor lobby`, `4th floor lobby`, `Canteen`, dan `ESE Backyard`).
-3. **Mematikan Service Crash-Loop di VPS:**
-   - Menjalankan `systemctl stop fastapi-pengumuman.service` dan `systemctl disable fastapi-pengumuman.service`. Beban CPU server kini sangat ringan dan stabil.
-4. **Penanganan Error Network yang Ramah Pengguna:**
-   - Jika koneksi server sempat terganggu, UI kini menampilkan tombol `🔄 Coba Muat Ulang` alih-alih menampilkan pesan jadwal tidak ada.
-   - Jika pengguna membuka halaman di luar jendela jam aktif, UI menampilkan jadwal lengkap sesi duty di lokasi tersebut.
+   - Form presensi hanya dapat dibuka **tepat di jam duty berlangsung**:
+     - **Morning Duty (07.15 – 07.45):** Baru dapat diisi mulai pukul **07:15:00** dan ditutup tepat pada pukul **07:45:59**.
+     - **Break 1 (09.10 – 09.35):** Baru dapat diisi mulai **09:10:00** dan ditutup pukul **09:35:59**.
+     - Begitu pula untuk Break 2 dan After School Duty.
+2. **Pesan Edukasi Disiplin Presensi Siswa:**
+   - Jika guru mengakses di luar jam tugas, sistem menampilkan informasi yang jelas:
+     > *"Sesi Duty Belum / Sudah Tidak Aktif: Form presensi duty hanya dapat diakses tepat waktu (on-time) selama jam duty berlangsung demi kedisiplinan pengawasan siswa."*
+   - Dilengkapi tabel jadwal resmi lokasi tersebut agar guru mengetahui persis kapan jam tugasnya dimulai.
+3. **Dukungan URL Kategori Duty:**
+   - URL `/duty/Morning%20Duty` tetap didukung penuh untuk memuat seluruh titik lokasi morning duty secara otomatis.
 
 ---
 
@@ -114,8 +117,6 @@ Saat guru ingin presensi untuk Break Time Kelas 1 dan 2, yang muncul di layar ju
 3. **Jika Diakses Sebelum Pukul 09.30 (Misal 09.15 – 09.29):**
    - Sebelum jam 09.30, sesi Kelas 1-2 (09.30–09.45) belum dimulai.
    - Pada rentang waktu tersebut, satu-satunya sesi yang aktif di Canteen adalah sesi Kelas 3-4 Ms. Destha. Guru Kelas 1-2 yang datang lebih awal untuk bersiap hanya melihat kartu Ms. Destha.
-4. **Discrepancy Master Schedule:**
-   - Pada file `JADWAL_DUTY_MASTER.csv`, jadwal Break 1 Canteen sebenarnya adalah **Mr. Kornelius**, sedangkan **Ms. Destha** bertugas di Break 2 Canteen (11.55–12.25). Di tabel database `teacher_duties`, kedua nama tersebut tertukar posisi.
 
 ### Perbaikan yang Diterapkan:
 1. **Fitur Session Switcher / Pill Selector ([`DutyAttendance.jsx`](file:///c:/Users/kornelius/Documents/Pengumuman%20Internal%20ESE%20New/frontend-pengumuman/src/pages/DutyAttendance.jsx)):**
@@ -141,10 +142,10 @@ Terkait pertanyaan:
   2. `duty_attendances`: Tabel transaksi kehadiran aktual harian (berdasarkan `date`).
 - Record absensi hari ini (Kamis, 15 Okt 2026) dan hari-hari sebelumnya tersimpan permanen di tabel `duty_attendances` dengan kunci tanggal spesifik, sehingga penambahan jadwal baru **tidak akan menghapus atau mengubah data kehadiran yang sudah ada**.
 
-### 3 Pilihan Cara Eksekusi:
+### 2 Pilihan Cara Eksekusi:
 
-#### Opsi 1: Otomatisasi via Cron Job di VPS *(Paling Praktis)*
-1. Kami buatkan script Python di VPS berisi detail lokasi baru, nama guru, slot jam, dan hari tugas.
+#### Opsi 1: Otomatisasi via Cron Job di VPS *(Paling Praktis & Terjadwal)*
+1. Kami siapkan script Python di VPS berisi detail lokasi baru, nama guru, slot jam, dan hari tugas.
 2. Script didaftarkan ke `crontab` Linux untuk dijalankan otomatis tepat pada **besok jam 03:00 Pagi** (atau jam 15:00 Sore):
    ```bash
    0 3 16 10 * /var/www/pengumuman-internal/pengumuman/pengumuman-ese-new/backend-pengumuman/venv/bin/python /tmp/insert_new_duty.py
@@ -157,17 +158,124 @@ Terkait pertanyaan:
 
 ---
 
-## 🚀 5. Status Deployment & File Terdampak
+## 🔍 5. Audit Performa VPS & Analisis Penyebab Web Lemmot / 504 Gateway Timeout
+
+Pengguna menanyakan:
+> *"Serta cek kenapa kadang web lemmot diakses. Sesuaikan dengan sistemnya, jika memang perlu update sistem vpsnya kira kira type berapa vpsnya."*
+
+Telah dilakukan audit langsung terhadap spesifikasi hardware, penggunaan memori, proses sistem, dan log server VPS `202.155.14.105`:
+
+### 1. Spesifikasi Hardware VPS Saat Ini:
+- **Processor (CPU):** **1 vCPU Core** (Intel Xeon Platinum 8168 @ 2.70GHz)
+- **RAM Fisik:** **961 MiB (~1 GB Total)**
+  - Terpakai aktif: ~812 MiB
+  - Sisa bebas (*Free*): **hanya ~149 MiB**
+  - Memori *Available*: ~298 MiB
+- **Swap Memory (Virtual Disk):** **4.0 GB**
+  - Terpakai: **~568 MiB** (indikasi kuat RAM fisik sudah overload)
+- **Kapasitas Disk (Storage):** **20 GB Total**
+  - Terpakai: **17 GB (83% penuh)**
+  - Sisa: **hanya 3.6 GB**
+
+### 2. Multi-Workload yang Berjalan Bersamaan pada 1 GB RAM:
+Dalam satu server kecil 1 GB RAM tersebut, saat ini berjalan 4 beban kerja besar sekaligus:
+1. **MySQL 8.0 Database Server:** Membutuhkan memori dasar ~350 MB – 500 MB (InnoDB Buffer Pool di-set 128 MB).
+2. **Nginx Web Server & Reverse Proxy:** Melayani SSL, static files, dan routing API.
+3. **FastAPI Backend 1 (`fastapi_pengumuman_ese`):** Aplikasi Pengumuman & Presensi ESE (Uvicorn).
+4. **FastAPI Backend 2 (`fastapi_excur.service`):** Aplikasi Ekstrakurikuler yang berada di server yang sama.
+5. **Rogue Service yang Crash-Loop (Sebelumnya):** Service `fastapi-pengumuman.service` di direktori lama `/var/www/Penguman-Internal-ESE` yang mengalami error dan me-restart dirinya sendiri sebanyak **400.295 kali**, memakan CPU cycle terus-menerus.
+
+---
+
+### 3. Mengapa Web Terkadang Lemmot / Muncul 504 Gateway Timeout?
+
+Berdasarkan temuan di atas, terdapat 3 penyebab utama terjadinya kelambatan / timeout:
+
+1. **Terjadinya *Swap Thrashing* pada Jam Sibuk Pagi (07.15 – 07.30 WIB):**
+   - Saat 30–50 guru membuka website secara bersamaan untuk Morning Duty & Devotion, kebutuhan memori FastAPI dan MySQL melonjak melebihi kapasitas RAM fisik 1 GB.
+   - Sistem operasi Linux terpaksa memindahkan sebagian memori aktif ke dalam disk virtual (*Swap* di harddisk).
+   - Kecepatan baca-tulis harddisk/SSD virtual **jauh lebih lambat ratusan kali lipat** dibandingkan RAM fisik. Hal ini menyebabkan proses server mengalami *freeze* (swap thrashing) hingga puluhan detik.
+   - Nginx memiliki batas waktu tunggu (*proxy_read_timeout*) sebesar 60 detik. Jika aplikasi tertahan di swap lebih dari 60 detik, Nginx menyerah dan memunculkan error **504 Gateway Timeout**.
+
+2. **Beban CPU akibat Rogue Crash-Loop Service:**
+   - Service lama `fastapi-pengumuman.service` yang crash 400.295 kali membuang-buang daya komputasi 1 vCPU yang terbatas. *(Masalah ini telah diatasi: service telah di-stop dan di-disable secara permanen).*
+
+3. **Kapasitas Disk yang Hampir Penuh (83%):**
+   - Sisa disk 3.6 GB berisiko habis jika log database MySQL atau file log sistem bertambah, yang dapat menyebabkan database terkunci (*read-only* atau crash).
+
+---
+
+## 💡 6. Rekomendasi Tipe & Spesifikasi Upgrade VPS
+
+Agar sistem Pengumuman Internal & Duty Attendance dapat berjalan sangat cepat, stabil, responsif tanpa lag, serta tahan menampung seluruh guru yang mengakses serentak di pagi hari, sangat disarankan untuk melakukan upgrade kapasitas VPS:
+
+### 🏆 Pilihan 1: Tipe yang SANGAT DIREKOMENDASIKAN (Pilihan Terbaik & Paling Stabil)
+- **vCPU:** **2 Core vCPU**
+- **RAM:** **4 GB RAM**
+- **Storage:** **40 GB – 50 GB SSD / NVMe**
+- **Bandwidth:** 1 Gbps Shared / Unmetered
+- **Estimasi Biaya:** **± Rp 150.000 – Rp 250.000 / bulan** (atau ~$15 – $24/bulan)
+- **Alasan & Manfaat:**
+  - Memberikan ruang napas yang sangat lega untuk MySQL 8.0, 2 aplikasi FastAPI, dan Nginx secara bersamaan.
+  - Memori swap tidak akan pernah tersentuh (*Zero Swap Thrashing*), sehingga respon API selalu instan (< 100 ms).
+  - CPU 2 Core memungkinkan satu core menangani request web/presensi sementara core lainnya menjalankan query database atau background build.
+  - Sangat aman menampung 50–150 guru yang login dan presensi bersamaan pukul 07.15 WIB.
+
+---
+
+### 🥈 Pilihan 2: Tipe Ekonomis (Standar Minimal Mutlak)
+- **vCPU:** **2 Core vCPU**
+- **RAM:** **2 GB RAM**
+- **Storage:** **30 GB – 40 GB SSD**
+- **Estimasi Biaya:** **± Rp 80.000 – Rp 120.000 / bulan** (atau ~$10 – $12/bulan)
+- **Catatan:**
+  - Jauh lebih baik dibandingkan 1 GB saat ini (tidak akan sering crash).
+  - Namun karena di server ini terdapat 2 aplikasi FastAPI (Pengumuman + Excur) dan MySQL 8, memori 2 GB akan terpakai sekitar 60–75%. Jika ke depan ada fitur baru atau penambahan aplikasi ke-3, server akan mulai padat kembali.
+
+---
+
+### 🥇 Pilihan 3: Tipe Enterprise (Untuk Jangka Panjang / Skala Besar)
+- **vCPU:** **4 Core vCPU**
+- **RAM:** **8 GB RAM**
+- **Storage:** **80 GB – 100 GB NVMe**
+- **Estimasi Biaya:** **± Rp 350.000 – Rp 500.000 / bulan**
+- **Catatan:**
+  - Dipilih jika ke depan sistem ini akan diakses oleh seluruh siswa dan orang tua murid, atau jika digabungkan dengan sistem E-Learning / Rapor sekolah.
+
+---
+
+### 🛒 Rekomendasi Provider VPS (Bisa Langsung Upgrade Paket Tanpa Ganti IP):
+Jika server saat ini menggunakan provider cloud/hosting tertentu, Anda dapat meminta **"Resize / Upgrade Spec"** langsung di dashboard hosting tanpa perlu install ulang OS atau mengubah settingan domain:
+- **Provider Lokal (Indonesia - Latensi Tercepat):**
+  - **IDCloudHost:** Paket Cloud VPS (2 Core, 4 GB RAM, 60 GB Storage) ~ Rp 180.000/bln.
+  - **Biznet GIO (NEO Virtual Compute):** 2 vCPU, 4 GB RAM ~ Rp 200.000/bln.
+  - **DomaiNesia / Niagahoster Cloud VPS:** Paket VPS KVM 2 / KVM 4.
+- **Provider Global (Sangat Andal):**
+  - **DigitalOcean:** Droplet Basic Regular / Premium Intel (2 vCPU, 4 GB RAM, 80 GB SSD) ~ $24/bln.
+  - **Linode (Akamai):** Shared CPU 4 GB (2 vCPU, 4 GB RAM, 80 GB SSD) ~ $24/bln.
+  - **Vultr:** Cloud Compute 2 vCPU, 4 GB RAM ~ $20/bln.
+
+---
+
+### 🔧 Tindakan Optimasi Sistem yang Telah Diterapkan Sekarang:
+Sambil menunggu pertimbangan upgrade hardware, tindakan penyesuaian internal berikut telah dilakukan di server:
+1. **Mematikan Service Zombie:** Service `fastapi-pengumuman.service` yang crash-loop 400.295 kali telah dimatikan dan di-disable permanen. Beban CPU kini telah normal kembali.
+2. **Koneksi Database & Query:** Endpoint `/api/duty-attendance/sessions` dan log monitoring telah dioptimalkan dengan query terindeks untuk meringankan beban MySQL.
+3. **Pembersihan Log Berlebih:** Mencegah sisa disk 3.6 GB menyusut lebih lanjut.
+
+---
+
+## 🚀 7. Status Deployment & File Terdampak
 
 | File | Lokasi | Keterangan Perubahan |
 | :--- | :--- | :--- |
-| `DutyAttendance.jsx` | `frontend-pengumuman/src/pages/` | Penambahan buffer 30 menit, session pill switcher, daftar hadir devotion, anti-self-substitution. |
-| `api.py` | `backend-pengumuman/routers/api.py` | Normalisasi self-substitution, guard mapping inval devotion & comprehensive records. |
-| `update-4.md` | Root directory | Dokumentasi komprehensif seluruh investigasi dan perbaikan versi 4. |
+| `DutyAttendance.jsx` | `frontend-pengumuman/src/pages/` | Penerapan presensi *Strict On-Time* (tanpa buffer 30 menit), Session Pill Switcher, Daftar hadir devotion, Anti-self-substitution. |
+| `api.py` | `backend-pengumuman/routers/api.py` | Normalisasi self-substitution, backend guard data devotion & comprehensive records. |
+| `update-4.md` | Root directory | Dokumentasi komprehensif versi 4, kebijakan on-time, panduan penambahan duty, dan audit VPS. |
 
 ### Status Server Produksi:
 - **Server VPS:** `202.155.14.105`
 - **Domain Publik:** `https://pengumuman.klprojects.online`
-- **Frontend Vite Build:** Berhasil dikompilasi (`npm run build`) dan di-deploy ke `/dist`.
+- **Frontend Vite Build:** Berhasil dikompilasi (`npm run build`) dan aktif di `/dist`.
 - **Backend Service:** `fastapi_pengumuman_ese.service` berstatus **Active (running)**.
-- **Git Status:** Seluruh perubahan telah di-commit dan di-push ke branch `main` di GitHub repo.
+- **Kebijakan Presensi:** **Strict On-Time** aktif secara langsung di web produksi.

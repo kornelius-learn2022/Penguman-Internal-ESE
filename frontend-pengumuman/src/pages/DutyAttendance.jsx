@@ -171,10 +171,10 @@ export default function DutyAttendance() {
         const startT = parseTime(parts[0]);
         const endT = parseTime(parts[1]);
         if (startT && endT && !isNaN(startT.h) && !isNaN(startT.m) && !isNaN(endT.h) && !isNaN(endT.m)) {
-          // Allow buffer: 30 minutes before duty starts, 30 minutes after duty ends
-          const startWithBuffer = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startT.h, startT.m - 30, 0);
-          const endWithBuffer = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endT.h, endT.m + 30, 0);
-          return now < startWithBuffer || now > endWithBuffer;
+          // Strict on-time: duty attendance is only open strictly within the scheduled time slot
+          const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startT.h, startT.m, 0);
+          const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endT.h, endT.m, 59);
+          return now < startTime || now > endTime;
         }
       }
     } catch (e) {
@@ -253,7 +253,7 @@ export default function DutyAttendance() {
     return loc === target || cat === target || loc.includes(target) || target.includes(loc);
   });
 
-  // Filter only sessions that are currently active (within time window + 30min buffer)
+  // Filter only sessions that are currently active (strictly within scheduled time window)
   const activeSessions = locationSessions.filter((s) => !isOutsideDuty(s.time_slot, currentDate));
 
   return (
@@ -318,9 +318,9 @@ export default function DutyAttendance() {
           <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
             <div className="text-4xl">🕒</div>
             <div>
-              <h3 className="text-lg font-bold text-slate-800">Belum Ada Sesi Duty yang Aktif Saat Ini</h3>
+              <h3 className="text-lg font-bold text-slate-800">Sesi Duty Belum / Sudah Tidak Aktif</h3>
               <p className="text-slate-500 text-sm mt-1 max-w-md mx-auto">
-                Form presensi dibuka 30 menit sebelum jadwal duty dimulai hingga 30 menit setelahnya.
+                Form presensi duty hanya dapat diakses tepat waktu (on-time) selama jam duty berlangsung demi kedisiplinan pengawasan siswa.
               </p>
             </div>
             {locationSessions.length > 0 && (
