@@ -190,24 +190,40 @@ export default function DutyAttendance() {
     return (
       <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
         <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
-          <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
-            <img
-              src="/252-SMA_CITA_HATI_EAST_SURABAYA.png"
-              alt="Cita Hati Logo"
-              className="h-10 w-auto object-contain flex-shrink-0"
-            />
-            <div>
-              <h1 className="text-lg font-black text-[#1e3a8a] tracking-tight">
-                Duty Attendance
-              </h1>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mt-0.5">
-                {currentDate.toLocaleDateString("en-US", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
-              </p>
+          <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <img
+                src="/252-SMA_CITA_HATI_EAST_SURABAYA.png"
+                alt="Cita Hati Logo"
+                className="h-10 w-auto object-contain flex-shrink-0"
+              />
+              <div>
+                <h1 className="text-lg font-black text-[#1e3a8a] tracking-tight">
+                  Duty Attendance
+                </h1>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mt-0.5">
+                  {currentDate.toLocaleDateString("en-US", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/tutorial"
+                className="px-3 py-1.5 bg-blue-50 text-[#1e3a8a] hover:bg-blue-100 rounded-xl text-xs font-bold transition-all border border-blue-200"
+              >
+                📖 Panduan
+              </Link>
+              <Link
+                to="/"
+                className="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-bold transition-all"
+              >
+                📢 Pengumuman
+              </Link>
             </div>
           </div>
         </header>
@@ -271,24 +287,40 @@ export default function DutyAttendance() {
 
       {/* Header */}
       <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-          <img
-            src="/252-SMA_CITA_HATI_EAST_SURABAYA.png"
-            alt="Cita Hati Logo"
-            className="h-10 w-auto object-contain flex-shrink-0"
-          />
-          <div>
-            <h1 className="text-lg font-black text-[#1e3a8a] tracking-tight">
-              Duty Attendance: {decodedLocation}
-            </h1>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mt-0.5">
-              {currentDate.toLocaleDateString("en-US", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
-            </p>
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <img
+              src="/252-SMA_CITA_HATI_EAST_SURABAYA.png"
+              alt="Cita Hati Logo"
+              className="h-10 w-auto object-contain flex-shrink-0"
+            />
+            <div>
+              <h1 className="text-lg font-black text-[#1e3a8a] tracking-tight">
+                Duty Attendance: {decodedLocation}
+              </h1>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mt-0.5">
+                {currentDate.toLocaleDateString("en-US", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/tutorial"
+              className="px-3 py-1.5 bg-blue-50 text-[#1e3a8a] hover:bg-blue-100 rounded-xl text-xs font-bold transition-all border border-blue-200"
+            >
+              📖 Panduan
+            </Link>
+            <Link
+              to="/"
+              className="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-bold transition-all"
+            >
+              📢 Pengumuman
+            </Link>
           </div>
         </div>
       </header>

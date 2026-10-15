@@ -8,6 +8,7 @@ import Announcements from "./pages/announcements";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
 import DutyAttendance from "./pages/DutyAttendance";
+import Tutorial from "./pages/Tutorial";
 
 const generateRandomHash = () => {
   return (
@@ -47,6 +48,10 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route path="/tutorial" element={<Tutorial />} />
+        <Route path="/panduan" element={<Tutorial />} />
+        <Route path="/guide" element={<Tutorial />} />
 
         <Route path="/login" element={<Login />} />
         <Route path="/AdminLogin" element={<Login />} />

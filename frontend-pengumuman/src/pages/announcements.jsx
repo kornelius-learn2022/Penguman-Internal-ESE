@@ -247,6 +247,15 @@ function Announcements() {
             </button>
 
             <Link
+              to="/tutorial"
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-2xs hover:shadow-xs active:scale-95"
+              title="Buka Buku Panduan & Tutorial"
+            >
+              <span>📖</span>
+              <span>Panduan</span>
+            </Link>
+
+            <Link
               to="/duty-attendance"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all active:scale-95"
             >
