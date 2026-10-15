@@ -249,10 +249,10 @@ function Announcements() {
             <Link
               to="/tutorial"
               className="inline-flex items-center gap-1.5 px-3 py-2 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-2xs hover:shadow-xs active:scale-95"
-              title="Buka Buku Panduan & Tutorial"
+              title="Open Teacher Guide & Tutorial"
             >
               <span>📖</span>
-              <span>Panduan</span>
+              <span>Teacher Guide</span>
             </Link>
 
             <Link

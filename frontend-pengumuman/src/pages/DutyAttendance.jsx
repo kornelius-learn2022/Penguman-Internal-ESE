@@ -216,13 +216,13 @@ export default function DutyAttendance() {
                 to="/tutorial"
                 className="px-3 py-1.5 bg-blue-50 text-[#1e3a8a] hover:bg-blue-100 rounded-xl text-xs font-bold transition-all border border-blue-200"
               >
-                📖 Panduan
+                📖 Teacher Guide
               </Link>
               <Link
                 to="/"
                 className="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-bold transition-all"
               >
-                📢 Pengumuman
+                📢 Announcements
               </Link>
             </div>
           </div>
@@ -313,13 +313,13 @@ export default function DutyAttendance() {
               to="/tutorial"
               className="px-3 py-1.5 bg-blue-50 text-[#1e3a8a] hover:bg-blue-100 rounded-xl text-xs font-bold transition-all border border-blue-200"
             >
-              📖 Panduan
+              📖 Teacher Guide
             </Link>
             <Link
               to="/"
               className="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-bold transition-all"
             >
-              📢 Pengumuman
+              📢 Announcements
             </Link>
           </div>
         </div>
