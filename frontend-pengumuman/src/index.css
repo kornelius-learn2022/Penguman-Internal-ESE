@@ -1,1 +1,29 @@
 @import "tailwindcss";
+
+@layer base {
+  /* High contrast focus ring for keyboard navigation (WCAG AA) */
+  :focus-visible {
+    outline: 2px solid #1e40af;
+    outline-offset: 2px;
+  }
+}
+
+/* Optimasi cetak (Print mode) untuk papan pengumuman fisik sekolah */
+@media print {
+  header,
+  .no-print,
+  button,
+  input,
+  [role="search"] {
+    display: none !important;
+  }
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .print-clean {
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+}

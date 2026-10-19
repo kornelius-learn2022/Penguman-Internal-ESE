@@ -995,7 +995,7 @@ def clean_duty_bullets(text: str) -> str:
 
 
 def call_gemini(
-    user_message: str, context: str, model_name: str = "gemini-3.8-flash"
+    user_message: str, context: str, model_name: str = "gemini-3.5-flash-lite"
 ) -> str:
     key = (os.getenv("GEMINI_API_KEY") or GEMINI_API_KEY or "").strip()
     if not key:
@@ -1014,7 +1014,7 @@ def call_gemini(
     req = urllib.request.Request(
         url, data=payload, headers={"Content-Type": "application/json"}
     )
-    with urllib.request.urlopen(req, timeout=10) as resp:
+    with urllib.request.urlopen(req, timeout=6) as resp:
         res = json.loads(resp.read().decode("utf-8"))
         candidates = res.get("candidates", [])
         if candidates:
@@ -1165,12 +1165,9 @@ async def chat_with_ai(data: schemas.ChatRequest, db: Session = Depends(get_db))
 
     # 3. AI Waterfall Providers List (Model tercepat dan teruji di awal)
     providers = [
-        ("Gemini 3.8 Flash", lambda: call_gemini(data.message, context, "gemini-3.8-flash")),
-        ("Gemini 3.5 Flash", lambda: call_gemini(data.message, context, "gemini-3.5-flash")),
         ("Gemini 3.5 Flash Lite", lambda: call_gemini(data.message, context, "gemini-3.5-flash-lite")),
-        ("Gemini 2.5 Flash", lambda: call_gemini(data.message, context, "gemini-2.5-flash")),
         ("Gemini 2.5 Flash Lite", lambda: call_gemini(data.message, context, "gemini-2.5-flash-lite")),
-        ("Groq AI", lambda: call_groq(data.message, context)),
+        ("Gemini 2.5 Flash", lambda: call_gemini(data.message, context, "gemini-2.5-flash")),
     ]
 
     for provider_name, func in providers:

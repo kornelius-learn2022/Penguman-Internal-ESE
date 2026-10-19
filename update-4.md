@@ -279,3 +279,32 @@ Sambil menunggu pertimbangan upgrade hardware, tindakan penyesuaian internal ber
 - **Frontend Vite Build:** Berhasil dikompilasi (`npm run build`) dan aktif di `/dist`.
 - **Backend Service:** `fastapi_pengumuman_ese.service` berstatus **Active (running)**.
 - **Kebijakan Presensi:** **Strict On-Time** aktif secara langsung di web produksi.
+
+---
+
+## 📅 8. Pembaruan Jadwal Piket (Duty) Baru & Rilis Tutorial Guru (16 Oktober 2026)
+
+### 📌 Ringkasan Pembaruan:
+Pada tanggal 16 Oktober 2026, telah diterapkan jadwal duty baru yang diintegrasikan secara menyeluruh ke database server produksi MySQL, file master CSV, AI ChatAssistant (Chatbot), serta halaman presensi QR Code:
+1. **Total Slot Tugas:** Diperbarui menjadi **150 slot** aktif per minggu (terdistribusi ke 35 guru).
+2. **Kantin Lantai 1 & Lantai 2 (1 QR Code):**
+   - Penambahan pengawasan khusus di **Kantin Lantai 2** (+20 slot baru) untuk Grade 3–4 dan Grade 5–6.
+   - Cukup menggunakan **1 lembar fisik QR Code** di area kantin (`/duty/Canteen`). Guru cukup memilih lantai tugasnya dan sesi istirahatnya melalui *Session Switcher*.
+3. **Penyederhanaan Kepulangan Siswa (Go Home):**
+   - Pos pintu belakang dihapus (-15 slot), dialihkan terpusat di Pintu Depan dengan petugas harian tetap:
+     - Grade 1–2: **Mr. Hakim** (Senin–Jumat)
+     - Grade 3–4: **Mr. Hindra** (Senin–Jumat)
+     - Grade 5–6: **Mr. Benu** (Senin–Jumat)
+4. **Proteksi Khusus Guru (100% Mengikuti Database Lama):**
+   - **Ms. Gloria:** Kamis Break 1 Grade 1–2 @ ESE Backyard.
+   - **Ms. Agnes:** Kamis Break 2 Grade 1–2 @ Canteen.
+   - **Ms. Destha:** Kamis Break 1 Grade 3–4 @ 1st floor Canteen.
+   - **Mr. Kornelius:** Kamis Break 2 Grade 3–4 @ 1st floor Canteen.
+   - **Ms. Vita & Sus Veronika:** Berdiri sendiri sebagai dua guru yang berbeda (masing-masing 5 slot).
+5. **Sinkronisasi AI Chatbot (`/api/chat`):**
+   - Database MySQL diperbarui secara transaksional (`update_duties.sql`).
+   - Chatbot membaca data baru secara instan dan menjawab pertanyaan jadwal guru/lokasi dengan akurat.
+6. **Tutorial & Rekapitulasi untuk Guru:**
+   - [**`TUTORIAL_TEACHER_GUIDE.html`**](file:///C:/Users/kornelius/Downloads/TUTORIAL_TEACHER_GUIDE.html): Panduan interaktif bahasa Inggris untuk guru non-teknis, menekankan kebijakan *Zero Tolerance* dan mekanisme 1 QR Code Kantin.
+   - [**`REKAP_JADWAL_DUTY_HP.xlsx`**](file:///C:/Users/kornelius/Downloads/REKAP_JADWAL_DUTY_HP.xlsx): Rekap 4 kolom ramah layar handphone dengan timeline harian dan rekap per guru.
+   - [**`REKAP_PERBANDINGAN_JADWAL.xlsx`**](file:///C:/Users/kornelius/Downloads/REKAP_PERBANDINGAN_JADWAL.xlsx): Rekap komparasi 1 sheet perpindahan data lama vs data baru.

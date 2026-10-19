@@ -9,6 +9,9 @@ class AdminResponse(BaseModel):
     name_admin: str
     level_admin: str
 
+    class Config:
+        from_attributes = True
+
 
 class AnnouncementCombinedResponse(BaseModel):
     id_announcement: int
@@ -51,6 +54,17 @@ class BirthdayUpdate(BaseModel):
     date: Optional[Union[dt_date, str]] = None
     gender: Optional[models.GenderType] = None
     admin_update: Optional[int] = None
+
+
+class BirthdayResponse(BaseModel):
+    id_birthday: int
+    name: str
+    date: date
+    gender: models.GenderType
+    admin_update: Optional[int] = None
+
+    class Config:
+        from_attributes = True
 
 
 class AdminCreate(BaseModel):

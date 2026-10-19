@@ -1,35 +1,98 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import BannerLoading from "./BannerLoading";
 import ChatAssistant from "../components/ChatAssistant";
 
-// --- Sub-Components untuk Kerapihan ---
-const SectionHeader = ({ title, icon, color }) => (
-  <h3
-    className={`text-lg font-bold mb-5 text-slate-800 flex items-center gap-2`}
-  >
-    <span className={`p-2 rounded-lg bg-${color}-50 text-${color}-600`}>
-      {icon}
-    </span>
-    {title}
-  </h3>
-);
+// --- Sub-Components dengan Aksesibilitas & Kontras Tinggi ---
+const SectionHeader = ({ title, icon, colorBadge = "blue", largeText, badgeCount }) => {
+  const badgeColors = {
+    blue: "bg-blue-100 text-blue-900 border-blue-200",
+    amber: "bg-amber-100 text-amber-900 border-amber-300",
+    rose: "bg-rose-100 text-rose-900 border-rose-200",
+    emerald: "bg-emerald-100 text-emerald-900 border-emerald-200",
+  };
+
+  return (
+    <div className="flex items-center justify-between gap-3 mb-6 pb-3 border-b border-slate-200">
+      <h3
+        className={`${
+          largeText ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl"
+        } font-black text-slate-900 flex items-center gap-3 tracking-tight transition-all`}
+      >
+        <span
+          className={`p-2.5 rounded-xl border flex items-center justify-center text-xl shadow-xs ${
+            badgeColors[colorBadge] || badgeColors.blue
+          }`}
+          aria-hidden="true"
+        >
+          {icon}
+        </span>
+        <span>{title}</span>
+      </h3>
+      {typeof badgeCount === "number" && (
+        <span
+          className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-300 shadow-2xs"
+          title={`${badgeCount} item`}
+        >
+          {badgeCount}
+        </span>
+      )}
+    </div>
+  );
+};
 
 function Announcements() {
   const today = new Date().toISOString().split("T")[0];
 
   // State Management
   const [selectedDate, setSelectedDate] = useState(today);
-  const [largeText, setLargeText] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [largeText, setLargeText] = useState(() => {
+    try {
+      return localStorage.getItem("preferred_large_font") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleLargeText = () => {
+    setLargeText((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("preferred_large_font", String(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const isFirstLoadRef = useRef(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [announcements, setAnnouncements] = useState([]);
   const [birthdays, setBirthdays] = useState([]);
   const [activeEvents, setActiveEvents] = useState([]);
 
+  const [copiedId, setCopiedId] = useState(null);
+  const [birthdayWishCopied, setBirthdayWishCopied] = useState(null);
+
+  // State untuk Image Modal
+  const [selectedImage, setSelectedImage] = useState(null);
+
+  // Keyboard Escape listener untuk Modal Gambar
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setSelectedImage(null);
+      }
+    };
+    if (selectedImage) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedImage]);
+
   // Date Shift Shortcuts
   const handleShiftDate = (days) => {
     const parts = selectedDate.split("-");
-    const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
     d.setDate(d.getDate() + days);
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -41,10 +104,41 @@ function Announcements() {
     setSelectedDate(today);
   };
 
-  // State untuk Image Modal
-  const [selectedImage, setSelectedImage] = useState(null);
+  // Copy helper untuk guru membagikan pengumuman ke WhatsApp / Grup Kelas
+  const handleCopyText = (id, text, dateStr) => {
+    const textToCopy = `📢 [PENGUMUMAN SEKOLAH CITA HATI - ${dateStr}]\n\n${text}\n\n- Cita Hati East Surabaya Internal Hub`;
+    navigator.clipboard
+      .writeText(textToCopy)
+      .then(() => {
+        setCopiedId(id);
+        setTimeout(() => setCopiedId(null), 2500);
+      })
+      .catch(() => {
+        // Fallback jika permission clipboard dicegah
+        setCopiedId(id);
+        setTimeout(() => setCopiedId(null), 2500);
+      });
+  };
 
-  // Anonymously track website visit once per session (Admin analytics only)
+  // Kirim / Salin Ucapan Ulang Tahun Rekan Guru
+  const handleWishBirthday = (item) => {
+    const prefix = item.gender?.toLowerCase() === "male" ? "Mr. " : "Ms. ";
+    const fullName = `${prefix}${item.name}`;
+    const message = `Selamat Ulang Tahun ${fullName}! 🎂🎉 Kiranya Tuhan senantiasa memberikan kesehatan, sukacita, dan hikmat dalam membimbing siswa-siswi Cita Hati East Surabaya. Have a wonderful birthday!`;
+
+    navigator.clipboard
+      .writeText(message)
+      .then(() => {
+        setBirthdayWishCopied(item.id_birthday);
+        setTimeout(() => setBirthdayWishCopied(null), 3000);
+      })
+      .catch(() => {
+        setBirthdayWishCopied(item.id_birthday);
+        setTimeout(() => setBirthdayWishCopied(null), 3000);
+      });
+  };
+
+  // Anonymously track website visit once per session
   useEffect(() => {
     try {
       const hasTracked = sessionStorage.getItem("visit_tracked");
@@ -54,13 +148,16 @@ function Announcements() {
           .then(() => sessionStorage.setItem("visit_tracked", "true"))
           .catch(() => {});
       }
-    } catch (e) {
+    } catch {
       // Ignore error for tracking
     }
   }, []);
 
   // --- API Functions (REAL DATA MODE) ---
   const fetchData = useCallback(async () => {
+    if (isFirstLoadRef.current) {
+      setIsInitialLoading(true);
+    }
     try {
       const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -71,25 +168,21 @@ function Announcements() {
           fetch(`${baseUrl}/events/schedule?date=${selectedDate}`),
         ]);
 
-      // Handle Data Announcements
+      // Announcements
       if (announcementsResponse.ok) {
         const annData = await announcementsResponse.json();
-        setAnnouncements(annData);
+        // Urutkan: Pinned di paling atas, kemudian berdasarkan id atau urutan asli
+        const sorted = [...annData].sort((a, b) => (b.is_pinned ? 1 : 0) - (a.is_pinned ? 1 : 0));
+        setAnnouncements(sorted);
       } else {
-        console.error(
-          `HTTP error Announcements! status: ${announcementsResponse.status}`,
-        );
         setAnnouncements([]);
       }
 
-      // Handle Data Birthdays (FILTER FRONTEND)
+      // Birthdays (Filter sesuai tanggal dan bulan yang dipilih)
       if (birthdaysResponse.ok) {
         const birthData = await birthdaysResponse.json();
-
-        // 1. Pecah tanggal yang dipilih (misal: "2026-08-15") menjadi [tahun, bulan, hari]
         const [, selectedMonth, selectedDay] = selectedDate.split("-");
 
-        // 2. Filter data dari backend
         const filteredBirthdays = birthData.filter((item) => {
           const tanggalLahir = item.date;
           if (!tanggalLahir) return false;
@@ -99,13 +192,10 @@ function Announcements() {
 
         setBirthdays(filteredBirthdays);
       } else {
-        console.error(
-          `HTTP error Birthdays! status: ${birthdaysResponse.status}`,
-        );
         setBirthdays([]);
       }
 
-      // Handle Data Special Events Schedule
+      // Special Events Schedule
       if (eventsResponse.ok) {
         const evData = await eventsResponse.json();
         setActiveEvents(evData);
@@ -118,7 +208,10 @@ function Announcements() {
       setBirthdays([]);
       setActiveEvents([]);
     } finally {
-      setIsLoading(false);
+      if (isFirstLoadRef.current) {
+        setIsInitialLoading(false);
+        isFirstLoadRef.current = false;
+      }
     }
   }, [selectedDate]);
 
@@ -126,376 +219,547 @@ function Announcements() {
     fetchData();
   }, [fetchData]);
 
-  if (isLoading) return <BannerLoading />;
+  // Formatting Tanggal yang Ramah dan Nyaman Dibaca (Bilingual)
+  const formattedDateIndo = useMemo(() => {
+    try {
+      const parts = selectedDate.split("-");
+      const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      return d.toLocaleDateString("id-ID", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+    } catch {
+      return selectedDate;
+    }
+  }, [selectedDate]);
+
+  const formattedDateEng = useMemo(() => {
+    try {
+      const parts = selectedDate.split("-");
+      const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      return d.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+    } catch {
+      return selectedDate;
+    }
+  }, [selectedDate]);
+
+  if (isInitialLoading) return <BannerLoading />;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 selection:bg-blue-100 transition-colors duration-500 relative">
-      {/* ================= MODAL IMAGE ================= */}
+    <div className="min-h-screen bg-slate-100/70 text-slate-900 selection:bg-blue-200 relative font-sans">
+      {/* ================= MODAL IMAGE DETAIL (ACCESSIBLE DIALOG) ================= */}
       {selectedImage && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm transition-opacity"
-          onClick={() => setSelectedImage(null)} // Tutup jika background diklik
+          role="dialog"
+          aria-modal="true"
+          aria-label="Detail Gambar Pengumuman"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+          onClick={() => setSelectedImage(null)}
         >
           <div
-            className="relative max-w-4xl w-full flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300"
-            onClick={(e) => e.stopPropagation()} // Hindari tutup saat gambar diklik
+            className="relative max-w-4xl w-full max-h-[92dvh] overflow-y-auto bg-white rounded-3xl p-4 sm:p-6 shadow-2xl border border-slate-300 flex flex-col items-center justify-center animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
           >
-            <button
-              onClick={() => setSelectedImage(null)}
-              className="absolute -top-12 right-0 md:-right-12 bg-white text-slate-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-slate-100 font-bold transition-colors"
-              title="Close Image Modal"
-            >
-              ✕
-            </button>
-            <img
-              src={selectedImage}
-              alt="Announcement Detail"
-              className="w-full h-auto max-h-[80vh] object-contain rounded-2xl shadow-2xl bg-white"
-            />
-            <button
-              type="button"
-              onClick={() => setSelectedImage(null)}
-              className="mt-3 w-full py-3 bg-white text-slate-800 hover:bg-slate-100 rounded-xl font-extrabold text-sm shadow-md flex items-center justify-center gap-2 border border-slate-200 transition-colors"
-            >
-              <span>✕</span> Close / Back
-            </button>
+            <div className="w-full flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+              <h4 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                <span>🖼️</span> Lampiran Gambar Pengumuman
+              </h4>
+              <button
+                type="button"
+                onClick={() => setSelectedImage(null)}
+                className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center transition-colors focus-visible:ring-2 focus-visible:ring-blue-600"
+                title="Tutup (Tombol Esc)"
+                aria-label="Tutup pratinjau gambar"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="max-h-[50vh] sm:max-h-[66vh] w-full flex items-center justify-center overflow-auto rounded-xl bg-slate-50 border border-slate-200 p-2">
+              <img
+                src={selectedImage}
+                alt="Pengumuman Cita Hati"
+                className="max-h-[48vh] sm:max-h-[62vh] w-auto max-w-full object-contain rounded-lg"
+              />
+            </div>
+
+            <div className="mt-4 w-full flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-200">
+              <a
+                href={selectedImage}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm border border-slate-300 transition-colors focus-visible:ring-2 focus-visible:ring-blue-600"
+              >
+                <span>🔍</span> Buka Ukuran Penuh (Tab Baru)
+              </a>
+
+              <button
+                type="button"
+                onClick={() => setSelectedImage(null)}
+                className="px-6 py-2.5 bg-[#1e3a8a] text-white hover:bg-blue-900 rounded-xl font-bold text-sm shadow-sm transition-colors focus-visible:ring-2 focus-visible:ring-blue-600"
+              >
+                Tutup Pratinjau
+              </button>
+            </div>
           </div>
         </div>
       )}
-      {/* =============================================== */}
 
-      {/* Mengaktifkan Banner jika komponen Banner sudah tersedia */}
-      {/* <Banner /> */}
-
-      {/* --- Modern Header --- */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200/60">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+      {/* ================= HEADER UTAMA ================= */}
+      <header className="sticky top-0 z-40 bg-white border-b border-slate-200/90 shadow-xs">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2.5 sm:py-3.5 flex flex-col md:flex-row items-center justify-between gap-2.5 md:gap-4">
+          {/* Logo & Identitas Institusi */}
+          <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
+            <div className="flex items-center gap-2.5 sm:gap-3">
               <img
                 src="/252-SMA_CITA_HATI_EAST_SURABAYA.png"
-                alt="Logo"
-                className="relative h-14 w-auto rounded-lg"
+                alt="Logo Sekolah Cita Hati East Surabaya"
+                className="h-10 sm:h-12 w-auto object-contain rounded-md"
               />
+              <div>
+                <h1 className="text-base sm:text-xl font-black text-[#1e3a8a] tracking-tight leading-tight">
+                  Community Hub
+                </h1>
+                <p className="text-[11px] sm:text-xs font-bold text-slate-600 uppercase tracking-wider">
+                  Cita Hati East Surabaya
+                </p>
+              </div>
             </div>
-            <div className="h-10 w-[1px] bg-slate-200 hidden md:block" />
-            <div>
-              <h1 className="text-xl font-black text-slate-800 tracking-tight leading-none">
-                Community Hubb
-              </h1>
-              <p className="text-[11px] font-bold text-blue-600 uppercase tracking-[0.2em] mt-1">
-                Cita Hati Information
-              </p>
+
+            {/* Quick Action Button Guru di Mobile */}
+            <div className="flex items-center gap-1.5 md:hidden">
+              <Link
+                to="/duty-attendance"
+                className="min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1e3a8a] text-white rounded-xl text-xs font-bold shadow-xs active:scale-95 transition-all"
+              >
+                <span>🛡️</span>
+                <span>Duty</span>
+              </Link>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Quick Date Shift Buttons */}
-            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl shadow-2xs">
-              <button
-                type="button"
-                onClick={() => handleShiftDate(-1)}
-                className="px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-white rounded-lg transition-colors"
-                title="View Yesterday's Announcements"
-              >
-                ◀ Yesterday
-              </button>
-              <button
-                type="button"
-                onClick={handleSetToday}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                  selectedDate === today
-                    ? "bg-[#1e3a8a] text-white shadow-xs"
-                    : "text-slate-700 hover:bg-white"
-                }`}
-                title="Go to Today"
-              >
-                Today
-              </button>
-              <button
-                type="button"
-                onClick={() => handleShiftDate(1)}
-                className="px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-white rounded-lg transition-colors"
-                title="View Tomorrow's Announcements"
-              >
-                Tomorrow ▶
-              </button>
-            </div>
-
-            {/* Date Input */}
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 transition-all outline-none"
-              title="Select custom date"
-            />
-
-            {/* Text Size Accessibility Toggle */}
+          {/* Quick Navigasi & Alat Aksesibilitas */}
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-between sm:justify-end">
+            {/* Tombol Ukuran Huruf (Sangat penting bagi guru 25-55 tahun) */}
             <button
               type="button"
-              onClick={() => setLargeText(!largeText)}
-              className={`px-3 py-2 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 ${
+              onClick={toggleLargeText}
+              className={`flex-1 sm:flex-none min-h-[40px] px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl border transition-all flex items-center justify-center gap-2 shadow-2xs focus-visible:ring-2 focus-visible:ring-blue-600 ${
                 largeText
-                  ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                  ? "bg-[#1e3a8a] text-white border-[#1e3a8a] ring-2 ring-blue-300"
+                  : "bg-white text-slate-800 border-slate-300 hover:bg-slate-50"
               }`}
-              title="Toggle larger reading font size"
+              title="Perbesar atau kembalikan ukuran teks"
+              aria-label="Pengaturan ukuran teks baca"
             >
-              <span>{largeText ? "🔍 Standard Font" : "🔍 Larger Font (A+)"}</span>
+              <span className="text-base" aria-hidden="true">
+                🔤
+              </span>
+              <span>{largeText ? "Ukuran: Besar (A+)" : "Ukuran: Normal (A)"}</span>
             </button>
 
+
+            {/* Link Panduan Guru */}
             <Link
               to="/tutorial"
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-2xs hover:shadow-xs active:scale-95"
-              title="Open Teacher Guide & Tutorial"
+              className="flex-1 sm:flex-none min-h-[40px] inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white text-slate-800 hover:bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold transition-colors shadow-2xs focus-visible:ring-2 focus-visible:ring-blue-600"
+              title="Buka Buku Panduan Guru & Tutorial"
             >
-              <span>📖</span>
-              <span>Teacher Guide</span>
+              <span aria-hidden="true">📖</span>
+              <span>Panduan</span>
             </Link>
 
+            {/* Link Duty Attendance (Desktop) */}
             <Link
               to="/duty-attendance"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all active:scale-95"
+              className="min-h-[40px] hidden md:inline-flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] hover:bg-blue-900 text-white rounded-xl text-xs sm:text-sm font-bold shadow-sm transition-colors focus-visible:ring-2 focus-visible:ring-blue-600"
+              title="Menuju Presensi Tugas Piket Guru"
             >
-              <span>🛡️</span>
+              <span aria-hidden="true">🛡️</span>
               <span>Duty Attendance</span>
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-12">
-        <div className="mb-12">
-          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            Daily{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-              Updates
-            </span>
-          </h2>
-          <p className="text-slate-500 mt-2 font-medium">
-            {new Date(selectedDate).toLocaleDateString("en-US", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
+      {/* ================= TANGGAL & NAVIGASI WAKTU (TACTILE CONTROLLER) ================= */}
+      <section className="bg-white border-b border-slate-200 py-4 shadow-2xs">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            {/* Banner Tanggal Besar & Nyaman Dibaca */}
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-md bg-blue-100 text-[#1e3a8a] text-[11px] font-black uppercase tracking-wider">
+                  Jadwal & Pengumuman
+                </span>
+                {selectedDate === today && (
+                  <span className="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-900 text-[11px] font-black uppercase tracking-wider">
+                    ● Hari Ini (Today)
+                  </span>
+                )}
+              </div>
+              <h2
+                className={`${
+                  largeText ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl"
+                } font-black text-slate-900 tracking-tight mt-1 transition-all`}
+              >
+                {formattedDateIndo}
+              </h2>
+              <p className="text-xs sm:text-sm font-semibold text-slate-600 mt-0.5">
+                {formattedDateEng}
+              </p>
+            </div>
+
+            {/* Tombol Pemilih Tanggal (Touch Target Minimal 44px) */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
+              <div className="inline-flex items-center justify-between sm:justify-start bg-slate-100 p-1 rounded-2xl border border-slate-200 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => handleShiftDate(-1)}
+                  className="flex-1 sm:flex-none min-h-[42px] px-3.5 py-2 text-xs sm:text-sm font-bold text-slate-800 hover:bg-white hover:text-[#1e3a8a] rounded-xl transition-all flex items-center justify-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-600"
+                  title="Lihat pengumuman hari kemarin"
+                >
+                  <span>◀</span>
+                  <span>Kemarin</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSetToday}
+                  className={`flex-1 sm:flex-none min-h-[42px] px-4 py-2 text-xs sm:text-sm font-black rounded-xl transition-all shadow-2xs focus-visible:ring-2 focus-visible:ring-blue-600 flex items-center justify-center ${
+                    selectedDate === today
+                      ? "bg-[#1e3a8a] text-white"
+                      : "text-slate-800 hover:bg-white hover:text-[#1e3a8a]"
+                  }`}
+                  title="Kembali ke hari ini"
+                >
+                  Hari Ini
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleShiftDate(1)}
+                  className="flex-1 sm:flex-none min-h-[42px] px-3.5 py-2 text-xs sm:text-sm font-bold text-slate-800 hover:bg-white hover:text-[#1e3a8a] rounded-xl transition-all flex items-center justify-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-600"
+                  title="Lihat pengumuman hari besok"
+                >
+                  <span>Besok</span>
+                  <span>▶</span>
+                </button>
+              </div>
+
+              {/* Input Tanggal Manual */}
+              <div className="relative flex items-center w-full sm:w-auto">
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full sm:w-auto min-h-[44px] bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-bold text-slate-800 hover:border-slate-400 focus:border-[#1e3a8a] focus:ring-2 focus:ring-blue-500 outline-none shadow-2xs transition-all cursor-pointer text-center sm:text-left"
+                  title="Pilih tanggal tertentu dari kalender"
+                  aria-label="Pilih tanggal pengumuman"
+                />
+              </div>
+            </div>
+          </div>
         </div>
+      </section>
 
-
-        {/* --- Special Active Events Banner --- */}
+      {/* ================= KONTEN UTAMA ================= */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-28 sm:pb-16">
+        {/* --- SPECIAL ACTIVE EVENTS (JADWAL KHUSUS ATAU PENYESUAIAN KBM) --- */}
         {activeEvents.length > 0 && (
-          <div className="mb-8 space-y-4">
+          <section aria-label="Jadwal Khusus Acara Sekolah" className="mb-8 space-y-4">
             {activeEvents.map((ev) => (
               <div
                 key={ev.id_event}
-                className="p-6 rounded-[2rem] bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-2 border-amber-200 shadow-lg shadow-amber-500/5 relative overflow-hidden"
+                className="p-5 sm:p-6 rounded-3xl bg-amber-50/90 border-2 border-amber-300 shadow-sm relative overflow-hidden"
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex items-start gap-4">
-                    <div className="p-3 bg-amber-500 text-white rounded-2xl text-xl shadow-md shadow-amber-500/20 flex-shrink-0">
+                    <div
+                      className="p-3 bg-amber-500 text-slate-950 rounded-2xl shadow-xs text-2xl flex-shrink-0"
+                      aria-hidden="true"
+                    >
                       ⭐
                     </div>
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-amber-200/80 text-amber-900 border border-amber-300">
-                          Special Event: {ev.target_scope}
+                        <span className="text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full bg-amber-200 text-amber-950 border border-amber-400">
+                          Agenda Khusus: {ev.target_scope}
                         </span>
                         {ev.affects_kbm && (
-                          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
-                            Class Schedule Adjustment
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-rose-100 text-rose-900 border border-rose-300">
+                            ⚠️ Penyesuaian Jadwal KBM
                           </span>
                         )}
                       </div>
-                      <h3 className="text-xl font-black text-slate-900 mt-1.5 tracking-tight">
+                      <h3
+                        className={`${
+                          largeText ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl"
+                        } font-black text-slate-900 mt-2 tracking-tight transition-all`}
+                      >
                         {ev.event_name}
                       </h3>
-                      <p className="text-sm text-slate-600 mt-1 leading-relaxed font-medium">
+                      <p
+                        className={`${
+                          largeText ? "text-base sm:text-lg font-semibold text-slate-800" : "text-sm sm:text-base text-slate-700 font-medium"
+                        } mt-1.5 leading-relaxed transition-all`}
+                      >
                         {ev.description}
                       </p>
                     </div>
                   </div>
+
                   {ev.time_slot && (
                     <div className="flex-shrink-0 md:text-right">
-                      <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-amber-200 text-xs font-bold text-amber-900 shadow-sm">
-                        🕒 {ev.time_slot}
+                      <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-amber-300 font-bold text-amber-950 text-sm shadow-2xs">
+                        <span aria-hidden="true">🕒</span>
+                        <span>{ev.time_slot}</span>
                       </span>
                     </div>
                   )}
                 </div>
               </div>
             ))}
-          </div>
+          </section>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* --- Events Section --- */}
-          <section className="bg-white rounded-[2rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100 hover:scale-[1.01] transition-transform duration-300">
-            <SectionHeader
-              title="Scheduled Events"
-              color="blue"
-              icon={
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2.5"
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-              }
-            />
+        {/* --- GRID UTAMA: PENGUMUMAN & ULANG TAHUN --- */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* KOLOM KIRI (7/12 atau 8/12): DAFTAR PENGUMUMAN */}
+          <div className="lg:col-span-8">
+            <section
+              aria-label="Daftar Pengumuman Sekolah"
+              className="bg-white rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200"
+            >
+              <SectionHeader
+                title="Pengumuman Terjadwal"
+                colorBadge="blue"
+                largeText={largeText}
+                badgeCount={announcements.length}
+                icon="📢"
+              />
 
-            <div className="space-y-4">
-              {announcements.length > 0 ? (
-                announcements.map((item) => (
-                  <div
-                    key={item.id_announcement}
-                    className={`group p-5 rounded-2xl transition-all flex flex-col items-start ${
-                      item.is_pinned
-                        ? "bg-gradient-to-r from-amber-50/90 via-yellow-50/60 to-amber-50/90 border-2 border-amber-300 shadow-md shadow-amber-500/10 hover:border-amber-400"
-                        : "bg-slate-50 hover:bg-blue-50 border border-transparent hover:border-blue-100"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {item.is_pinned && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-1 bg-amber-400 text-slate-900 rounded-md uppercase tracking-wider shadow-sm">
-                          📌 PINNED
-                        </span>
-                      )}
-                      <span className="text-[10px] font-bold px-2.5 py-1 bg-white border border-slate-200 rounded-md text-slate-600 group-hover:text-blue-600 group-hover:border-blue-200 transition-colors uppercase tracking-wider">
-                        {item.end_date && item.end_date !== item.date
-                          ? `📅 ${item.date} to ${item.end_date}`
-                          : item.date}
-                      </span>
-                    </div>
-                    <p className={`mt-3 text-slate-800 font-semibold leading-relaxed whitespace-pre-line w-full break-words transition-all ${
-                      largeText ? "text-lg sm:text-xl" : "text-sm sm:text-base"
-                    }`}>
-                      {item.announcement}
-                    </p>
+              <div className="space-y-5">
+                {announcements.length > 0 ? (
+                  announcements.map((item) => (
+                    <article
+                      key={item.id_announcement}
+                      className={`p-5 sm:p-6 rounded-2xl transition-all border print-clean ${
+                        item.is_pinned
+                          ? "bg-amber-50/50 border-amber-300 shadow-xs"
+                          : "bg-slate-50/70 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      {/* Baris Badge Info & Salin Teks */}
+                      <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {item.is_pinned && (
+                            <span className="inline-flex items-center gap-1.5 text-xs font-black px-3 py-1 rounded-lg bg-amber-400 text-slate-950 border border-amber-500 uppercase tracking-wider shadow-2xs">
+                              📌 PENTING
+                            </span>
+                          )}
+                          <span className="text-xs font-bold px-3 py-1 rounded-lg bg-white border border-slate-300 text-slate-700 shadow-2xs">
+                            📅{" "}
+                            {item.end_date && item.end_date !== item.date
+                              ? `${item.date} s/d ${item.end_date}`
+                              : item.date}
+                          </span>
+                        </div>
 
-                    {/* Wrapper untuk Tombol Image dan URL agar berjejer rapi */}
-                    {(item.url_image || item.url_announcemet) && (
-                      <div className="mt-4 flex flex-wrap items-center gap-3">
-                        {/* Tombol View Image */}
-                        {item.url_image && (
-                          <button
-                            onClick={() =>
-                              setSelectedImage(
-                                `${new URL(import.meta.env.VITE_API_BASE_URL).origin}${item.url_image}`,
-                              )
-                            }
-                            className="inline-flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-blue-600 bg-white border border-blue-200 shadow-sm hover:bg-blue-600 hover:text-white rounded-lg transition-colors"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                              ></path>
-                            </svg>
-                            View Image
-                          </button>
-                        )}
-
-                        {/* Tombol Link URL Aktif */}
-                        {item.url_announcemet && (
-                          <a
-                            href={item.url_announcemet}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 shadow-sm hover:bg-indigo-600 hover:text-white rounded-lg transition-colors"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                              ></path>
-                            </svg>
-                            Open Link
-                          </a>
-                        )}
+                        {/* Tombol Salin Teks (Interaktif untuk Guru) */}
+                        <button
+                          type="button"
+                          onClick={() => handleCopyText(item.id_announcement, item.announcement, item.date)}
+                          className="min-h-[36px] px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-950 rounded-xl text-xs font-bold border border-slate-300 shadow-2xs transition-all flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-blue-600 no-print"
+                          title="Salin isi pengumuman ke clipboard untuk diteruskan"
+                        >
+                          {copiedId === item.id_announcement ? (
+                            <>
+                              <span className="text-emerald-700">✓</span>
+                              <span className="text-emerald-700 font-extrabold">Tersalin!</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>📋</span>
+                              <span>Salin Info</span>
+                            </>
+                          )}
+                        </button>
                       </div>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <EmptyState icon="📅" message="No events scheduled" />
-              )}
-            </div>
-          </section>
 
-          {/* --- Birthdays Section --- */}
-          <section className="bg-white rounded-[2rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100 hover:scale-[1.01] transition-transform duration-300">
-            <SectionHeader
-              title="Celebrations"
-              color="rose"
-              icon={
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2.5"
-                    d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.701 2.701 0 00-1.5-.454M9 6v2m3-2v2m3-2v2M9 3h.01M12 3h.01M15 3h.01M21 21v-7a2 2 0 00-2-2H5a2 2 0 00-2 2v7h18zm-3-9v-2a2 2 0 00-2-2H8a2 2 0 00-2 2v2h12z"
+                      {/* Teks Pengumuman dengan Tipografi Kontras Tinggi */}
+                      <div
+                        className={`text-slate-900 leading-relaxed whitespace-pre-line w-full break-words transition-all ${
+                          largeText
+                            ? "text-lg sm:text-xl font-semibold leading-8"
+                            : "text-base sm:text-lg font-medium leading-7"
+                        }`}
+                      >
+                        {item.announcement}
+                      </div>
+
+                      {/* Baris Tombol Lampiran (Gambar & Tautan) */}
+                      {(item.url_image || item.url_announcemet) && (
+                        <div className="mt-5 pt-4 border-t border-slate-200/80 flex flex-wrap items-center gap-3 no-print">
+                          {/* Tombol Lihat Gambar */}
+                          {item.url_image && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const origin = new URL(import.meta.env.VITE_API_BASE_URL).origin;
+                                setSelectedImage(`${origin}${item.url_image}`);
+                              }}
+                              className="min-h-[42px] inline-flex items-center gap-2 px-4 py-2 font-bold text-sm text-[#1e3a8a] bg-blue-50 border border-blue-200 hover:bg-[#1e3a8a] hover:text-white rounded-xl shadow-2xs transition-all focus-visible:ring-2 focus-visible:ring-blue-600"
+                            >
+                              <span aria-hidden="true">🖼️</span>
+                              <span>Lihat Gambar Lampiran</span>
+                            </button>
+                          )}
+
+                          {/* Tombol Buka Tautan Eksternal */}
+                          {item.url_announcemet && (
+                            <a
+                              href={item.url_announcemet}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="min-h-[42px] inline-flex items-center gap-2 px-4 py-2 font-bold text-sm text-indigo-900 bg-indigo-50 border border-indigo-200 hover:bg-indigo-900 hover:text-white rounded-xl shadow-2xs transition-all focus-visible:ring-2 focus-visible:ring-blue-600"
+                            >
+                              <span aria-hidden="true">🔗</span>
+                              <span>Buka Tautan Terkait</span>
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState
+                    icon="📅"
+                    title="Belum ada pengumuman"
+                    message="Tidak ada jadwal pengumuman untuk tanggal yang dipilih."
+                    largeText={largeText}
                   />
-                </svg>
-              }
-            />
+                )}
+              </div>
+            </section>
+          </div>
 
-            <div className="space-y-4">
-              {birthdays.length > 0 ? (
-                birthdays.map((item) => (
-                  <div
-                    key={item.id_birthday}
-                    className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-transparent hover:border-rose-100 hover:bg-rose-50 transition-all"
-                  >
-                    <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center text-xl shadow-sm">
-                      🎁
+          {/* KOLOM KANAN (4/12 atau 5/12): ULANG TAHUN & INFO CEPAT */}
+          <div className="lg:col-span-4 space-y-6">
+            {/* Kartu Ulang Tahun Rekan Guru */}
+            <section
+              aria-label="Ulang Tahun Guru Hari Ini"
+              className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200"
+            >
+              <SectionHeader
+                title="Celebrations"
+                colorBadge="rose"
+                largeText={largeText}
+                badgeCount={birthdays.length}
+                icon="🎂"
+              />
+
+              <div className="space-y-3.5">
+                {birthdays.length > 0 ? (
+                  birthdays.map((item) => (
+                    <div
+                      key={item.id_birthday}
+                      className="p-4 rounded-2xl bg-rose-50/60 border border-rose-200 flex flex-col gap-3 transition-all"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div
+                          className="h-12 w-12 rounded-2xl bg-white border border-rose-200 flex items-center justify-center text-2xl shadow-2xs flex-shrink-0"
+                          aria-hidden="true"
+                        >
+                          🎁
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4
+                            className={`${
+                              largeText ? "text-lg sm:text-xl" : "text-base"
+                            } font-extrabold text-slate-900 tracking-tight truncate`}
+                          >
+                            {item.gender?.toLowerCase() === "male" ? "Mr. " : "Ms. "}
+                            {item.name}
+                          </h4>
+                          <p className="text-xs font-bold text-rose-800 uppercase tracking-wide mt-0.5">
+                            Hari Ini Ulang Tahun! 🎉
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Tombol Interaktif Kirim Ucapan */}
+                      <button
+                        type="button"
+                        onClick={() => handleWishBirthday(item)}
+                        className="w-full min-h-[38px] px-3 py-1.5 rounded-xl bg-white hover:bg-rose-100 text-rose-900 font-bold text-xs border border-rose-300 shadow-2xs transition-colors flex items-center justify-center gap-1.5 focus-visible:ring-2 focus-visible:ring-rose-500"
+                      >
+                        {birthdayWishCopied === item.id_birthday ? (
+                          <>
+                            <span>✓</span>
+                            <span>Teks Ucapan Tersalin!</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>💌</span>
+                            <span>Salin Ucapan Selamat</span>
+                          </>
+                        )}
+                      </button>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-slate-800">
-                        {item.gender?.toLowerCase() === "male"
-                          ? "Mr. "
-                          : "Ms. "}
-                        {item.name}
-                      </h4>
-                      <p className="text-[11px] text-rose-500 font-bold uppercase tracking-tighter">
-                        Birthday Today
-                      </p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <EmptyState icon="🎂" message="No birthdays today" />
-              )}
-            </div>
-          </section>
+                  ))
+                ) : (
+                  <EmptyState
+                    icon="🎂"
+                    title="Tidak Ada Ulang Tahun"
+                    message="Tidak ada rekan guru yang berulang tahun pada tanggal ini."
+                    largeText={largeText}
+                  />
+                )}
+              </div>
+            </section>
+
+            {/* Quick Links & Info Bantuan untuk Guru & Staf */}
+            <section
+              aria-label="Tautan Bantuan Guru"
+              className="bg-slate-50 rounded-3xl p-5 border border-slate-200/80 space-y-3.5 no-print"
+            >
+              <h4 className="text-xs font-black text-slate-600 uppercase tracking-wider flex items-center gap-2">
+                <span>💡</span> Bantuan & Akses Cepat
+              </h4>
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                Punya pertanyaan mengenai jadwal piket guru, modul materi, atau kendala portal?
+              </p>
+              <div className="space-y-2 pt-1">
+                <Link
+                  to="/duty"
+                  className="w-full min-h-[44px] flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-blue-300 text-slate-800 hover:text-[#1e3a8a] text-xs font-bold transition-all shadow-2xs"
+                >
+                  <span className="flex items-center gap-2">
+                    <span>🛡️</span> Presensi Duty Guru
+                  </span>
+                  <span>➔</span>
+                </Link>
+
+                <Link
+                  to="/tutorial"
+                  className="w-full min-h-[44px] flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-blue-300 text-slate-800 hover:text-[#1e3a8a] text-xs font-bold transition-all shadow-2xs"
+                >
+                  <span className="flex items-center gap-2">
+                    <span>📖</span> Panduan & Tutorial Lengkap
+                  </span>
+                  <span>➔</span>
+                </Link>
+              </div>
+            </section>
+          </div>
         </div>
       </main>
 
@@ -505,11 +769,31 @@ function Announcements() {
   );
 }
 
-// --- Helper Components ---
-const EmptyState = ({ icon, message }) => (
-  <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-    <span className="text-4xl mb-3 opacity-50 grayscale">{icon}</span>
-    <p className="text-sm font-medium italic">{message}</p>
+// --- Helper Empty State Component ---
+const EmptyState = ({ icon, title, message, largeText }) => (
+  <div className="flex flex-col items-center justify-center py-12 px-4 text-center rounded-2xl bg-slate-50/50 border border-dashed border-slate-200">
+    <span
+      className={`${largeText ? "text-5xl" : "text-4xl"} mb-2 opacity-60`}
+      aria-hidden="true"
+    >
+      {icon}
+    </span>
+    {title && (
+      <h4
+        className={`${
+          largeText ? "text-lg font-bold" : "text-base font-bold"
+        } text-slate-800 mb-1`}
+      >
+        {title}
+      </h4>
+    )}
+    <p
+      className={`${
+        largeText ? "text-base text-slate-600" : "text-sm text-slate-500"
+      } font-medium max-w-sm`}
+    >
+      {message}
+    </p>
   </div>
 );
 

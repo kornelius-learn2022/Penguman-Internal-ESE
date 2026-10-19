@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 
 export default function DutyAttendance() {
@@ -44,12 +44,13 @@ export default function DutyAttendance() {
   const [freeTeachersBySlot, setFreeTeachersBySlot] = useState({});
   const inFlightSlotsRef = useRef(new Set());
 
-  const fetchFreeTeachers = async (timeSlot) => {
+  const fetchFreeTeachers = useCallback(async (timeSlot) => {
     if (!timeSlot || freeTeachersBySlot[timeSlot] || inFlightSlotsRef.current.has(timeSlot)) return;
     inFlightSlotsRef.current.add(timeSlot);
     try {
       const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
-      const res = await fetch(`/api/duty-attendance/free-teachers?date=${todayStr}&time_slot=${encodeURIComponent(timeSlot)}`);
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || "/api";
+      const res = await fetch(`${apiUrl}/duty-attendance/free-teachers?date=${todayStr}&time_slot=${encodeURIComponent(timeSlot)}`);
       if (res.ok) {
         const data = await res.json();
         setFreeTeachersBySlot((prev) => ({ ...prev, [timeSlot]: data }));
@@ -59,20 +60,24 @@ export default function DutyAttendance() {
     } finally {
       inFlightSlotsRef.current.delete(timeSlot);
     }
-  };
+  }, [freeTeachersBySlot]);
 
   const fetchData = async () => {
     setLoading(true);
     setFetchError(false);
     try {
       const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || "/api";
       const [resSess, resTeach] = await Promise.all([
-        fetch(`/api/duty-attendance/sessions?tanggal=${todayStr}`),
-        fetch(`/api/duty-attendance/teachers`),
+        fetch(`${apiUrl}/duty-attendance/sessions?tanggal=${todayStr}`),
+        fetch(`${apiUrl}/duty-attendance/teachers`),
       ]);
       if (resSess.ok) {
         const data = await resSess.json();
         setSessions(data);
+        // Otomatis muat daftar guru bebas untuk setiap slot sesi hari ini
+        const slots = Array.from(new Set(data.map((s) => s.time_slot).filter(Boolean)));
+        slots.forEach((slot) => fetchFreeTeachers(slot));
       } else {
         setFetchError(true);
       }
@@ -117,7 +122,8 @@ export default function DutyAttendance() {
     setSessionFormField(session.session_key, "isSubmitting", true);
     try {
       const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
-      const res = await fetch("/api/duty-attendance/check-in", {
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || "/api";
+      const res = await fetch(`${apiUrl}/duty-attendance/check-in`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -214,15 +220,17 @@ export default function DutyAttendance() {
             <div className="flex items-center gap-2">
               <Link
                 to="/tutorial"
-                className="px-3 py-1.5 bg-blue-50 text-[#1e3a8a] hover:bg-blue-100 rounded-xl text-xs font-bold transition-all border border-blue-200"
+                className="min-h-[42px] inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 text-[#1e3a8a] hover:bg-blue-100 rounded-xl text-xs sm:text-sm font-bold transition-all border border-blue-200 shadow-2xs focus-visible:ring-2 focus-visible:ring-blue-600"
               >
-                📖 Teacher Guide
+                <span>📖</span>
+                <span>Panduan Guru</span>
               </Link>
               <Link
                 to="/"
-                className="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-bold transition-all"
+                className="min-h-[42px] inline-flex items-center gap-1.5 px-3.5 py-2 bg-white text-slate-800 hover:bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-2xs focus-visible:ring-2 focus-visible:ring-blue-600"
               >
-                📢 Announcements
+                <span>📢</span>
+                <span>Pengumuman</span>
               </Link>
             </div>
           </div>
@@ -311,15 +319,17 @@ export default function DutyAttendance() {
           <div className="flex items-center gap-2">
             <Link
               to="/tutorial"
-              className="px-3 py-1.5 bg-blue-50 text-[#1e3a8a] hover:bg-blue-100 rounded-xl text-xs font-bold transition-all border border-blue-200"
+              className="min-h-[42px] inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 text-[#1e3a8a] hover:bg-blue-100 rounded-xl text-xs sm:text-sm font-bold transition-all border border-blue-200 shadow-2xs focus-visible:ring-2 focus-visible:ring-blue-600"
             >
-              📖 Teacher Guide
+              <span>📖</span>
+              <span>Panduan Guru</span>
             </Link>
             <Link
               to="/"
-              className="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-bold transition-all"
+              className="min-h-[42px] inline-flex items-center gap-1.5 px-3.5 py-2 bg-white text-slate-800 hover:bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-2xs focus-visible:ring-2 focus-visible:ring-blue-600"
             >
-              📢 Announcements
+              <span>📢</span>
+              <span>Pengumuman</span>
             </Link>
           </div>
         </div>
@@ -611,25 +621,57 @@ export default function DutyAttendance() {
                                       </select>
 
                                       <div>
-                                        <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-                                          🔄 Guru Pengganti / Inval (Opsional — Hanya jika guru di atas digantikan)
-                                        </label>
-                                        <select
-                                          value={currentForm.substituteName || ""}
-                                          onChange={(e) => {
-                                            setSessionFormField(session.session_key, "substituteName", e.target.value);
-                                          }}
-                                          className="w-full bg-white border border-slate-300 text-sm font-medium text-slate-700 px-3.5 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
-                                        >
-                                          <option value="">-- Tidak ada pengganti (Hadir sendiri) --</option>
-                                          {allTeachers
-                                            .filter((t) => t.trim().toLowerCase() !== (currentForm.teacherName || "").trim().toLowerCase())
-                                            .map((t, idx) => (
-                                              <option key={`sub-${idx}`} value={t}>
-                                                Digantikan oleh: {t}
-                                              </option>
-                                            ))}
-                                        </select>
+                                        <div className="flex items-center justify-between mb-1">
+                                          <label className="block text-[11px] font-semibold text-slate-500">
+                                            🔄 Guru Pengganti / Inval (Opsional: Hanya jika guru di atas digantikan)
+                                          </label>
+                                          {freeTeachersBySlot[session.time_slot] && (
+                                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 shadow-2xs">
+                                              ✨ {freeTeachersBySlot[session.time_slot].length} Guru Bebas Jadwal
+                                            </span>
+                                          )}
+                                        </div>
+                                        {(() => {
+                                          const slotFreeTeachers = freeTeachersBySlot[session.time_slot] || [];
+                                          const availableTeachers = allTeachers.filter(
+                                            (t) => t.trim().toLowerCase() !== (currentForm.teacherName || "").trim().toLowerCase()
+                                          );
+                                          const recommendedTeachers = availableTeachers.filter((t) =>
+                                            slotFreeTeachers.some((ft) => ft.trim().toLowerCase() === t.trim().toLowerCase())
+                                          );
+                                          const otherTeachers = availableTeachers.filter(
+                                            (t) => !slotFreeTeachers.some((ft) => ft.trim().toLowerCase() === t.trim().toLowerCase())
+                                          );
+
+                                          return (
+                                            <select
+                                              value={currentForm.substituteName || ""}
+                                              onFocus={() => fetchFreeTeachers(session.time_slot)}
+                                              onChange={(e) => {
+                                                setSessionFormField(session.session_key, "substituteName", e.target.value);
+                                              }}
+                                              className="w-full bg-white border border-slate-300 text-sm font-medium text-slate-700 px-3.5 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
+                                            >
+                                              <option value="">-- Tidak ada pengganti (Hadir sendiri) --</option>
+                                              {recommendedTeachers.length > 0 && (
+                                                <optgroup label={`⭐ Rekomendasi Guru Bebas (${recommendedTeachers.length} Guru Tidak Mengajar)`}>
+                                                  {recommendedTeachers.map((t, idx) => (
+                                                    <option key={`rec-${idx}`} value={t}>
+                                                      ⭐ {t} (Bebas Jadwal)
+                                                    </option>
+                                                  ))}
+                                                </optgroup>
+                                              )}
+                                              <optgroup label={recommendedTeachers.length > 0 ? "Guru Lainnya" : "Daftar Seluruh Guru"}>
+                                                {otherTeachers.map((t, idx) => (
+                                                  <option key={`sub-${idx}`} value={t}>
+                                                    {t}
+                                                  </option>
+                                                ))}
+                                              </optgroup>
+                                            </select>
+                                          );
+                                        })()}
                                         {currentForm.substituteName && currentForm.substituteName.trim().toLowerCase() !== (currentForm.teacherName || "").trim().toLowerCase() && (
                                           <div className="mt-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-xs font-medium text-amber-800 flex items-center gap-1.5">
                                             <span>🔄</span>

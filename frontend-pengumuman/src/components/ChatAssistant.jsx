@@ -349,10 +349,10 @@ export default function ChatAssistant() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Language Selector for Instant Chips */}
-          <div className="px-3 py-1.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Quick Prompt:</span>
-            <div className="flex gap-1">
+          {/* Language Selector for Instant Chips (Aksesibilitas Sentuh Minimal 36-40px) */}
+          <div className="px-3 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Quick Prompt:</span>
+            <div className="flex gap-1.5">
               {[
                 { id: "all", label: "🌐 All" },
                 { id: "en", label: "🇬🇧 EN" },
@@ -363,10 +363,10 @@ export default function ChatAssistant() {
                   key={tab.id}
                   type="button"
                   onClick={() => setChipLang(tab.id)}
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-all ${
+                  className={`text-xs font-bold px-3 py-1.5 min-h-[36px] rounded-xl transition-all flex items-center justify-center focus-visible:ring-2 focus-visible:ring-blue-600 ${
                     chipLang === tab.id
-                      ? "bg-blue-600 text-white shadow-xs"
-                      : "text-slate-600 bg-white hover:bg-slate-200 border border-slate-200"
+                      ? "bg-[#1e3a8a] text-white shadow-xs"
+                      : "text-slate-700 bg-white hover:bg-slate-200 border border-slate-200"
                   }`}
                 >
                   {tab.label}
@@ -407,7 +407,7 @@ export default function ChatAssistant() {
               disabled={!inputValue.trim() || isLoading}
               className={`p-2.5 rounded-2xl flex items-center justify-center transition-all ${
                 inputValue.trim() && !isLoading
-                  ? "bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/30 scale-100 active:scale-95"
+                  ? "bg-[#1e3a8a] hover:bg-blue-900 text-white shadow-md shadow-blue-900/20 scale-100 active:scale-95"
                   : "bg-slate-100 text-slate-300 cursor-not-allowed"
               }`}
             >
@@ -419,21 +419,18 @@ export default function ChatAssistant() {
         </div>
       )}
 
-      {/* ================= FLOATING ACTION BUTTON ================= */}
+      {/* ================= FLOATING ACTION BUTTON (SOLID SCHOOL NAVY, NO SLOP PULSE) ================= */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="pointer-events-auto relative group flex items-center justify-center p-0.5 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95"
+        className="pointer-events-auto relative flex items-center justify-center rounded-full shadow-lg transition-all duration-200 active:scale-95 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
         title="Ask Cita Hati AI Assistant"
+        aria-label="Buka Asisten AI Cita Hati"
       >
-        {/* Glowing Background Pulse */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 rounded-full blur-sm opacity-70 group-hover:opacity-100 animate-pulse transition duration-500"></div>
-
-        <div className="relative flex items-center gap-2.5 px-4 sm:px-5 py-3 sm:py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full font-bold text-xs sm:text-sm shadow-inner">
-          <div className="relative">
-            <span className="text-xl">🤖</span>
-            <span className="absolute -top-1 -right-1 flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-300 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-400"></span>
+        <div className="relative flex items-center gap-2.5 px-4 sm:px-5 py-3 sm:py-3.5 bg-[#1e3a8a] hover:bg-blue-900 text-white rounded-full font-bold text-xs sm:text-sm border-2 border-white/90 shadow-md">
+          <div className="relative flex items-center justify-center">
+            <span className="text-lg sm:text-xl" aria-hidden="true">🤖</span>
+            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
             </span>
           </div>
           <span className="tracking-tight whitespace-nowrap">Ask Schedules & Duty</span>

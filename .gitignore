@@ -52,3 +52,48 @@ yarn-error.log*
 # File sistem operasi
 .DS_Store
 Thumbs.db
+
+# ==========================================
+# 5. TEMPORARY & SCRATCH SCRIPTS
+# ==========================================
+*.xlsx
+*.txt
+scratch/
+anti-slop/
+check_*.py
+inspect_*.py
+deploy_*.py
+test_*.py
+fix_*.py
+add_*.py
+audit_*.py
+delete_*.py
+find_*.py
+get_*.py
+patch_*.py
+print_*.py
+query_*.py
+read_*.py
+run_*.py
+seed_*.py
+translate_*.py
+update_*.py
+verify_*.py
+view_*.py
+diagnose.py
+expand_swap.py
+integrate_duty_pin.py
+investigate_icha.py
+match_*.py
+modify_admin.py
+morning_preflight_check.py
+quick_check.py
+reset_today_attendance.py
+upload_fe_dist.py
+wait_build.py
+calculate_today_devotion.py
+all_canteen_duties.py
+apply_*.py
+detail_teachers.py
+generate_excel_pins.py
+search_citahati.py

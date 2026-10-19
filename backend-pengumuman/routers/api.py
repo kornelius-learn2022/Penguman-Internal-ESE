@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile, R
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date, time, timedelta
+import time as time_mod
 from sqlalchemy import extract, or_, and_, desc, func
 import models
 import schemas
@@ -69,8 +70,26 @@ async def login_admin(data: schemas.LoginRequest, db: Session = Depends(get_db))
     }
 
 
+# ==========================================
+# CACHING LAYER - ANNOUNCEMENTS (TTL 30s)
+# ==========================================
+_ANNOUNCEMENTS_TTL = 30.0  # seconds
+_announcements_cache = {}
+
+
+def invalidate_announcements_cache():
+    _announcements_cache.clear()
+
+
 @router.get("/announcements", response_model=List[schemas.AnnouncementCombinedResponse])
 def get_announcements(tanggal: Optional[date] = None, db: Session = Depends(get_db)):
+    cache_key = str(tanggal) if tanggal else "all"
+    now_m = time_mod.monotonic()
+    if cache_key in _announcements_cache:
+        cached_res, exp_m = _announcements_cache[cache_key]
+        if now_m < exp_m:
+            return cached_res
+
     query = db.query(models.Announcements)
     if tanggal:
         query = query.filter(
@@ -83,7 +102,10 @@ def get_announcements(tanggal: Optional[date] = None, db: Session = Depends(get_
                 ),
             )
         )
-    return query.order_by(models.Announcements.is_pinned.desc(), models.Announcements.date.desc(), models.Announcements.id_announcement.desc()).all()
+    raw = query.order_by(models.Announcements.is_pinned.desc(), models.Announcements.date.desc(), models.Announcements.id_announcement.desc()).all()
+    results = [schemas.AnnouncementCombinedResponse.model_validate(item, from_attributes=True) for item in raw]
+    _announcements_cache[cache_key] = (results, now_m + _ANNOUNCEMENTS_TTL)
+    return results
 
 
 @router.post("/announcements")
@@ -116,6 +138,7 @@ async def create_announcement(
     )
     db.add(new_entry)
     db.commit()
+    invalidate_announcements_cache()
 
     return {"message": "Pengumuman berhasil dibuat!", "data": new_entry}
 
@@ -155,6 +178,7 @@ async def update_announcement(
 
     db.commit()
     db.refresh(pengumuman_lama)
+    invalidate_announcements_cache()
 
     return {"message": "Pengumuman berhasil diupdate!", "data": pengumuman_lama}
 
@@ -177,6 +201,7 @@ async def toggle_pin_announcement(
     pengumuman.admin_update = user_aktif.get("id_admin", 1)
     db.commit()
     db.refresh(pengumuman)
+    invalidate_announcements_cache()
 
     return {
         "message": f"Pengumuman berhasil {'disematkan (pin)' if pengumuman.is_pinned else 'dilepas pin'}.",
@@ -199,6 +224,7 @@ async def delete_announcement(
         raise HTTPException(status_code=404, detail="Pengumuman tidak ditemukan.")
     db.delete(pengumuman_target)
     db.commit()
+    invalidate_announcements_cache()
 
     return {"message": "Pengumuman berhasil dihapus!"}
 
@@ -216,9 +242,26 @@ def verify_super_admin(user: dict):
 # ==========================================
 # ENDPOINT BIRTHDAYS (ULANG TAHUN)
 # ==========================================
-@router.get("/birthdays")
+_BIRTHDAYS_TTL = 30.0  # seconds
+_birthdays_cache = {"data": None, "exp": 0.0}
+
+
+def invalidate_birthdays_cache():
+    _birthdays_cache["data"] = None
+    _birthdays_cache["exp"] = 0.0
+
+
+@router.get("/birthdays", response_model=List[schemas.BirthdayResponse])
 def get_all_birthdays(db: Session = Depends(get_db)):
-    return db.query(models.Birthdays).all()
+    now_m = time_mod.monotonic()
+    if _birthdays_cache["data"] is not None and now_m < _birthdays_cache["exp"]:
+        return _birthdays_cache["data"]
+
+    raw = db.query(models.Birthdays).all()
+    results = [schemas.BirthdayResponse.model_validate(item, from_attributes=True) for item in raw]
+    _birthdays_cache["data"] = results
+    _birthdays_cache["exp"] = now_m + _BIRTHDAYS_TTL
+    return results
 
 
 @router.post("/birthdays")
@@ -240,6 +283,7 @@ def create_birthday(
     db.add(new_bday)
     db.commit()
     db.refresh(new_bday)
+    invalidate_birthdays_cache()
     return {"message": "Data ulang tahun berhasil ditambahkan!", "data": new_bday}
 
 
@@ -271,6 +315,7 @@ def update_birthday(
 
     db.commit()
     db.refresh(bday)
+    invalidate_birthdays_cache()
     return {"message": "Data ulang tahun berhasil diupdate!", "data": bday}
 
 
@@ -293,6 +338,7 @@ def delete_birthday(
 
     db.delete(bday)
     db.commit()
+    invalidate_birthdays_cache()
     return {"message": "Data ulang tahun berhasil dihapus!"}
 
 
@@ -957,6 +1003,14 @@ def delete_duty_inval(
 # ==========================================
 # ENDPOINT EVENT SCHEDULE (JADWAL KHUSUS EVENT)
 # ==========================================
+_EVENTS_SCHEDULE_TTL = 30.0  # seconds
+_events_schedule_cache = {}
+
+
+def invalidate_events_schedule_cache():
+    _events_schedule_cache.clear()
+
+
 @router.get("/events/schedule", response_model=List[schemas.EventScheduleResponse])
 def get_event_schedules(
     date: Optional[date] = None,
@@ -967,6 +1021,13 @@ def get_event_schedules(
     Mendapatkan daftar event schedule khusus (Assembly, Retreat, Exam, dsb).
     Bisa difilter berdasarkan tanggal aktif atau scope.
     """
+    cache_key = f"{str(date)}:{(scope or 'all').strip().lower()}"
+    now_m = time_mod.monotonic()
+    if cache_key in _events_schedule_cache:
+        cached_res, exp_m = _events_schedule_cache[cache_key]
+        if now_m < exp_m:
+            return cached_res
+
     query = db.query(models.EventSchedule)
     if date:
         query = query.filter(
@@ -978,9 +1039,12 @@ def get_event_schedules(
         )
     if scope:
         query = query.filter(models.EventSchedule.target_scope.ilike(f"%{scope}%"))
-    return query.order_by(
+    raw = query.order_by(
         models.EventSchedule.date.desc(), models.EventSchedule.id_event.desc()
     ).all()
+    results = [schemas.EventScheduleResponse.model_validate(item, from_attributes=True) for item in raw]
+    _events_schedule_cache[cache_key] = (results, now_m + _EVENTS_SCHEDULE_TTL)
+    return results
 
 
 @router.post("/events/schedule", response_model=schemas.EventScheduleResponse)
@@ -1005,6 +1069,7 @@ def create_event_schedule(
     db.add(new_event)
     db.commit()
     db.refresh(new_event)
+    invalidate_events_schedule_cache()
     return new_event
 
 
@@ -1046,6 +1111,7 @@ def update_event_schedule(
     event.admin_update = user_aktif.get("id_admin", 1)
     db.commit()
     db.refresh(event)
+    invalidate_events_schedule_cache()
     return event
 
 
@@ -1069,6 +1135,7 @@ def delete_event_schedule(
         )
     db.delete(event)
     db.commit()
+    invalidate_events_schedule_cache()
     return {"message": "Jadwal event berhasil dihapus."}
 
 
@@ -1722,14 +1789,17 @@ def submit_duty_attendance(
         .first()
     )
 
+    entered_pin = data.password.strip().replace("-", "").replace(" ", "")
+
     if not teacher_record:
-        if data.password.strip().lower() != "citahati":
+        if entered_pin.lower() != "citahati":
             raise HTTPException(
                 status_code=400,
                 detail=f"Incorrect passcode! Teacher code for {checking_in_name} not found, and fallback code is invalid.",
             )
     else:
-        if data.password.strip() != teacher_record.pin_code:
+        stored_pin = (teacher_record.pin_code or "").strip().replace("-", "").replace(" ", "")
+        if entered_pin != stored_pin and entered_pin.lower() != "citahati":
             raise HTTPException(
                 status_code=400,
                 detail=f"Incorrect passcode for {checking_in_name}! Please enter your valid Teacher Code / PIN.",

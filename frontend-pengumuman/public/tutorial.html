@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Guide & System Tutorial - Cita Hati ESE</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased font-sans p-3 sm:p-6">
+  <div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Top Header -->
+    <header class="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3.5">
+        <div class="w-12 h-12 rounded-2xl bg-blue-900 text-white flex items-center justify-center font-black text-xl shadow-md flex-shrink-0">
+          CH
+        </div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-black text-[#1e3a8a] tracking-tight">
+            Teacher System Guide & Attendance Tutorial
+          </h1>
+          <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-0.5">
+            Cita Hati East Surabaya • Duty Attendance, Devotion & Announcements
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span class="px-3.5 py-1.5 bg-red-100 text-red-800 border border-red-300 rounded-xl text-xs font-black flex items-center gap-2 shadow-2xs">
+          <span class="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse"></span>
+          <span>STRICT ON-TIME (ZERO TOLERANCE)</span>
+        </span>
+      </div>
+    </header>
+
+    <!-- Teacher Tab Navigation (Teacher-Only: No Admin) -->
+    <nav class="flex overflow-x-auto gap-2 bg-slate-200/60 p-1.5 rounded-2xl scrollbar-none">
+      <button onclick="switchTab('tab-duty')" id="btn-tab-duty" class="tab-btn px-4 py-2.5 rounded-xl text-xs font-black transition-all bg-white text-[#1e3a8a] shadow-xs whitespace-nowrap">
+        🛡️ 1. Duty Attendance & 1 QR Canteen
+      </button>
+      <button onclick="switchTab('tab-devotion')" id="btn-tab-devotion" class="tab-btn px-4 py-2.5 rounded-xl text-xs font-black transition-all text-slate-600 hover:text-slate-900 whitespace-nowrap">
+        🙏 2. Morning Devotion & Substitution
+      </button>
+      <button onclick="switchTab('tab-announcement')" id="btn-tab-announcement" class="tab-btn px-4 py-2.5 rounded-xl text-xs font-black transition-all text-slate-600 hover:text-slate-900 whitespace-nowrap">
+        📢 3. Announcements Hub
+      </button>
+      <button onclick="switchTab('tab-faq')" id="btn-tab-faq" class="tab-btn px-4 py-2.5 rounded-xl text-xs font-black transition-all text-slate-600 hover:text-slate-900 whitespace-nowrap">
+        💡 4. Teacher Help & FAQ
+      </button>
+    </nav>
+
+    <!-- ================= TAB 1: DUTY ATTENDANCE (ZERO TOLERANCE + 1 QR CANTEEN) ================= -->
+    <section id="tab-duty" class="tab-content active space-y-6">
+      
+      <!-- Strict Zero-Tolerance Alert Banner -->
+      <div class="bg-gradient-to-r from-red-950 via-red-900 to-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-md border border-red-700/50">
+        <div class="flex flex-wrap items-center gap-2 mb-2">
+          <span class="px-3 py-1 bg-red-500/30 text-red-200 border border-red-400/40 rounded-full text-[11px] font-extrabold uppercase tracking-wider">
+            Critical Policy: Student Safety & Supervision
+          </span>
+          <span class="px-2.5 py-0.5 bg-amber-400 text-amber-950 rounded-full text-[10px] font-black uppercase">
+            No Late Buffer
+          </span>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">Strict On-Time Policy (Zero Tolerance)</h2>
+        <p class="text-slate-200 text-xs sm:text-sm mt-2 max-w-3xl leading-relaxed">
+          Teacher duty is dedicated to <strong>safeguarding students during recess, morning arrival, and dismissal</strong>. Because child safety requires prompt adult supervision, <strong>THERE IS NO 30-MINUTE GRACE PERIOD</strong>. Check-in unlocks exclusively during your scheduled session minutes.
+        </p>
+
+        <!-- Duty Schedule Time Grid -->
+        <div class="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+          <div class="bg-white/10 backdrop-blur-sm p-3.5 rounded-2xl border border-white/10">
+            <span class="text-red-300 font-bold block uppercase text-[10px]">Morning Duty</span>
+            <span class="font-black text-base text-white">07:15 – 07:45</span>
+            <p class="text-[11px] text-slate-300 mt-1">Canteen, Lobby & Backyard</p>
+          </div>
+          <div class="bg-white/10 backdrop-blur-sm p-3.5 rounded-2xl border border-white/10">
+            <span class="text-red-300 font-bold block uppercase text-[10px]">Break 1 Recess</span>
+            <span class="font-black text-base text-white">09:10 / 10:20</span>
+            <p class="text-[11px] text-slate-300 mt-1">Gr 1-2, 3-4 (09:10) • Gr 5-6 (10:20)</p>
+          </div>
+          <div class="bg-white/10 backdrop-blur-sm p-3.5 rounded-2xl border border-white/10">
+            <span class="text-red-300 font-bold block uppercase text-[10px]">Break 2 Lunch</span>
+            <span class="font-black text-base text-white">11:20 / 11:55</span>
+            <p class="text-[11px] text-slate-300 mt-1">Gr 1-2 (11:20) • Gr 3-6 (11:55)</p>
+          </div>
+          <div class="bg-white/10 backdrop-blur-sm p-3.5 rounded-2xl border border-white/10">
+            <span class="text-red-300 font-bold block uppercase text-[10px]">Go Home Announcer</span>
+            <span class="font-black text-base text-white">13:00 – 14:35</span>
+            <p class="text-[11px] text-slate-300 mt-1">Front Gate Dismissal</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature Highlight: 1 QR Code Canteen System -->
+      <div class="bg-blue-50 border-2 border-blue-200 rounded-3xl p-6 shadow-xs space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🍔</span>
+          <h3 class="text-base font-black text-[#1e3a8a]">
+            NEW: 1 Single QR Code for the Entire Canteen (1st Floor & 2nd Floor)
+          </h3>
+        </div>
+        <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">
+          There is now <strong>only 1 QR Code sheet posted at the Canteen</strong> (<code class="bg-blue-100 text-blue-900 font-bold px-1.5 py-0.5 rounded">/duty/Canteen</code>). Whether you are assigned to <strong>1st floor Canteen</strong> or <strong>2nd floor Canteen</strong>, across Grade 1–2, Grade 3–4, or Grade 5–6, scan this single QR code!
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+          <div class="bg-white p-3 rounded-xl border border-blue-200">
+            <strong class="text-blue-900 block font-black">1. Scan Once:</strong>
+            <span class="text-slate-600">Scan the QR code on the canteen wall using your phone camera.</span>
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-blue-200">
+            <strong class="text-blue-900 block font-black">2. Tap Your Session:</strong>
+            <span class="text-slate-600">If multiple breaks overlap, tap your grade session pill button at the top.</span>
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-blue-200">
+            <strong class="text-blue-900 block font-black">3. Select Floor & Submit:</strong>
+            <span class="text-slate-600">Select Lantai 1 or Lantai 2, enter your 5-digit PIN, and submit on-time.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Steps & Interactive Practice Simulator -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Step-by-Step Instructions (Senior & Beginner Friendly) -->
+        <div class="lg:col-span-6 bg-white rounded-3xl p-6 border border-slate-200 shadow-2xs space-y-4">
+          <h3 class="font-black text-sm uppercase tracking-wider text-slate-700">
+            Step-by-Step Check-In Procedure
+          </h3>
+
+          <div class="flex gap-3 text-xs leading-relaxed">
+            <div class="w-7 h-7 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-black flex-shrink-0">1</div>
+            <div>
+              <strong class="text-slate-900 text-sm block">Arrive at Your Duty Post 2-3 Minutes Early</strong>
+              <p class="text-slate-600 mt-0.5">Walk directly to your designated area (Canteen, Lobby, or ESE Backyard). Find the printed QR code on the wall or desk.</p>
+            </div>
+          </div>
+
+          <div class="border-t border-slate-100 pt-3 flex gap-3 text-xs leading-relaxed">
+            <div class="w-7 h-7 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-black flex-shrink-0">2</div>
+            <div>
+              <strong class="text-slate-900 text-sm block">Scan the QR Code with Your Phone Camera</strong>
+              <p class="text-slate-600 mt-0.5">Open your phone camera or QR scanner. Tap the link that appears: <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-800 font-mono">https://pengumuman.klprojects.online/duty/...</code></p>
+            </div>
+          </div>
+
+          <div class="border-t border-slate-100 pt-3 flex gap-3 text-xs leading-relaxed">
+            <div class="w-7 h-7 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-black flex-shrink-0">3</div>
+            <div>
+              <strong class="text-slate-900 text-sm block">Select Scheduled Teacher Name</strong>
+              <p class="text-slate-600 mt-0.5">Select the name of the teacher scheduled for duty. If you are covering for an absent colleague, select their name first.</p>
+            </div>
+          </div>
+
+          <div class="border-t border-slate-100 pt-3 flex gap-3 text-xs leading-relaxed bg-amber-50/70 p-3 rounded-2xl border border-amber-200">
+            <div class="w-7 h-7 rounded-full bg-amber-200 text-amber-900 flex items-center justify-center font-black flex-shrink-0">4</div>
+            <div>
+              <strong class="text-amber-950 text-sm block">🔄 Are You a Substitute (Inval)?</strong>
+              <p class="text-amber-800 mt-0.5">
+                If you are replacing an absent teacher, select <strong>your own name</strong> in the <strong>"🔄 Guru Pengganti / Inval"</strong> dropdown. Then enter <strong>your own 5-digit PIN</strong>. The system records your attendance while crediting the substitution.
+              </p>
+            </div>
+          </div>
+
+          <div class="border-t border-slate-100 pt-3 flex gap-3 text-xs leading-relaxed">
+            <div class="w-7 h-7 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-black flex-shrink-0">5</div>
+            <div>
+              <strong class="text-slate-900 text-sm block">Enter Your Secret 5-Digit PIN & Submit</strong>
+              <p class="text-slate-600 mt-0.5">Type your permanent 5-digit PIN and tap <strong>"Submit Attendance"</strong>. Look for the green confirmation banner with your exact timestamp.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive Duty Simulator (Hands-On Practice) -->
+        <div class="lg:col-span-6 bg-white rounded-3xl p-6 border-2 border-blue-300 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <span class="text-xs font-black uppercase text-[#1e3a8a] tracking-wider block">Interactive Practice Screen</span>
+              <span class="text-[11px] text-slate-500">Test how 1 QR Canteen & Inval work on your phone</span>
+            </div>
+            <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-xl">Try It Below</span>
+          </div>
+
+          <!-- Session Switcher Buttons -->
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-bold text-slate-500 block uppercase">1. Choose Active Break Session:</label>
+            <div class="flex flex-wrap gap-1.5">
+              <button onclick="switchDutySession('g34_b1')" id="btn-session-g34_b1" class="px-2.5 py-1 text-xs font-bold rounded-xl border bg-[#1e3a8a] text-white">
+                👉 Gr 3-4 (Break 1: 09.10)
+              </button>
+              <button onclick="switchDutySession('g12_b1')" id="btn-session-g12_b1" class="px-2.5 py-1 text-xs font-bold rounded-xl border bg-slate-100 text-slate-700">
+                👉 Gr 1-2 (Break 1: 09.30)
+              </button>
+              <button onclick="switchDutySession('g56_b1')" id="btn-session-g56_b1" class="px-2.5 py-1 text-xs font-bold rounded-xl border bg-slate-100 text-slate-700">
+                👉 Gr 5-6 (Break 1: 10.20)
+              </button>
+            </div>
+          </div>
+
+          <!-- Practice Form Box -->
+          <div id="sim-duty-box" class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+            <div class="flex items-center justify-between">
+              <span id="sim-session-label" class="text-xs font-black text-[#1e3a8a]">📍 Canteen (Break 1 Grade 3-4)</span>
+              <span class="text-[10px] font-black bg-red-100 text-red-800 px-2 py-0.5 rounded border border-red-200">ON-TIME WINDOW</span>
+            </div>
+
+            <!-- Floor Selector -->
+            <div>
+              <label class="text-xs font-bold text-slate-600 block mb-1">Canteen Area / Floor:</label>
+              <select id="sim-canteen-floor" onchange="updateFloorTeachers()" class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white">
+                <option value="1st floor Canteen">1st floor Canteen (Lantai 1)</option>
+                <option value="2nd floor Canteen">2nd floor Canteen (Lantai 2)</option>
+              </select>
+            </div>
+
+            <!-- Teacher Selector (Scheduled) -->
+            <div>
+              <label class="text-xs font-bold text-slate-600 block mb-1">Select Scheduled Teacher (Guru Terjadwal):</label>
+              <select id="sim-duty-teacher" onchange="handleDutyTeacherChange()" class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white">
+                <option value="Ms. Destha">Ms. Destha (Scheduled: 1st floor)</option>
+                <option value="Mr. Kornelius">Mr. Kornelius</option>
+              </select>
+            </div>
+
+            <!-- Substitute Teacher Selector (Inval) -->
+            <div>
+              <label class="text-xs font-bold text-slate-600 block mb-1">
+                🔄 Guru Pengganti / Inval (Optional — If replacing absent teacher):
+              </label>
+              <select id="sim-duty-inval" onchange="handleDutyInvalChange()" class="w-full text-xs font-medium p-2.5 rounded-xl border border-slate-200 bg-white text-slate-700">
+                <option value="">-- Tidak ada pengganti (Hadir sendiri) --</option>
+                <option value="Mr. Dion">Mr. Dion (Inval Substitute)</option>
+                <option value="Ms. Meitha">Ms. Meitha (Inval Substitute)</option>
+                <option value="Mr. Kornelius">Mr. Kornelius (Inval Substitute)</option>
+              </select>
+              <div id="sim-inval-hint" class="hidden mt-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-xs font-medium text-amber-800 flex items-center gap-1.5">
+                <span>🔄</span>
+                <span id="sim-inval-hint-text"></span>
+              </div>
+            </div>
+
+            <!-- PIN Input -->
+            <div>
+              <label class="text-xs font-bold text-slate-600 block mb-1">Secret 5-Digit PIN:</label>
+              <input type="password" id="sim-duty-pin" maxlength="5" placeholder="Enter your 5-digit PIN" class="w-full text-xs font-mono font-bold p-2.5 rounded-xl border border-slate-200 bg-white tracking-widest">
+            </div>
+
+            <!-- Submit Button -->
+            <button onclick="submitDemoDuty()" class="w-full py-2.5 bg-[#1e3a8a] hover:bg-blue-800 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all">
+              Submit Attendance (Practice Check-In)
+            </button>
+          </div>
+
+          <!-- Success Box -->
+          <div id="sim-duty-success" class="hidden bg-emerald-50 border-2 border-emerald-300 p-5 rounded-2xl text-center space-y-2">
+            <div class="text-3xl">✅</div>
+            <div class="text-sm font-black text-emerald-950">Attendance Successfully Recorded!</div>
+            <p id="sim-duty-success-msg" class="text-xs text-emerald-800 font-semibold"></p>
+            <span class="inline-block px-2.5 py-1 bg-emerald-200 text-emerald-900 rounded-lg text-[11px] font-black">Status: Terjadwal Duty (On-Time)</span>
+            <div>
+              <button onclick="resetDemoDuty()" class="mt-2 px-4 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-xs">
+                Try Another Session
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= TAB 2: MORNING DEVOTION & SUBSTITUTION ================= -->
+    <section id="tab-devotion" class="tab-content space-y-6">
+      <div class="bg-gradient-to-r from-purple-950 via-indigo-900 to-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-md border border-purple-800/40">
+        <span class="px-3 py-1 bg-purple-500/30 text-purple-200 border border-purple-400/40 rounded-full text-xs font-bold uppercase tracking-wider">
+          Chapel Morning Service
+        </span>
+        <h2 class="text-2xl font-black mt-2">Morning Devotion & Substitution (Inval)</h2>
+        <p class="text-slate-200 text-xs sm:text-sm mt-2 max-w-3xl leading-relaxed">
+          How to check in for devotion if you are attending yourself, or if you are stepping in to substitute for an absent colleague.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-7 bg-white rounded-3xl p-6 border border-slate-200 shadow-2xs space-y-4">
+          <h3 class="font-black text-sm uppercase tracking-wider text-slate-700">
+            Two Devotion Check-In Scenarios
+          </h3>
+
+          <div class="space-y-3 text-xs leading-relaxed">
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
+              <strong class="text-slate-900 text-sm block">Case 1: Attending for Yourself</strong>
+              <p class="text-slate-600">Select your name. Leave the substitute field as: <code class="bg-white px-1.5 py-0.5 rounded font-bold border border-slate-200">-- No substitute (Attending for myself) --</code>. Enter your PIN and submit.</p>
+            </div>
+
+            <div class="bg-purple-50 p-4 rounded-2xl border border-purple-200 space-y-1">
+              <strong class="text-purple-950 text-sm block">Case 2: Replacing an Absent Colleague (Inval)</strong>
+              <p class="text-purple-900">1. On <strong>Scheduled Teacher</strong>: Select your <strong>colleague's name</strong>.</p>
+              <p class="text-purple-900">2. On <strong>Substitute Teacher</strong>: Select <strong>your own name</strong>.</p>
+              <p class="text-purple-900">3. Enter <strong>your own 5-digit PIN</strong> and submit.</p>
+            </div>
+
+            <div class="bg-amber-50 p-3 rounded-xl border border-amber-200 text-amber-900 text-xs">
+              <strong>Notice:</strong> The system automatically blocks selecting yourself in both dropdowns (anti self-substitution protection).
+            </div>
+          </div>
+        </div>
+
+        <!-- Devotion Simulator -->
+        <div class="lg:col-span-5 bg-white rounded-3xl p-6 border-2 border-purple-200 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <span class="text-xs font-black uppercase text-purple-900 tracking-wider">Practice Devotion</span>
+            <span class="text-xs bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-lg">Live Test</span>
+          </div>
+
+          <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+            <div>
+              <label class="text-xs font-bold text-slate-600 block mb-1">Scheduled Teacher:</label>
+              <select id="sim-dev-teacher" class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white">
+                <option value="Mr. Kevin">Mr. Kevin (Absent)</option>
+                <option value="Ms. Maria">Ms. Maria</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="text-xs font-bold text-slate-600 block mb-1">🔄 Substitute (Inval) - Optional:</label>
+              <select id="sim-dev-inval" class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white">
+                <option value="">-- No substitute (Attending for myself) --</option>
+                <option value="Ms. Jessica">Ms. Jessica (Inval substitute)</option>
+                <option value="Mr. Kornelius">Mr. Kornelius (Inval substitute)</option>
+              </select>
+            </div>
+
+            <button onclick="submitDemoDevotion()" class="w-full py-2.5 bg-purple-800 hover:bg-purple-900 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all">
+              Simulate Devotion Check-In
+            </button>
+          </div>
+
+          <div id="sim-dev-output" class="hidden bg-purple-50 border border-purple-200 p-4 rounded-2xl text-xs space-y-1">
+            <strong class="text-purple-900 block font-black">Recorded Devotion Attendance:</strong>
+            <p id="sim-dev-text" class="text-purple-800"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TAB 3: ANNOUNCEMENTS HUB ================= -->
+    <section id="tab-announcement" class="tab-content space-y-6">
+      <div class="bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 text-white rounded-3xl p-6 md:p-8 shadow-md border border-blue-800/40">
+        <span class="px-3 py-1 bg-blue-500/30 text-blue-200 border border-blue-400/40 rounded-full text-xs font-bold uppercase tracking-wider">
+          Schoolwide Communications
+        </span>
+        <h2 class="text-2xl font-black mt-2">Announcements Hub & Senior-Friendly Reader</h2>
+        <p class="text-slate-200 text-xs sm:text-sm mt-2 max-w-3xl leading-relaxed">
+          Stay informed with official circulars, event agendas, and daily memos. Optimized with large text toggles for effortless mobile reading.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-7 bg-white rounded-3xl p-6 border border-slate-200 shadow-2xs space-y-4">
+          <h3 class="font-black text-sm uppercase tracking-wider text-slate-700">
+            Reader Controls for Teachers
+          </h3>
+
+          <div class="flex gap-3 text-xs leading-relaxed">
+            <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-black flex-shrink-0">1</div>
+            <div>
+              <strong class="text-slate-800">Date Switcher (Yesterday, Today, Tomorrow):</strong>
+              <p class="text-slate-500 mt-0.5">Quickly view announcements for any day without typing dates.</p>
+            </div>
+          </div>
+
+          <div class="border-t border-slate-100 pt-3 flex gap-3 text-xs leading-relaxed">
+            <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-black flex-shrink-0">2</div>
+            <div>
+              <strong class="text-slate-800">🔍 Larger Font (A+ Mode):</strong>
+              <p class="text-slate-500 mt-0.5">Tap the <strong>"Larger Font (A+)"</strong> button anytime to enlarge fonts for crystal-clear reading on small phone screens.</p>
+            </div>
+          </div>
+
+          <div class="border-t border-slate-100 pt-3 flex gap-3 text-xs leading-relaxed">
+            <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-black flex-shrink-0">3</div>
+            <div>
+              <strong class="text-slate-800">Full-Screen Image Posters:</strong>
+              <p class="text-slate-500 mt-0.5">Tap any poster or flyer attachment to expand full screen. Tap ✕ to dismiss.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulator -->
+        <div class="lg:col-span-5 bg-white rounded-3xl p-6 border-2 border-blue-200 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <span class="text-xs font-black uppercase text-slate-500 tracking-wider">Preview Controls</span>
+            <span class="text-xs bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded-lg">Try It</span>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button onclick="toggleFontSize()" id="demo-font-btn" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border">
+              🔍 Larger Font (A+)
+            </button>
+            <button onclick="changeDemoDate('Today')" class="px-2.5 py-1.5 bg-[#1e3a8a] text-white font-bold text-xs rounded-xl shadow-xs">
+              Today
+            </button>
+          </div>
+
+          <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs bg-white">
+            <div class="bg-slate-50 p-3 border-b border-slate-100 flex items-center justify-between">
+              <span class="text-xs font-extrabold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">ACADEMIC</span>
+              <span id="demo-card-date" class="text-xs text-slate-400 font-semibold">Today</span>
+            </div>
+            <div class="p-4 space-y-2">
+              <h4 id="demo-card-title" class="font-black text-slate-900 text-sm transition-all">
+                Parent-Teacher Conference (PTC)
+              </h4>
+              <p id="demo-card-body" class="text-slate-600 text-xs leading-relaxed transition-all">
+                Consultations take place this Friday. Please ensure all student portfolios are ready in your homeroom.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TAB 4: TEACHER HELP & FAQ ================= -->
+    <section id="tab-faq" class="tab-content space-y-4">
+      <div class="bg-gradient-to-r from-slate-900 to-blue-950 text-white rounded-3xl p-6 shadow-md border border-slate-700/50">
+        <h2 class="text-xl font-black">Teacher Help & Frequently Asked Questions</h2>
+        <p class="text-slate-300 text-xs mt-1">Simple answers to common questions about duty check-in and system policies.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs leading-relaxed">
+        
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 space-y-2">
+          <h4 class="font-extrabold text-sm text-[#1e3a8a]">❓ Why is there only 1 QR code at the Canteen now?</h4>
+          <p class="text-slate-600">
+            To prevent confusion with multiple printed papers. Whether you are on <strong>Lantai 1</strong> or <strong>Lantai 2</strong>, scan the single Canteen QR code on the wall. Your phone will show the session selector to pick your grade and floor.
+          </p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 space-y-2">
+          <h4 class="font-extrabold text-sm text-[#1e3a8a]">❓ Why does the system refuse check-in 10 minutes early?</h4>
+          <p class="text-slate-600">
+            Under the <strong>Strict Zero-Tolerance Policy</strong>, teacher presence is tracked when students are actively in the duty zone. The check-in unlocks right on schedule (e.g. 07:15 for morning duty). Please arrive 2-3 minutes beforehand.
+          </p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 space-y-2">
+          <h4 class="font-extrabold text-sm text-[#1e3a8a]">❓ What should I do if school Wi-Fi is slow or disconnects?</h4>
+          <p class="text-slate-600">
+            Switch your mobile phone to cellular data (4G/5G). The attendance page is ultra-lightweight (less than 25 KB) and transmits in under 1 second even on weak mobile signals.
+          </p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 space-y-2">
+          <h4 class="font-extrabold text-sm text-[#1e3a8a]">❓ What if I forget my 5-digit PIN?</h4>
+          <p class="text-slate-600">
+            Your 5-digit PIN is permanently assigned to your teacher account. Contact the Duty Coordinator or school administration to quickly look up or reset your passcode.
+          </p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 space-y-2">
+          <h4 class="font-extrabold text-sm text-[#1e3a8a]">❓ How do I ask the AI Chatbot about my duty schedule?</h4>
+          <p class="text-slate-600">
+            Open the chat window on the web portal and type: <em>"Jadwal piket [Your Name]"</em> or <em>"Siapa yang piket di kantin hari Kamis?"</em>. The AI assistant responds instantly with your real-time duties.
+          </p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 space-y-2">
+          <h4 class="font-extrabold text-sm text-[#1e3a8a]">❓ Can I check in from my classroom or staff room?</h4>
+          <p class="text-slate-600">
+            No. Attendance must strictly be completed on-site at your duty post (Canteen, Lobby, Backyard) during duty hours to ensure student supervision.
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-white', 'text-[#1e3a8a]', 'shadow-xs');
+        btn.classList.add('text-slate-600');
+      });
+      document.getElementById(tabId).classList.add('active');
+      const activeBtn = document.getElementById('btn-' + tabId);
+      activeBtn.classList.remove('text-slate-600');
+      activeBtn.classList.add('bg-white', 'text-[#1e3a8a]', 'shadow-xs');
+    }
+
+    let isLarge = false;
+    function toggleFontSize() {
+      isLarge = !isLarge;
+      const title = document.getElementById('demo-card-title');
+      const body = document.getElementById('demo-card-body');
+      const btn = document.getElementById('demo-font-btn');
+      if (isLarge) {
+        title.className = 'font-black text-slate-900 text-lg transition-all';
+        body.className = 'text-slate-600 text-sm leading-relaxed transition-all';
+        btn.innerText = '🔍 Standard Font';
+        btn.classList.add('bg-indigo-600', 'text-white');
+      } else {
+        title.className = 'font-black text-slate-900 text-sm transition-all';
+        body.className = 'text-slate-600 text-xs leading-relaxed transition-all';
+        btn.innerText = '🔍 Larger Font (A+)';
+        btn.classList.remove('bg-indigo-600', 'text-white');
+      }
+    }
+
+    function changeDemoDate(label) {
+      document.getElementById('demo-card-date').innerText = label;
+    }
+
+    let currentSession = 'g34_b1';
+    function switchDutySession(type) {
+      currentSession = type;
+      const b34 = document.getElementById('btn-session-g34_b1');
+      const b12 = document.getElementById('btn-session-g12_b1');
+      const b56 = document.getElementById('btn-session-g56_b1');
+      const label = document.getElementById('sim-session-label');
+      
+      b34.className = 'px-2.5 py-1 text-xs font-bold rounded-xl border bg-slate-100 text-slate-700';
+      b12.className = 'px-2.5 py-1 text-xs font-bold rounded-xl border bg-slate-100 text-slate-700';
+      b56.className = 'px-2.5 py-1 text-xs font-bold rounded-xl border bg-slate-100 text-slate-700';
+
+      if (type === 'g34_b1') {
+        b34.className = 'px-2.5 py-1 text-xs font-bold rounded-xl border bg-[#1e3a8a] text-white';
+        label.innerText = '📍 Canteen (Break 1 Grade 3-4)';
+      } else if (type === 'g12_b1') {
+        b12.className = 'px-2.5 py-1 text-xs font-bold rounded-xl border bg-[#1e3a8a] text-white';
+        label.innerText = '📍 Canteen (Break 1 Grade 1-2)';
+      } else {
+        b56.className = 'px-2.5 py-1 text-xs font-bold rounded-xl border bg-[#1e3a8a] text-white';
+        label.innerText = '📍 Canteen (Break 1 Grade 5-6)';
+      }
+      updateFloorTeachers();
+      resetDemoDuty();
+    }
+
+    function updateFloorTeachers() {
+      const floor = document.getElementById('sim-canteen-floor').value;
+      const select = document.getElementById('sim-duty-teacher');
+      
+      if (currentSession === 'g34_b1') {
+        if (floor.includes('1st')) {
+          select.innerHTML = '<option value="Ms. Destha">Ms. Destha (Scheduled - 1st fl)</option><option value="Mr. Kornelius">Mr. Kornelius</option>';
+        } else {
+          select.innerHTML = '<option value="Ms. Endah">Ms. Endah (Scheduled - 2nd fl)</option><option value="Ms. Meitha">Ms. Meitha</option>';
+        }
+      } else if (currentSession === 'g12_b1') {
+        select.innerHTML = '<option value="Ms. Jenny P">Ms. Jenny P (Scheduled)</option><option value="Ms. Rahayu">Ms. Rahayu</option>';
+      } else {
+        if (floor.includes('1st')) {
+          select.innerHTML = '<option value="Mr. Percy">Mr. Percy (Scheduled - 1st fl)</option><option value="Ms. Inggrid">Ms. Inggrid</option>';
+        } else {
+          select.innerHTML = '<option value="Mr. Gideon">Mr. Gideon (Scheduled - 2nd fl)</option><option value="Mr. Minh">Mr. Minh</option>';
+        }
+      }
+    }
+
+    function handleDutyTeacherChange() {
+      handleDutyInvalChange();
+    }
+
+    function handleDutyInvalChange() {
+      const teacher = document.getElementById('sim-duty-teacher').value;
+      const inval = document.getElementById('sim-duty-inval').value;
+      const hint = document.getElementById('sim-inval-hint');
+      const text = document.getElementById('sim-inval-hint-text');
+      
+      if (inval && inval !== teacher) {
+        hint.classList.remove('hidden');
+        text.innerHTML = `<strong>${inval}</strong> will check in replacing <strong>${teacher}</strong>. Enter <strong>${inval}'s PIN</strong>.`;
+      } else {
+        hint.classList.add('hidden');
+      }
+    }
+
+    function submitDemoDuty() {
+      const teacher = document.getElementById('sim-duty-teacher').value;
+      const inval = document.getElementById('sim-duty-inval').value;
+      const pin = document.getElementById('sim-duty-pin').value;
+      const floor = document.getElementById('sim-canteen-floor').value;
+      if (pin.length !== 5) {
+        alert('PIN must be exactly 5 digits!');
+        return;
+      }
+      document.getElementById('sim-duty-box').classList.add('hidden');
+      document.getElementById('sim-duty-success').classList.remove('hidden');
+      
+      if (inval) {
+        document.getElementById('sim-duty-success-msg').innerHTML = `<span class="text-amber-800 font-bold block mb-1">🔄 Inval Substitution Recorded:</span> <strong>${inval}</strong> successfully checked in as Substitute for <strong>${teacher}</strong> at <strong>${floor}</strong>.`;
+      } else {
+        document.getElementById('sim-duty-success-msg').innerText = `${teacher} checked in successfully for self at ${floor}.`;
+      }
+    }
+
+    function resetDemoDuty() {
+      document.getElementById('sim-duty-box').classList.remove('hidden');
+      document.getElementById('sim-duty-success').classList.add('hidden');
+      document.getElementById('sim-duty-pin').value = '';
+      document.getElementById('sim-duty-inval').value = '';
+      document.getElementById('sim-inval-hint').classList.add('hidden');
+    }
+
+    function submitDemoDevotion() {
+      const t = document.getElementById('sim-dev-teacher').value;
+      const inv = document.getElementById('sim-dev-inval').value;
+      const out = document.getElementById('sim-dev-output');
+      const text = document.getElementById('sim-dev-text');
+      const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+      out.classList.remove('hidden');
+      if (inv) {
+        text.innerHTML = `✅ Recorded at ${timeStr}: <strong>${t}</strong> replaced by substitute <strong>${inv}</strong>.`;
+      } else {
+        text.innerHTML = `✅ Recorded at ${timeStr}: <strong>${t}</strong> attended for self.`;
+      }
+    }
+  </script>
+</body>
+</html>
