@@ -1391,8 +1391,13 @@ def get_duty_sessions(
     attendance_map = {}
     attendance_by_session = {}
     for att in attendances:
-        sess_key = f"{att.location}_{att.time_slot}"
-        attendance_by_session.setdefault(sess_key, []).append(att)
+        duty_cat = (att.duty_category or "").strip()
+        if duty_cat:
+            cat_key = f"{att.location}_{att.time_slot}_{duty_cat}"
+            attendance_by_session.setdefault(cat_key, []).append(att)
+        slot_key = f"{att.location}_{att.time_slot}"
+        attendance_by_session.setdefault(slot_key, []).append(att)
+
         t_key = (att.location.strip().lower(), att.time_slot.strip().lower(), att.teacher_name.strip().lower())
         attendance_map[t_key] = att
         if att.substitute_name and att.substitute_name.strip().lower() != att.teacher_name.strip().lower():
@@ -1401,12 +1406,13 @@ def get_duty_sessions(
             if t_key not in inval_map:
                 inval_map[t_key] = att.substitute_name.strip()
 
-    # Group duties by (location, time_slot)
+    # Group duties by (location, time_slot, category) to prevent category collision
     grouped_sessions = {}
     for duty in duties:
         if (duty.location or "").strip().lower() == "morning devotion":
             continue
-        sess_key = f"{duty.location}_{duty.time_slot}"
+        duty_cat = (duty.category or "").strip()
+        sess_key = f"{duty.location}_{duty.time_slot}_{duty_cat}" if duty_cat else f"{duty.location}_{duty.time_slot}"
         if sess_key not in grouped_sessions:
             grouped_sessions[sess_key] = {
                 "session_key": sess_key,
@@ -1576,7 +1582,16 @@ def get_duty_sessions(
                     )
                 )
 
-        attended_list = attendance_by_session.get(sess_key, [])
+        session_teacher_names = {d.teacher_name.strip().lower() for d in sess_info["raw_teachers"]}
+        attended_list = attendance_by_session.get(sess_key)
+        if attended_list is None:
+            # Fallback for historical attendance records where duty_category was null
+            slot_atts = attendance_by_session.get(f"{sess_info['location']}_{sess_info['time_slot']}", [])
+            attended_list = [
+                a for a in slot_atts
+                if a.teacher_name.strip().lower() in session_teacher_names
+                or (a.substitute_name and a.substitute_name.strip().lower() in session_teacher_names)
+            ]
         total_scheduled = len(scheduled_teacher_statuses)
         total_attended = len([s for s in scheduled_teacher_statuses if s.is_attended])
 
@@ -1854,16 +1869,16 @@ def submit_duty_attendance(
     slot_clean = data.time_slot.strip()
 
     # 2. Cek apakah guru sudah absen di sesi dan lokasi ini
-    already_attended = (
-        db.query(models.DutyAttendance)
-        .filter(
-            models.DutyAttendance.date == data.date,
-            models.DutyAttendance.location == loc_clean,
-            models.DutyAttendance.time_slot == slot_clean,
-            models.DutyAttendance.teacher_name.ilike(teacher_clean),
-        )
-        .first()
+    query_att = db.query(models.DutyAttendance).filter(
+        models.DutyAttendance.date == data.date,
+        models.DutyAttendance.location == loc_clean,
+        models.DutyAttendance.time_slot == slot_clean,
+        models.DutyAttendance.teacher_name.ilike(teacher_clean),
     )
+    if data.duty_category and data.duty_category.strip():
+        query_att = query_att.filter(models.DutyAttendance.duty_category.ilike(data.duty_category.strip()))
+    already_attended = query_att.first()
+
     if already_attended:
         raise HTTPException(
             status_code=400,
@@ -1872,16 +1887,15 @@ def submit_duty_attendance(
 
     # 3. Cek apakah guru terjadwal duty pada hari, tempat, dan jam tersebut
     day_of_week = data.date.strftime("%A")
-    scheduled_duty = (
-        db.query(models.TeacherDuty)
-        .filter(
-            models.TeacherDuty.day_of_week.ilike(day_of_week),
-            models.TeacherDuty.location.ilike(loc_clean),
-            models.TeacherDuty.time_slot.ilike(slot_clean),
-            models.TeacherDuty.teacher_name.ilike(f"%{teacher_clean}%"),
-        )
-        .first()
+    query_sched = db.query(models.TeacherDuty).filter(
+        models.TeacherDuty.day_of_week.ilike(day_of_week),
+        models.TeacherDuty.location.ilike(loc_clean),
+        models.TeacherDuty.time_slot.ilike(slot_clean),
+        models.TeacherDuty.teacher_name.ilike(f"%{teacher_clean}%"),
     )
+    if data.duty_category and data.duty_category.strip():
+        query_sched = query_sched.filter(models.TeacherDuty.category.ilike(data.duty_category.strip()))
+    scheduled_duty = query_sched.first()
 
     # Cek juga di duty invals (guru pengganti sah)
     inval_record = (

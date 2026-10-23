@@ -133,6 +133,7 @@ export default function DutyAttendance() {
           teacher_name: form.teacherName,
           location: session.location,
           time_slot: session.time_slot,
+          duty_category: session.duty_category,
           password: form.password.trim(),
           substitute_name: subClean,
         }),
