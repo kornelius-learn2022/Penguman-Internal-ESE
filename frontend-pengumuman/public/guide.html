@@ -109,16 +109,114 @@
         </p>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
           <div class="bg-white p-3 rounded-xl border border-blue-200">
-            <strong class="text-blue-900 block font-black">1. Scan Once:</strong>
-            <span class="text-slate-600">Scan the QR code on the canteen wall using your phone camera.</span>
+            <strong class="text-blue-900 block font-black">1. Scan 1 QR Code:</strong>
+            <span class="text-slate-600">Cukup scan 1 lembar QR Code di dinding Canteen dengan kamera HP.</span>
           </div>
           <div class="bg-white p-3 rounded-xl border border-blue-200">
-            <strong class="text-blue-900 block font-black">2. Tap Your Session:</strong>
-            <span class="text-slate-600">If multiple breaks overlap, tap your grade session pill button at the top.</span>
+            <strong class="text-blue-900 block font-black">2. Pilih Tab Jenjang:</strong>
+            <span class="text-slate-600">Tekan tab <strong>[ Grade 3-4 ]</strong> atau <strong>[ Grade 5-6 ]</strong> di atas agar layar fokus.</span>
           </div>
           <div class="bg-white p-3 rounded-xl border border-blue-200">
-            <strong class="text-blue-900 block font-black">3. Select Floor & Submit:</strong>
-            <span class="text-slate-600">Select Lantai 1 or Lantai 2, enter your 5-digit PIN, and submit on-time.</span>
+            <strong class="text-blue-900 block font-black">3. Kartu Terpisah & PIN:</strong>
+            <span class="text-slate-600">Lantai 1 & 2 memiliki kartu terpisah dengan dropdown guru yang sudah terisolasi.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Real-Life Examples Section -->
+      <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-2xs space-y-4">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">📚</span>
+          <h3 class="text-base font-black text-slate-800">
+            Contoh Kasus Nyata Presensi Duty (Step-by-Step Examples)
+          </h3>
+        </div>
+        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+          Berikut adalah 3 contoh skenario nyata yang dialami guru saat piket istirahat dengan sistem 1 QR Code & Tab Jenjang:
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+          <!-- Contoh 1 -->
+          <div class="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 space-y-2.5 flex flex-col justify-between">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="px-2 py-0.5 bg-blue-200 text-[#1e3a8a] rounded-lg text-[10px] font-black uppercase">
+                  Contoh 1
+                </span>
+                <span class="text-[11px] font-extrabold text-blue-900">🎒 Grade 3-4 (Lantai 1)</span>
+              </div>
+              <h4 class="font-extrabold text-xs text-slate-900">
+                Piket Break 2 di Lantai 1 Canteen
+              </h4>
+              <p class="text-[11px] text-slate-500 font-medium">
+                Kondisi: Mr. Kornelius bertugas pukul 11.55 – 12.25 di 1st floor Canteen.
+              </p>
+              <ol class="text-xs text-slate-700 space-y-1.5 list-decimal list-inside leading-relaxed pt-1">
+                <li>Scan 1 QR Code di dinding Canteen.</li>
+                <li>Di HP, tekan tab <strong class="text-[#1e3a8a]">[ 🎒 Grade 3-4 ]</strong> di atas. Layar langsung menyembunyikan kartu Grade 5-6.</li>
+                <li>Pada kartu <strong class="text-slate-800">📍 1st floor Canteen</strong>, pilih nama "Mr. Kornelius".</li>
+                <li>Masukkan 5-digit PIN & tekan <em>Check In Duty</em>.</li>
+              </ol>
+            </div>
+            <div class="pt-2 border-t border-blue-200/60 text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+              <span>✅</span> Status: Terjadwal Duty (Hadir Sendiri)
+            </div>
+          </div>
+
+          <!-- Contoh 2 -->
+          <div class="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-2.5 flex flex-col justify-between">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="px-2 py-0.5 bg-indigo-200 text-indigo-900 rounded-lg text-[10px] font-black uppercase">
+                  Contoh 2
+                </span>
+                <span class="text-[11px] font-extrabold text-indigo-950">🎓 Grade 5-6 (Lantai 2)</span>
+              </div>
+              <h4 class="font-extrabold text-xs text-slate-900">
+                Piket Break 2 di Lantai 2 Canteen
+              </h4>
+              <p class="text-[11px] text-slate-500 font-medium">
+                Kondisi: Guru bertugas pukul 12.05 – 12.25 di 2nd floor Canteen.
+              </p>
+              <ol class="text-xs text-slate-700 space-y-1.5 list-decimal list-inside leading-relaxed pt-1">
+                <li>Scan 1 QR Code yang sama di dinding Canteen.</li>
+                <li>Tekan tab filter <strong class="text-indigo-900">[ 🎓 Grade 5-6 ]</strong>.</li>
+                <li>Pilih kartu <strong class="text-slate-800">📍 2nd floor Canteen</strong>.</li>
+                <li>Pilih nama Anda di dropdown guru Lantai 2.</li>
+                <li>Masukkan PIN & tekan tombol check-in.</li>
+              </ol>
+            </div>
+            <div class="pt-2 border-t border-indigo-200/60 text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+              <span>✅</span> Dropdown bersih tanpa nama guru Gr 3-4
+            </div>
+          </div>
+
+          <!-- Contoh 3 -->
+          <div class="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 space-y-2.5 flex flex-col justify-between">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="px-2 py-0.5 bg-amber-200 text-amber-900 rounded-lg text-[10px] font-black uppercase">
+                  Contoh 3
+                </span>
+                <span class="text-[11px] font-extrabold text-amber-950">🔄 Guru Pengganti (Inval)</span>
+              </div>
+              <h4 class="font-extrabold text-xs text-slate-900">
+                Menggantikan Rekan yang Berhalangan
+              </h4>
+              <p class="text-[11px] text-amber-800 font-medium">
+                Kondisi: Ms. Endah izin sakit. Mr. Dion ditugaskan menggantikan di Lantai 2.
+              </p>
+              <ol class="text-xs text-amber-950 space-y-1.5 list-decimal list-inside leading-relaxed pt-1">
+                <li>Mr. Dion scan 1 QR Code di Canteen.</li>
+                <li>Buka kartu sesi <strong class="text-slate-800">2nd floor Canteen</strong>.</li>
+                <li>Pada <strong>Guru Terjadwal</strong>: pilih nama <strong>Ms. Endah</strong>.</li>
+                <li>Pada <strong>Guru Pengganti / Inval</strong>: pilih nama <strong>Mr. Dion</strong>.</li>
+                <li>Ketik <strong>PIN Mr. Dion sendiri</strong> & submit.</li>
+              </ol>
+            </div>
+            <div class="pt-2 border-t border-amber-200/60 text-[11px] font-bold text-amber-900 flex items-center gap-1">
+              <span>🔄</span> Status: Hadir Inval (Substitusi Rekan)
+            </div>
           </div>
         </div>
       </div>

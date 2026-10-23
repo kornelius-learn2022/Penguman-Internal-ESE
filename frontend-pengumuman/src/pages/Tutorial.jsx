@@ -10,9 +10,10 @@ export default function Tutorial() {
   const [simImageOpen, setSimImageOpen] = useState(false);
 
   // Simulation states for Duty Attendance preview
-  const [simSession, setSimSession] = useState("g34_b1");
+  const [simGradeFilter, setSimGradeFilter] = useState("all");
+  const [simSession, setSimSession] = useState("g34_b2_1f");
   const [simFloor, setSimFloor] = useState("1st floor Canteen");
-  const [simTeacher, setSimTeacher] = useState("Ms. Destha");
+  const [simTeacher, setSimTeacher] = useState("Mr. Kornelius");
   const [simInval, setSimInval] = useState("");
   const [simPin, setSimPin] = useState("");
   const [simSubmitted, setSimSubmitted] = useState(false);
@@ -207,16 +208,114 @@ export default function Tutorial() {
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
                 <div className="bg-white p-3 rounded-xl border border-blue-200">
-                  <strong className="text-blue-900 block font-black">1. Scan Once:</strong>
-                  <span className="text-slate-600">Scan the single QR code on the canteen wall using your phone.</span>
+                  <strong className="text-blue-900 block font-black">1. Scan 1 QR Code:</strong>
+                  <span className="text-slate-600">Cukup scan 1 lembar QR Code di dinding Canteen dengan kamera HP.</span>
                 </div>
                 <div className="bg-white p-3 rounded-xl border border-blue-200">
-                  <strong className="text-blue-900 block font-black">2. Tap Your Session:</strong>
-                  <span className="text-slate-600">If multiple breaks overlap, tap your grade session pill button at the top.</span>
+                  <strong className="text-blue-900 block font-black">2. Pilih Tab Jenjang:</strong>
+                  <span className="text-slate-600">Tekan tab <strong>[ Grade 3-4 ]</strong> atau <strong>[ Grade 5-6 ]</strong> di atas agar layar fokus.</span>
                 </div>
                 <div className="bg-white p-3 rounded-xl border border-blue-200">
-                  <strong className="text-blue-900 block font-black">3. Select Floor & Submit:</strong>
-                  <span className="text-slate-600">Choose Lantai 1 or Lantai 2, enter your 5-digit PIN, and submit on-time.</span>
+                  <strong className="text-blue-900 block font-black">3. Kartu Terpisah & PIN:</strong>
+                  <span className="text-slate-600">Lantai 1 & 2 memiliki kartu terpisah dengan dropdown guru yang sudah terisolasi.</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Real-Life Examples Section */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-2xs space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">📚</span>
+                <h3 className="text-base font-black text-slate-800">
+                  Contoh Kasus Nyata Presensi Duty (Step-by-Step Examples)
+                </h3>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Berikut adalah 3 contoh skenario nyata yang dialami guru saat piket istirahat dengan sistem 1 QR Code & Tab Jenjang:
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+                {/* Contoh 1 */}
+                <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 space-y-2.5 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2 py-0.5 bg-blue-200 text-[#1e3a8a] rounded-lg text-[10px] font-black uppercase">
+                        Contoh 1
+                      </span>
+                      <span className="text-[11px] font-extrabold text-blue-900">🎒 Grade 3-4 (Lantai 1)</span>
+                    </div>
+                    <h4 className="font-extrabold text-xs text-slate-900">
+                      Piket Break 2 di Lantai 1 Canteen
+                    </h4>
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      Kondisi: Mr. Kornelius bertugas pukul 11.55 – 12.25 di 1st floor Canteen.
+                    </p>
+                    <ol className="text-xs text-slate-700 space-y-1.5 list-decimal list-inside leading-relaxed pt-1">
+                      <li>Scan 1 QR Code di dinding Canteen.</li>
+                      <li>Di HP, tekan tab <strong className="text-[#1e3a8a]">[ 🎒 Grade 3-4 ]</strong> di atas. Layar langsung menyembunyikan kartu Grade 5-6.</li>
+                      <li>Pada kartu <strong className="text-slate-800">📍 1st floor Canteen</strong>, pilih nama "Mr. Kornelius".</li>
+                      <li>Masukkan 5-digit PIN & tekan <em>Check In Duty</em>.</li>
+                    </ol>
+                  </div>
+                  <div className="pt-2 border-t border-blue-200/60 text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                    <span>✅</span> Status: Terjadwal Duty (Hadir Sendiri)
+                  </div>
+                </div>
+
+                {/* Contoh 2 */}
+                <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-2.5 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2 py-0.5 bg-indigo-200 text-indigo-900 rounded-lg text-[10px] font-black uppercase">
+                        Contoh 2
+                      </span>
+                      <span className="text-[11px] font-extrabold text-indigo-950">🎓 Grade 5-6 (Lantai 2)</span>
+                    </div>
+                    <h4 className="font-extrabold text-xs text-slate-900">
+                      Piket Break 2 di Lantai 2 Canteen
+                    </h4>
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      Kondisi: Guru bertugas pukul 12.05 – 12.25 di 2nd floor Canteen.
+                    </p>
+                    <ol className="text-xs text-slate-700 space-y-1.5 list-decimal list-inside leading-relaxed pt-1">
+                      <li>Scan 1 QR Code yang sama di dinding Canteen.</li>
+                      <li>Tekan tab filter <strong className="text-indigo-900">[ 🎓 Grade 5-6 ]</strong>.</li>
+                      <li>Pilih kartu <strong className="text-slate-800">📍 2nd floor Canteen</strong>.</li>
+                      <li>Pilih nama Anda di dropdown guru Lantai 2.</li>
+                      <li>Masukkan PIN & tekan tombol check-in.</li>
+                    </ol>
+                  </div>
+                  <div className="pt-2 border-t border-indigo-200/60 text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                    <span>✅</span> Dropdown bersih tanpa nama guru Gr 3-4
+                  </div>
+                </div>
+
+                {/* Contoh 3 */}
+                <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 space-y-2.5 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2 py-0.5 bg-amber-200 text-amber-900 rounded-lg text-[10px] font-black uppercase">
+                        Contoh 3
+                      </span>
+                      <span className="text-[11px] font-extrabold text-amber-950">🔄 Guru Pengganti (Inval)</span>
+                    </div>
+                    <h4 className="font-extrabold text-xs text-slate-900">
+                      Menggantikan Rekan yang Berhalangan
+                    </h4>
+                    <p className="text-[11px] text-amber-800 font-medium">
+                      Kondisi: Ms. Endah izin sakit. Mr. Dion ditugaskan menggantikan di Lantai 2.
+                    </p>
+                    <ol className="text-xs text-amber-950 space-y-1.5 list-decimal list-inside leading-relaxed pt-1">
+                      <li>Mr. Dion scan 1 QR Code di Canteen.</li>
+                      <li>Buka kartu sesi <strong className="text-slate-800">2nd floor Canteen</strong>.</li>
+                      <li>Pada <strong>Guru Terjadwal</strong>: pilih nama <strong>Ms. Endah</strong>.</li>
+                      <li>Pada <strong>Guru Pengganti / Inval</strong>: pilih nama <strong>Mr. Dion</strong>.</li>
+                      <li>Ketik <strong>PIN Mr. Dion sendiri</strong> & submit.</li>
+                    </ol>
+                  </div>
+                  <div className="pt-2 border-t border-amber-200/60 text-[11px] font-bold text-amber-900 flex items-center gap-1">
+                    <span>🔄</span> Status: Hadir Inval (Substitusi Rekan)
+                  </div>
                 </div>
               </div>
             </div>
@@ -322,113 +421,200 @@ export default function Tutorial() {
                   </span>
                 </div>
 
-                {/* Session Selector Pill Simulation */}
+                {/* Grade Shortcut Tabs Simulation */}
                 <div className="space-y-1.5">
-                  <span className="text-xs font-bold text-slate-600 block">
-                    1. Choose Active Break Session (Canteen):
+                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <span>🎒</span>
+                    <span>1. Coba Shortcut Filter Jenjang:</span>
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     <button
                       type="button"
-                      onClick={() => {
-                        setSimSession("g34_b1");
-                        setSimTeacher("Ms. Destha");
-                        setSimSubmitted(false);
-                      }}
-                      className={`px-2.5 py-1 text-xs font-bold rounded-xl border transition-all ${
-                        simSession === "g34_b1"
-                          ? "bg-[#1e3a8a] text-white shadow-xs"
-                          : "bg-slate-50 text-slate-700 hover:bg-slate-100"
+                      onClick={() => setSimGradeFilter("all")}
+                      className={`px-3 py-1.5 text-xs font-extrabold rounded-xl border transition-all cursor-pointer ${
+                        simGradeFilter === "all"
+                          ? "bg-[#1e3a8a] text-white shadow-2xs border-[#1e3a8a]"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200"
                       }`}
                     >
-                      👉 Gr 3-4 (Break 1: 09.10)
+                      Semua (4)
                     </button>
                     <button
                       type="button"
                       onClick={() => {
-                        setSimSession("g12_b1");
-                        setSimTeacher("Ms. Jenny P");
-                        setSimSubmitted(false);
+                        setSimGradeFilter("Grade 3-4");
+                        if (!simSession.startsWith("g34")) {
+                          setSimSession("g34_b2_1f");
+                          setSimFloor("1st floor Canteen");
+                          setSimTeacher("Mr. Kornelius");
+                        }
                       }}
-                      className={`px-2.5 py-1 text-xs font-bold rounded-xl border transition-all ${
-                        simSession === "g12_b1"
-                          ? "bg-[#1e3a8a] text-white shadow-xs"
-                          : "bg-slate-50 text-slate-700 hover:bg-slate-100"
+                      className={`px-3 py-1.5 text-xs font-extrabold rounded-xl border transition-all cursor-pointer ${
+                        simGradeFilter === "Grade 3-4"
+                          ? "bg-[#1e3a8a] text-white shadow-2xs border-[#1e3a8a]"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200"
                       }`}
                     >
-                      👉 Gr 1-2 (Break 1: 09.30)
+                      🎒 Grade 3-4 (2)
                     </button>
                     <button
                       type="button"
                       onClick={() => {
-                        setSimSession("g56_b1");
-                        setSimTeacher("Mr. Percy");
-                        setSimSubmitted(false);
+                        setSimGradeFilter("Grade 5-6");
+                        if (!simSession.startsWith("g56")) {
+                          setSimSession("g56_b2_1f");
+                          setSimFloor("1st floor Canteen");
+                          setSimTeacher("Mr. Hendro");
+                        }
                       }}
-                      className={`px-2.5 py-1 text-xs font-bold rounded-xl border transition-all ${
-                        simSession === "g56_b1"
-                          ? "bg-[#1e3a8a] text-white shadow-xs"
-                          : "bg-slate-50 text-slate-700 hover:bg-slate-100"
+                      className={`px-3 py-1.5 text-xs font-extrabold rounded-xl border transition-all cursor-pointer ${
+                        simGradeFilter === "Grade 5-6"
+                          ? "bg-[#1e3a8a] text-white shadow-2xs border-[#1e3a8a]"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200"
                       }`}
                     >
-                      👉 Gr 5-6 (Break 1: 10.20)
+                      🎓 Grade 5-6 (2)
                     </button>
                   </div>
                 </div>
 
-                {/* Form Simulation Box */}
+                {/* Simulated Active Cards Selector */}
+                <div className="space-y-1.5">
+                  <span className="text-xs font-bold text-slate-600 block">
+                    2. Pilih Kartu Sesi Tugas Anda:
+                  </span>
+                  <div className="flex flex-col gap-1.5">
+                    {(simGradeFilter === "all" || simGradeFilter === "Grade 3-4") && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSimSession("g34_b2_1f");
+                            setSimFloor("1st floor Canteen");
+                            setSimTeacher("Mr. Kornelius");
+                            setSimSubmitted(false);
+                          }}
+                          className={`px-3 py-2 text-xs font-extrabold rounded-xl border text-left transition-all flex items-center justify-between ${
+                            simSession === "g34_b2_1f"
+                              ? "bg-blue-50 text-[#1e3a8a] border-blue-400 shadow-2xs"
+                              : "bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200"
+                          }`}
+                        >
+                          <span>👉 1st floor Canteen - Break 2 (Grade 3-4)</span>
+                          <span className="text-[10px] font-bold text-slate-500">11.55-12.25</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSimSession("g34_b2_2f");
+                            setSimFloor("2nd floor Canteen");
+                            setSimTeacher("Ms. Endah");
+                            setSimSubmitted(false);
+                          }}
+                          className={`px-3 py-2 text-xs font-extrabold rounded-xl border text-left transition-all flex items-center justify-between ${
+                            simSession === "g34_b2_2f"
+                              ? "bg-blue-50 text-[#1e3a8a] border-blue-400 shadow-2xs"
+                              : "bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200"
+                          }`}
+                        >
+                          <span>👉 2nd floor Canteen - Break 2 (Grade 3-4)</span>
+                          <span className="text-[10px] font-bold text-slate-500">11.55-12.25</span>
+                        </button>
+                      </>
+                    )}
+
+                    {(simGradeFilter === "all" || simGradeFilter === "Grade 5-6") && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSimSession("g56_b2_1f");
+                            setSimFloor("1st floor Canteen");
+                            setSimTeacher("Mr. Hendro");
+                            setSimSubmitted(false);
+                          }}
+                          className={`px-3 py-2 text-xs font-extrabold rounded-xl border text-left transition-all flex items-center justify-between ${
+                            simSession === "g56_b2_1f"
+                              ? "bg-blue-50 text-[#1e3a8a] border-blue-400 shadow-2xs"
+                              : "bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200"
+                          }`}
+                        >
+                          <span>👉 1st floor Canteen - Break 2 (Grade 5-6)</span>
+                          <span className="text-[10px] font-bold text-slate-500">12.05-12.25</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSimSession("g56_b2_2f");
+                            setSimFloor("2nd floor Canteen");
+                            setSimTeacher("Mr. Gideon");
+                            setSimSubmitted(false);
+                          }}
+                          className={`px-3 py-2 text-xs font-extrabold rounded-xl border text-left transition-all flex items-center justify-between ${
+                            simSession === "g56_b2_2f"
+                              ? "bg-blue-50 text-[#1e3a8a] border-blue-400 shadow-2xs"
+                              : "bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200"
+                          }`}
+                        >
+                          <span>👉 2nd floor Canteen - Break 2 (Grade 5-6)</span>
+                          <span className="text-[10px] font-bold text-slate-500">12.05-12.25</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Form Simulation Box (Card View) */}
                 {!simSubmitted ? (
                   <form onSubmit={handleSimDutySubmit} className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-extrabold text-[#1e3a8a]">
-                        📍 Canteen ({simSession === "g34_b1" ? "Grade 3-4" : simSession === "g12_b1" ? "Grade 1-2" : "Grade 5-6"})
-                      </span>
-                      <span className="text-[10px] font-black bg-red-100 text-red-800 px-2 py-0.5 rounded border border-red-200">
-                        ON-TIME WINDOW
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 bg-blue-100 text-[#1e3a8a] rounded text-[10px] font-black uppercase">
+                          {simSession.startsWith("g34") ? "Grade 3-4" : "Grade 5-6"}
+                        </span>
+                        <span className="text-xs font-extrabold text-slate-800">
+                          📍 {simFloor}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200">
+                        {simSession.startsWith("g34") ? "11.55 - 12.25" : "12.05 - 12.25"}
                       </span>
                     </div>
 
-                    {/* Floor Selector */}
+                    {/* Scheduled Teacher Selector (Cleanly Isolated) */}
                     <div>
                       <label className="text-xs font-bold text-slate-600 block mb-1">
-                        Canteen Area / Floor:
-                      </label>
-                      <select
-                        value={simFloor}
-                        onChange={(e) => setSimFloor(e.target.value)}
-                        className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white"
-                      >
-                        <option value="1st floor Canteen">1st floor Canteen (Lantai 1)</option>
-                        <option value="2nd floor Canteen">2nd floor Canteen (Lantai 2)</option>
-                      </select>
-                    </div>
-
-                    {/* Scheduled Teacher Selector */}
-                    <div>
-                      <label className="text-xs font-bold text-slate-600 block mb-1">
-                        Select Scheduled Teacher (Guru Terjadwal):
+                        Pilih Guru Terjadwal:
                       </label>
                       <select
                         value={simTeacher}
                         onChange={(e) => setSimTeacher(e.target.value)}
                         className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white"
                       >
-                        {simSession === "g34_b1" ? (
+                        {simSession === "g34_b2_1f" && (
                           <>
-                            <option value="Ms. Destha">Ms. Destha (Scheduled - 1st fl)</option>
-                            <option value="Ms. Endah">Ms. Endah (Scheduled - 2nd fl)</option>
+                            <option value="Mr. Kornelius">Mr. Kornelius (Terjadwal)</option>
+                            <option value="Ms. Destha">Ms. Destha</option>
+                          </>
+                        )}
+                        {simSession === "g34_b2_2f" && (
+                          <>
+                            <option value="Ms. Endah">Ms. Endah (Terjadwal)</option>
+                            <option value="Ms. Meitha">Ms. Meitha</option>
+                          </>
+                        )}
+                        {simSession === "g56_b2_1f" && (
+                          <>
+                            <option value="Mr. Hendro">Mr. Hendro (Terjadwal)</option>
+                            <option value="Mr. Percy">Mr. Percy</option>
+                          </>
+                        )}
+                        {simSession === "g56_b2_2f" && (
+                          <>
+                            <option value="Mr. Gideon">Mr. Gideon (Terjadwal)</option>
                             <option value="Mr. Kornelius">Mr. Kornelius</option>
-                          </>
-                        ) : simSession === "g12_b1" ? (
-                          <>
-                            <option value="Ms. Jenny P">Ms. Jenny P (Scheduled)</option>
-                            <option value="Ms. Rahayu">Ms. Rahayu</option>
-                          </>
-                        ) : (
-                          <>
-                            <option value="Mr. Percy">Mr. Percy (Scheduled - 1st fl)</option>
-                            <option value="Mr. Gideon">Mr. Gideon (Scheduled - 2nd fl)</option>
-                            <option value="Mr. Minh">Mr. Minh</option>
                           </>
                         )}
                       </select>
