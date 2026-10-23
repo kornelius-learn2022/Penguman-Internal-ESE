@@ -14,6 +14,7 @@ export default function DutyAttendance() {
   // Forms state keyed by session_key
   const [forms, setForms] = useState({});
   const [showPasswords, setShowPasswords] = useState({});
+  const [selectedGrade, setSelectedGrade] = useState("all");
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
   const todayDateStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
   const [submittedSessions, setSubmittedSessions] = useState(() => {
@@ -283,6 +284,19 @@ export default function DutyAttendance() {
   // Filter only sessions that are currently active (strictly within scheduled time window)
   const activeSessions = locationSessions.filter((s) => !isOutsideDuty(s.time_slot, currentDate));
 
+  // Extract unique grades present in active sessions
+  const availableGrades = Array.from(
+    new Set(activeSessions.map((s) => s.grade_scope).filter(Boolean))
+  );
+
+  const activeSelectedGrade = (selectedGrade !== "all" && availableGrades.includes(selectedGrade))
+    ? selectedGrade
+    : "all";
+
+  const displayedSessions = activeSelectedGrade === "all"
+    ? activeSessions
+    : activeSessions.filter((s) => s.grade_scope === activeSelectedGrade);
+
   return (
     <div className="min-h-screen bg-slate-100 pb-20 font-sans">
       {/* Toast Notification */}
@@ -388,30 +402,75 @@ export default function DutyAttendance() {
           </div>
         ) : (
           <div className="space-y-6">
-            {activeSessions.length > 1 && (
-              <div className="bg-white rounded-2xl p-4 border border-blue-200 shadow-sm space-y-2.5">
+            {/* Grade Filter Tabs (Opsi 1: Active when multiple grades are present) */}
+            {availableGrades.length > 1 && (
+              <div className="bg-white rounded-2xl p-3 border border-slate-200 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+                <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <span className="text-base">🎒</span>
+                  <span>Filter Jenjang:</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedGrade("all")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                      activeSelectedGrade === "all"
+                        ? "bg-[#1e3a8a] text-white shadow-2xs"
+                        : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
+                    }`}
+                  >
+                    Semua ({activeSessions.length})
+                  </button>
+                  {availableGrades.map((grade, gIdx) => {
+                    const count = activeSessions.filter((s) => s.grade_scope === grade).length;
+                    const isSelected = activeSelectedGrade === grade;
+                    return (
+                      <button
+                        key={gIdx}
+                        type="button"
+                        onClick={() => setSelectedGrade(grade)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-[#1e3a8a] text-white shadow-2xs"
+                            : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
+                        }`}
+                      >
+                        {grade} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Quick Navigation Anchor Buttons */}
+            {displayedSessions.length > 1 && (
+              <div className="bg-white rounded-2xl p-4 border border-blue-200 shadow-2xs space-y-2.5">
                 <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                   <span className="text-base">🔔</span>
                   <span>
-                    Terdapat <strong>{activeSessions.length} sesi duty</strong> yang aktif bersamaan di lokasi ini. Silakan pilih sesi Anda:
+                    Terdapat <strong>{displayedSessions.length} sesi duty</strong> {activeSelectedGrade !== "all" ? `untuk ${activeSelectedGrade}` : "yang aktif bersamaan"}. Silakan pilih sesi Anda:
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {activeSessions.map((s, idx) => (
+                  {displayedSessions.map((s, idx) => (
                     <a
                       key={idx}
                       href={`#session-${s.session_key}`}
                       className="px-3.5 py-2 bg-blue-50 hover:bg-[#1e3a8a] text-[#1e3a8a] hover:text-white rounded-xl text-xs font-extrabold border border-blue-200 transition-all flex items-center gap-1.5 shadow-2xs active:scale-95"
                     >
                       <span>👉</span>
-                      <span>{s.duty_category} ({s.time_slot})</span>
+                      <span>
+                        {displayedSessions.some((o) => o.location !== s.location) ? `${s.location} - ` : ""}
+                        {s.duty_category} ({s.time_slot})
+                      </span>
                     </a>
                   ))}
                 </div>
               </div>
             )}
 
-            {activeSessions.map((session, sIdx) => {
+            {displayedSessions.map((session, sIdx) => {
               const currentForm = forms[session.session_key] || {
                 teacherName: "",
                 password: "",
