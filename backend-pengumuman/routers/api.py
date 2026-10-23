@@ -1182,10 +1182,13 @@ def get_duty_locations(db: Session = Depends(get_db)):
 import time as time_mod
 
 _free_teachers_cache = {}
-_FREE_TEACHERS_TTL = 60  # seconds
+_FREE_TEACHERS_TTL = 300  # seconds
 
 _duty_teachers_cache = {"data": None, "exp": 0.0}
 _DUTY_TEACHERS_TTL = 300  # seconds
+
+_day_timetable_cache = {}
+_DAY_TIMETABLE_TTL = 300  # seconds
 
 _duty_sessions_cache = {}
 _DUTY_SESSIONS_TTL = 15  # seconds
@@ -1228,7 +1231,7 @@ def get_free_duty_teachers(
     """
     Mengambil daftar guru yang KOSONG (free) pada hari/tanggal dan time_slot tersebut:
     1. Tidak sedang bertugas piket (teacher_duties).
-    2. Tidak sedang mengajar (teacher_schedules).
+    2. Tidak sedang mengajar kelas reguler (teacher_schedules; sesi 'Break' tidak dihitung mengajar).
     """
     if date:
         resolved_day = date.strftime("%A")
@@ -1237,46 +1240,89 @@ def get_free_duty_teachers(
     else:
         resolved_day = get_now_wib().date().strftime("%A")
 
-    cache_key = f"{resolved_day.lower()}:{(time_slot or 'all').strip().lower()}"
+    day_key = resolved_day.lower()
+    slot_key = (time_slot or "all").strip().lower()
+    cache_key = f"{day_key}:{slot_key}"
     now_m = time_mod.monotonic()
+
+    # 1. Cek cache daftar guru bebas
     if cache_key in _free_teachers_cache:
         cached_res, exp_m = _free_teachers_cache[cache_key]
         if now_m < exp_m:
             return cached_res
 
-    teacher_records = [r[0].strip() for r in db.query(models.Teacher.db_name).distinct().all() if r[0]]
-    duty_teachers = [r[0].strip() for r in db.query(models.TeacherDuty.teacher_name).distinct().all() if r[0]]
-    sched_teachers = [r[0].strip() for r in db.query(models.TeacherSchedule.teacher_name).distinct().all() if r[0]]
-    all_names = sorted(list(set(teacher_records + duty_teachers + sched_teachers)))
+    # 2. Ambil daftar seluruh nama guru terdaftar (menggunakan cache internal)
+    all_names = get_all_duty_teachers(db)
+
+    # 3. Ambil jadwal tugas dan jadwal mengajar hari ini (dengan day-cache & tuple query ringan)
+    if day_key in _day_timetable_cache and now_m < _day_timetable_cache[day_key]["exp"]:
+        day_duties = _day_timetable_cache[day_key]["duties"]
+        day_schedules = _day_timetable_cache[day_key]["schedules"]
+    else:
+        day_duties = (
+            db.query(models.TeacherDuty.teacher_name, models.TeacherDuty.time_slot)
+            .filter(models.TeacherDuty.day_of_week.ilike(resolved_day))
+            .all()
+        )
+        day_schedules = (
+            db.query(
+                models.TeacherSchedule.teacher_name,
+                models.TeacherSchedule.time_slot,
+                models.TeacherSchedule.class_name,
+                models.TeacherSchedule.subject_grade,
+            )
+            .filter(models.TeacherSchedule.day_of_week.ilike(resolved_day))
+            .all()
+        )
+        _day_timetable_cache[day_key] = {
+            "duties": day_duties,
+            "schedules": day_schedules,
+            "exp": now_m + _DAY_TIMETABLE_TTL,
+        }
 
     busy_duty = set()
-    day_duties = db.query(models.TeacherDuty).filter(models.TeacherDuty.day_of_week.ilike(resolved_day)).all()
-
     busy_teaching = set()
-    day_schedules = db.query(models.TeacherSchedule).filter(models.TeacherSchedule.day_of_week.ilike(resolved_day)).all()
 
-    if time_slot and time_slot.strip().lower() not in ["", "all", "semua"]:
+    if time_slot and slot_key not in ["", "all", "semua"]:
         target_start, target_end = parse_time_slot_range(time_slot)
-        for d in day_duties:
-            s_start, s_end = parse_time_slot_range(d.time_slot)
-            if s_start and s_end and target_start and target_end:
-                if max(s_start, target_start) < min(s_end, target_end):
-                    busy_duty.add(d.teacher_name.strip().lower())
-            elif d.time_slot.strip().lower() == time_slot.strip().lower():
-                busy_duty.add(d.teacher_name.strip().lower())
 
-        for s in day_schedules:
-            s_start, s_end = parse_time_slot_range(s.time_slot)
+        for d_name, d_slot in day_duties:
+            if not d_name or not d_slot:
+                continue
+            s_start, s_end = parse_time_slot_range(d_slot)
             if s_start and s_end and target_start and target_end:
                 if max(s_start, target_start) < min(s_end, target_end):
-                    busy_teaching.add(s.teacher_name.strip().lower())
-            elif s.time_slot.strip().lower() == time_slot.strip().lower():
-                busy_teaching.add(s.teacher_name.strip().lower())
+                    busy_duty.add(d_name.strip().lower())
+            elif d_slot.strip().lower() == slot_key:
+                busy_duty.add(d_name.strip().lower())
+
+        for s_name, s_slot, s_class, s_subj in day_schedules:
+            if not s_name or not s_slot:
+                continue
+            # Sesi Break bukan jam mengajar; guru tetap tersedia sebagai pengganti piket
+            c_name = (s_class or "").strip().lower()
+            s_subj_lower = (s_subj or "").strip().lower()
+            if c_name == "break" or "break" in s_subj_lower:
+                continue
+
+            s_start, s_end = parse_time_slot_range(s_slot)
+            if s_start and s_end and target_start and target_end:
+                if max(s_start, target_start) < min(s_end, target_end):
+                    busy_teaching.add(s_name.strip().lower())
+            elif s_slot.strip().lower() == slot_key:
+                busy_teaching.add(s_name.strip().lower())
     else:
-        for d in day_duties:
-            busy_duty.add(d.teacher_name.strip().lower())
-        for s in day_schedules:
-            busy_teaching.add(s.teacher_name.strip().lower())
+        for d_name, _ in day_duties:
+            if d_name:
+                busy_duty.add(d_name.strip().lower())
+        for s_name, _, s_class, s_subj in day_schedules:
+            if not s_name:
+                continue
+            c_name = (s_class or "").strip().lower()
+            s_subj_lower = (s_subj or "").strip().lower()
+            if c_name == "break" or "break" in s_subj_lower:
+                continue
+            busy_teaching.add(s_name.strip().lower())
 
     free_teachers = [
         name for name in all_names

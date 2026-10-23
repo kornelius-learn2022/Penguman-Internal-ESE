@@ -75,9 +75,11 @@ export default function DutyAttendance() {
       if (resSess.ok) {
         const data = await resSess.json();
         setSessions(data);
-        // Otomatis muat daftar guru bebas untuk setiap slot sesi hari ini
+        // Otomatis muat daftar guru bebas untuk setiap slot sesi hari ini secara bertahap
         const slots = Array.from(new Set(data.map((s) => s.time_slot).filter(Boolean)));
-        slots.forEach((slot) => fetchFreeTeachers(slot));
+        slots.forEach((slot, idx) => {
+          setTimeout(() => fetchFreeTeachers(slot), idx * 50);
+        });
       } else {
         setFetchError(true);
       }

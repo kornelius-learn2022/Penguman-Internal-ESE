@@ -111,7 +111,7 @@ def process_homeroom_timetable():
 
                     day_slots = [
                         ("Monday", t1, mon), ("Tuesday", t1, tue),
-                        ("Wednesday", t2, wed), ("Thursday", t2, thu), ("Friday", t2, fri)
+                        ("Wednesday", t2, wed), ("Thursday", t1, thu), ("Friday", t1, fri)
                     ]
                 else:
                     t1 = str(unmerged.get((r, 1)) or '').strip()
