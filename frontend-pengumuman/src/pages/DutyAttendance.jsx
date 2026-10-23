@@ -227,14 +227,14 @@ export default function DutyAttendance() {
                 className="min-h-[42px] inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 text-[#1e3a8a] hover:bg-blue-100 rounded-xl text-xs sm:text-sm font-bold transition-all border border-blue-200 shadow-2xs focus-visible:ring-2 focus-visible:ring-blue-600"
               >
                 <span>📖</span>
-                <span>Panduan Guru</span>
+                <span>Teacher Guide</span>
               </Link>
               <Link
                 to="/"
                 className="min-h-[42px] inline-flex items-center gap-1.5 px-3.5 py-2 bg-white text-slate-800 hover:bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-2xs focus-visible:ring-2 focus-visible:ring-blue-600"
               >
                 <span>📢</span>
-                <span>Pengumuman</span>
+                <span>Announcements</span>
               </Link>
             </div>
           </div>
@@ -339,14 +339,14 @@ export default function DutyAttendance() {
               className="min-h-[42px] inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 text-[#1e3a8a] hover:bg-blue-100 rounded-xl text-xs sm:text-sm font-bold transition-all border border-blue-200 shadow-2xs focus-visible:ring-2 focus-visible:ring-blue-600"
             >
               <span>📖</span>
-              <span>Panduan Guru</span>
+              <span>Teacher Guide</span>
             </Link>
             <Link
               to="/"
               className="min-h-[42px] inline-flex items-center gap-1.5 px-3.5 py-2 bg-white text-slate-800 hover:bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-2xs focus-visible:ring-2 focus-visible:ring-blue-600"
             >
               <span>📢</span>
-              <span>Pengumuman</span>
+              <span>Announcements</span>
             </Link>
           </div>
         </div>
@@ -361,31 +361,31 @@ export default function DutyAttendance() {
         ) : fetchError ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-red-200 shadow-sm p-6 space-y-3">
             <div className="text-4xl">⚠️</div>
-            <h3 className="text-lg font-bold text-slate-800">Gagal Memuat Jadwal Duty</h3>
+            <h3 className="text-lg font-bold text-slate-800">Failed to Load Duty Schedule</h3>
             <p className="text-slate-500 text-sm max-w-md mx-auto">
-              Koneksi ke server sempat terputus atau server sedang sibuk. Silakan coba muat ulang.
+              Connection was interrupted or the server is busy. Please try reloading.
             </p>
             <button
               type="button"
               onClick={fetchData}
               className="bg-[#1e3a8a] text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-800 shadow-md transition-all active:scale-95"
             >
-              🔄 Coba Muat Ulang
+              🔄 Try Reloading
             </button>
           </div>
         ) : activeSessions.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
             <div className="text-4xl">🕒</div>
             <div>
-              <h3 className="text-lg font-bold text-slate-800">Sesi Duty Belum / Sudah Tidak Aktif</h3>
+              <h3 className="text-lg font-bold text-slate-800">Duty Session Not Currently Active</h3>
               <p className="text-slate-500 text-sm mt-1 max-w-md mx-auto">
-                Form presensi duty hanya dapat diakses tepat waktu (on-time) selama jam duty berlangsung demi kedisiplinan pengawasan siswa.
+                Duty attendance forms can only be accessed on-time during scheduled duty hours for student safety and supervision.
               </p>
             </div>
             {locationSessions.length > 0 && (
               <div className="max-w-md mx-auto bg-slate-50 rounded-2xl p-4 border border-slate-200 text-left">
                 <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Jadwal Duty di Lokasi Ini Hari Ini:
+                  Today's Duty Schedule at This Location:
                 </div>
                 <div className="space-y-2">
                   {locationSessions.map((ls, idx) => (
@@ -407,7 +407,7 @@ export default function DutyAttendance() {
               <div className="bg-white rounded-2xl p-3 border border-slate-200 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
                 <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                   <span className="text-base">🎒</span>
-                  <span>Filter Jenjang:</span>
+                  <span>Filter Grade:</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5 w-full sm:w-auto">
                   <button
@@ -419,7 +419,7 @@ export default function DutyAttendance() {
                         : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
                     }`}
                   >
-                    Semua ({activeSessions.length})
+                    All ({activeSessions.length})
                   </button>
                   {availableGrades.map((grade, gIdx) => {
                     const count = activeSessions.filter((s) => s.grade_scope === grade).length;
@@ -449,7 +449,7 @@ export default function DutyAttendance() {
                 <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                   <span className="text-base">🔔</span>
                   <span>
-                    Terdapat <strong>{displayedSessions.length} sesi duty</strong> {activeSelectedGrade !== "all" ? `untuk ${activeSelectedGrade}` : "yang aktif bersamaan"}. Silakan pilih sesi Anda:
+                    There are <strong>{displayedSessions.length} duty session{displayedSessions.length > 1 ? "s" : ""}</strong> {activeSelectedGrade !== "all" ? `for ${activeSelectedGrade}` : "active at this location"}. Please select your session:
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -570,11 +570,11 @@ export default function DutyAttendance() {
                                     <div className="flex items-center gap-2 text-xs font-bold text-emerald-950">
                                       <span>✅</span>
                                       <span>
-                                        Sudah Hadir Devotion ({session.attended_list.length} / {session.total_scheduled || (session.scheduled_teachers || []).length}):
+                                        Attended Morning Devotion ({session.attended_list.length} / {session.total_scheduled || (session.scheduled_teachers || []).length}):
                                       </span>
                                     </div>
                                     <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100/90 px-2.5 py-0.5 rounded-full">
-                                      {session.attended_list.length} Guru Hadir
+                                      {session.attended_list.length} Teachers Present
                                     </span>
                                   </div>
                                   <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
@@ -685,11 +685,11 @@ export default function DutyAttendance() {
                                       <div>
                                         <div className="flex items-center justify-between mb-1">
                                           <label className="block text-[11px] font-semibold text-slate-500">
-                                            🔄 Guru Pengganti / Inval (Opsional: Hanya jika guru di atas digantikan)
+                                            🔄 Substitute Teacher / Inval (Optional: Only if replacing teacher above)
                                           </label>
                                           {freeTeachersBySlot[session.time_slot] && (
                                             <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 shadow-2xs">
-                                              ✨ {freeTeachersBySlot[session.time_slot].length} Guru Bebas Jadwal
+                                              ✨ {freeTeachersBySlot[session.time_slot].length} Free Teachers Available
                                             </span>
                                           )}
                                         </div>
@@ -714,17 +714,17 @@ export default function DutyAttendance() {
                                               }}
                                               className="w-full bg-white border border-slate-300 text-sm font-medium text-slate-700 px-3.5 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
                                             >
-                                              <option value="">-- Tidak ada pengganti (Hadir sendiri) --</option>
+                                              <option value="">-- No substitute (Attending for myself) --</option>
                                               {recommendedTeachers.length > 0 && (
-                                                <optgroup label={`⭐ Rekomendasi Guru Bebas (${recommendedTeachers.length} Guru Tidak Mengajar)`}>
+                                                <optgroup label={`⭐ Recommended Available Teachers (${recommendedTeachers.length} Not Teaching)`}>
                                                   {recommendedTeachers.map((t, idx) => (
                                                     <option key={`rec-${idx}`} value={t}>
-                                                      ⭐ {t} (Bebas Jadwal)
+                                                      ⭐ {t} (Available)
                                                     </option>
                                                   ))}
                                                 </optgroup>
                                               )}
-                                              <optgroup label={recommendedTeachers.length > 0 ? "Guru Lainnya" : "Daftar Seluruh Guru"}>
+                                              <optgroup label={recommendedTeachers.length > 0 ? "Other Teachers" : "All Teachers"}>
                                                 {otherTeachers.map((t, idx) => (
                                                   <option key={`sub-${idx}`} value={t}>
                                                     {t}
@@ -738,7 +738,7 @@ export default function DutyAttendance() {
                                           <div className="mt-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-xs font-medium text-amber-800 flex items-center gap-1.5">
                                             <span>🔄</span>
                                             <span>
-                                              <strong>{currentForm.substituteName}</strong> akan presensi menggantikan <strong>{currentForm.teacherName || "guru terpilih"}</strong>. Masukkan PIN milik {currentForm.substituteName}.
+                                              <strong>{currentForm.substituteName}</strong> will check in replacing <strong>{currentForm.teacherName || "selected teacher"}</strong>. Enter {currentForm.substituteName}'s PIN.
                                             </span>
                                           </div>
                                         )}

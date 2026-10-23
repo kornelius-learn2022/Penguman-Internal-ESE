@@ -259,7 +259,7 @@ function Announcements() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Detail Gambar Pengumuman"
+          aria-label="Announcement Image Details"
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
           onClick={() => setSelectedImage(null)}
         >
@@ -269,7 +269,7 @@ function Announcements() {
           >
             <div className="w-full flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
               <h4 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                <span>🖼️</span> Lampiran Gambar Pengumuman
+                <span>🖼️</span> Attached Announcement Image
               </h4>
               <button
                 type="button"
@@ -370,10 +370,10 @@ function Announcements() {
             <Link
               to="/tutorial"
               className="flex-1 sm:flex-none min-h-[40px] inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white text-slate-800 hover:bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold transition-colors shadow-2xs focus-visible:ring-2 focus-visible:ring-blue-600"
-              title="Buka Buku Panduan Guru & Tutorial"
+              title="Open Teacher Guide & Tutorial"
             >
               <span aria-hidden="true">📖</span>
-              <span>Panduan</span>
+              <span>Guide</span>
             </Link>
 
             {/* Link Duty Attendance (Desktop) */}
@@ -397,7 +397,7 @@ function Announcements() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded-md bg-blue-100 text-[#1e3a8a] text-[11px] font-black uppercase tracking-wider">
-                  Jadwal & Pengumuman
+                  Schedule & Announcements
                 </span>
                 {selectedDate === today && (
                   <span className="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-900 text-[11px] font-black uppercase tracking-wider">
@@ -424,7 +424,7 @@ function Announcements() {
                   type="button"
                   onClick={() => handleShiftDate(-1)}
                   className="flex-1 sm:flex-none min-h-[42px] px-3.5 py-2 text-xs sm:text-sm font-bold text-slate-800 hover:bg-white hover:text-[#1e3a8a] rounded-xl transition-all flex items-center justify-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-600"
-                  title="Lihat pengumuman hari kemarin"
+                  title="View yesterday's announcements"
                 >
                   <span>◀</span>
                   <span>Kemarin</span>
@@ -447,7 +447,7 @@ function Announcements() {
                   type="button"
                   onClick={() => handleShiftDate(1)}
                   className="flex-1 sm:flex-none min-h-[42px] px-3.5 py-2 text-xs sm:text-sm font-bold text-slate-800 hover:bg-white hover:text-[#1e3a8a] rounded-xl transition-all flex items-center justify-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-600"
-                  title="Lihat pengumuman hari besok"
+                  title="View tomorrow's announcements"
                 >
                   <span>Besok</span>
                   <span>▶</span>
@@ -462,7 +462,7 @@ function Announcements() {
                   onChange={(e) => setSelectedDate(e.target.value)}
                   className="w-full sm:w-auto min-h-[44px] bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-bold text-slate-800 hover:border-slate-400 focus:border-[#1e3a8a] focus:ring-2 focus:ring-blue-500 outline-none shadow-2xs transition-all cursor-pointer text-center sm:text-left"
                   title="Pilih tanggal tertentu dari kalender"
-                  aria-label="Pilih tanggal pengumuman"
+                  aria-label="Select announcement date"
                 />
               </div>
             </div>
@@ -495,7 +495,7 @@ function Announcements() {
                         </span>
                         {ev.affects_kbm && (
                           <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-rose-100 text-rose-900 border border-rose-300">
-                            ⚠️ Penyesuaian Jadwal KBM
+                            ⚠️ Teaching Schedule Adjustments
                           </span>
                         )}
                       </div>
@@ -539,7 +539,7 @@ function Announcements() {
               className="bg-white rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200"
             >
               <SectionHeader
-                title="Pengumuman Terjadwal"
+                title="Scheduled Announcements"
                 colorBadge="blue"
                 largeText={largeText}
                 badgeCount={announcements.length}
@@ -578,7 +578,7 @@ function Announcements() {
                           type="button"
                           onClick={() => handleCopyText(item.id_announcement, item.announcement, item.date)}
                           className="min-h-[36px] px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-950 rounded-xl text-xs font-bold border border-slate-300 shadow-2xs transition-all flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-blue-600 no-print"
-                          title="Salin isi pengumuman ke clipboard untuk diteruskan"
+                          title="Copy announcement content to clipboard"
                         >
                           {copiedId === item.id_announcement ? (
                             <>
@@ -642,8 +642,8 @@ function Announcements() {
                 ) : (
                   <EmptyState
                     icon="📅"
-                    title="Belum ada pengumuman"
-                    message="Tidak ada jadwal pengumuman untuk tanggal yang dipilih."
+                    title="No Announcements Scheduled"
+                    message="There are no announcements scheduled for the selected date."
                     largeText={largeText}
                   />
                 )}
@@ -690,7 +690,7 @@ function Announcements() {
                             {item.name}
                           </h4>
                           <p className="text-xs font-bold text-rose-800 uppercase tracking-wide mt-0.5">
-                            Hari Ini Ulang Tahun! 🎉
+                            Today's Birthdays! 🎉
                           </p>
                         </div>
                       </div>
@@ -718,8 +718,8 @@ function Announcements() {
                 ) : (
                   <EmptyState
                     icon="🎂"
-                    title="Tidak Ada Ulang Tahun"
-                    message="Tidak ada rekan guru yang berulang tahun pada tanggal ini."
+                    title="No Birthdays Today"
+                    message="No teachers celebrate their birthday on this date."
                     largeText={largeText}
                   />
                 )}
@@ -735,7 +735,7 @@ function Announcements() {
                 <span>💡</span> Bantuan & Akses Cepat
               </h4>
               <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                Punya pertanyaan mengenai jadwal piket guru, modul materi, atau kendala portal?
+                Have questions regarding teacher duty schedules, teaching materials, or portal access?
               </p>
               <div className="space-y-2 pt-1">
                 <Link
@@ -753,7 +753,7 @@ function Announcements() {
                   className="w-full min-h-[44px] flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-blue-300 text-slate-800 hover:text-[#1e3a8a] text-xs font-bold transition-all shadow-2xs"
                 >
                   <span className="flex items-center gap-2">
-                    <span>📖</span> Panduan & Tutorial Lengkap
+                    <span>📖</span> Complete Guide & Tutorial
                   </span>
                   <span>➔</span>
                 </Link>

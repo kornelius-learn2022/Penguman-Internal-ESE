@@ -209,15 +209,15 @@ export default function Tutorial() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
                 <div className="bg-white p-3 rounded-xl border border-blue-200">
                   <strong className="text-blue-900 block font-black">1. Scan 1 QR Code:</strong>
-                  <span className="text-slate-600">Cukup scan 1 lembar QR Code di dinding Canteen dengan kamera HP.</span>
+                  <span className="text-slate-600">Scan the single QR Code sheet on the Canteen wall using your phone camera.</span>
                 </div>
                 <div className="bg-white p-3 rounded-xl border border-blue-200">
-                  <strong className="text-blue-900 block font-black">2. Pilih Tab Jenjang:</strong>
-                  <span className="text-slate-600">Tekan tab <strong>[ Grade 3-4 ]</strong> atau <strong>[ Grade 5-6 ]</strong> di atas agar layar fokus.</span>
+                  <strong className="text-blue-900 block font-black">2. Select Grade Tab:</strong>
+                  <span className="text-slate-600">Tap <strong>[ Grade 3-4 ]</strong> or <strong>[ Grade 5-6 ]</strong> tab at the top to focus your screen.</span>
                 </div>
                 <div className="bg-white p-3 rounded-xl border border-blue-200">
-                  <strong className="text-blue-900 block font-black">3. Kartu Terpisah & PIN:</strong>
-                  <span className="text-slate-600">Lantai 1 & 2 memiliki kartu terpisah dengan dropdown guru yang sudah terisolasi.</span>
+                  <strong className="text-blue-900 block font-black">3. Separate Cards & PIN:</strong>
+                  <span className="text-slate-600">1st & 2nd floor have dedicated cards with cleanly isolated teacher dropdowns.</span>
                 </div>
               </div>
             </div>
@@ -227,94 +227,94 @@ export default function Tutorial() {
               <div className="flex items-center gap-2">
                 <span className="text-xl">📚</span>
                 <h3 className="text-base font-black text-slate-800">
-                  Contoh Kasus Nyata Presensi Duty (Step-by-Step Examples)
+                  Real-Life Duty Attendance Examples (Step-by-Step Scenarios)
                 </h3>
               </div>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Berikut adalah 3 contoh skenario nyata yang dialami guru saat piket istirahat dengan sistem 1 QR Code & Tab Jenjang:
+                Here are 3 real-world scenarios teachers encounter during recess duty with the 1 QR Code & Grade Tabs system:
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
-                {/* Contoh 1 */}
+                {/* Example 1 */}
                 <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 space-y-2.5 flex flex-col justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="px-2 py-0.5 bg-blue-200 text-[#1e3a8a] rounded-lg text-[10px] font-black uppercase">
-                        Contoh 1
+                        Example 1
                       </span>
                       <span className="text-[11px] font-extrabold text-blue-900">🎒 Grade 3-4 (Lantai 1)</span>
                     </div>
                     <h4 className="font-extrabold text-xs text-slate-900">
-                      Piket Break 2 di Lantai 1 Canteen
+                      Break 2 Duty at 1st Floor Canteen
                     </h4>
                     <p className="text-[11px] text-slate-500 font-medium">
-                      Kondisi: Mr. Kornelius bertugas pukul 11.55 – 12.25 di 1st floor Canteen.
+                      Scenario: Mr. Kornelius is assigned to 1st floor Canteen from 11:55 to 12:25.
                     </p>
                     <ol className="text-xs text-slate-700 space-y-1.5 list-decimal list-inside leading-relaxed pt-1">
-                      <li>Scan 1 QR Code di dinding Canteen.</li>
-                      <li>Di HP, tekan tab <strong className="text-[#1e3a8a]">[ 🎒 Grade 3-4 ]</strong> di atas. Layar langsung menyembunyikan kartu Grade 5-6.</li>
-                      <li>Pada kartu <strong className="text-slate-800">📍 1st floor Canteen</strong>, pilih nama "Mr. Kornelius".</li>
-                      <li>Masukkan 5-digit PIN & tekan <em>Check In Duty</em>.</li>
+                      <li>Scan the 1 QR Code on the Canteen wall.</li>
+                      <li>On your phone, tap the <strong className="text-[#1e3a8a]">[ 🎒 Grade 3-4 ]</strong> tab at the top. The screen instantly hides Grade 5-6 cards.</li>
+                      <li>On the <strong className="text-slate-800">📍 1st floor Canteen</strong> card, select your name "Mr. Kornelius".</li>
+                      <li>Enter your 5-digit PIN and tap <em>Check In Duty</em>.</li>
                     </ol>
                   </div>
                   <div className="pt-2 border-t border-blue-200/60 text-[11px] font-bold text-emerald-700 flex items-center gap-1">
-                    <span>✅</span> Status: Terjadwal Duty (Hadir Sendiri)
+                    <span>✅</span> Status: Scheduled Duty (Attended for Self)
                   </div>
                 </div>
 
-                {/* Contoh 2 */}
+                {/* Example 2 */}
                 <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-2.5 flex flex-col justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="px-2 py-0.5 bg-indigo-200 text-indigo-900 rounded-lg text-[10px] font-black uppercase">
-                        Contoh 2
+                        Example 2
                       </span>
                       <span className="text-[11px] font-extrabold text-indigo-950">🎓 Grade 5-6 (Lantai 2)</span>
                     </div>
                     <h4 className="font-extrabold text-xs text-slate-900">
-                      Piket Break 2 di Lantai 2 Canteen
+                      Break 2 Duty at 2nd Floor Canteen
                     </h4>
                     <p className="text-[11px] text-slate-500 font-medium">
-                      Kondisi: Guru bertugas pukul 12.05 – 12.25 di 2nd floor Canteen.
+                      Scenario: Teacher is assigned to 2nd floor Canteen from 12:05 to 12:25.
                     </p>
                     <ol className="text-xs text-slate-700 space-y-1.5 list-decimal list-inside leading-relaxed pt-1">
-                      <li>Scan 1 QR Code yang sama di dinding Canteen.</li>
-                      <li>Tekan tab filter <strong className="text-indigo-900">[ 🎓 Grade 5-6 ]</strong>.</li>
-                      <li>Pilih kartu <strong className="text-slate-800">📍 2nd floor Canteen</strong>.</li>
-                      <li>Pilih nama Anda di dropdown guru Lantai 2.</li>
-                      <li>Masukkan PIN & tekan tombol check-in.</li>
+                      <li>Scan the same 1 QR Code on the Canteen wall.</li>
+                      <li>Tap the <strong className="text-indigo-900">[ 🎓 Grade 5-6 ]</strong> tab at the top.</li>
+                      <li>Select the <strong className="text-slate-800">📍 2nd floor Canteen</strong> card.</li>
+                      <li>Select your name from the 2nd Floor teacher dropdown.</li>
+                      <li>Enter your 5-digit PIN and tap check in on-time.</li>
                     </ol>
                   </div>
                   <div className="pt-2 border-t border-indigo-200/60 text-[11px] font-bold text-emerald-700 flex items-center gap-1">
-                    <span>✅</span> Dropdown bersih tanpa nama guru Gr 3-4
+                    <span>✅</span> Clean dropdown without Grade 3-4 teacher names
                   </div>
                 </div>
 
-                {/* Contoh 3 */}
+                {/* Example 3 */}
                 <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 space-y-2.5 flex flex-col justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="px-2 py-0.5 bg-amber-200 text-amber-900 rounded-lg text-[10px] font-black uppercase">
-                        Contoh 3
+                        Example 3
                       </span>
-                      <span className="text-[11px] font-extrabold text-amber-950">🔄 Guru Pengganti (Inval)</span>
+                      <span className="text-[11px] font-extrabold text-amber-950">🔄 Substitute Teacher (Inval)</span>
                     </div>
                     <h4 className="font-extrabold text-xs text-slate-900">
-                      Menggantikan Rekan yang Berhalangan
+                      Substituting for an Absent Colleague
                     </h4>
                     <p className="text-[11px] text-amber-800 font-medium">
-                      Kondisi: Ms. Endah izin sakit. Mr. Dion ditugaskan menggantikan di Lantai 2.
+                      Scenario: Ms. Endah is on sick leave. Mr. Dion covers her post at 2nd Floor Canteen.
                     </p>
                     <ol className="text-xs text-amber-950 space-y-1.5 list-decimal list-inside leading-relaxed pt-1">
-                      <li>Mr. Dion scan 1 QR Code di Canteen.</li>
-                      <li>Buka kartu sesi <strong className="text-slate-800">2nd floor Canteen</strong>.</li>
-                      <li>Pada <strong>Guru Terjadwal</strong>: pilih nama <strong>Ms. Endah</strong>.</li>
-                      <li>Pada <strong>Guru Pengganti / Inval</strong>: pilih nama <strong>Mr. Dion</strong>.</li>
-                      <li>Ketik <strong>PIN Mr. Dion sendiri</strong> & submit.</li>
+                      <li>Mr. Dion scans the 1 QR Code in the Canteen.</li>
+                      <li>Select the <strong className="text-slate-800">2nd floor Canteen</strong> card.</li>
+                      <li>Under <strong>Scheduled Teacher</strong>: select the absent colleague's name (<strong>Ms. Endah</strong>).</li>
+                      <li>Under <strong>🔄 Substitute Teacher / Inval</strong>: select your own name (<strong>Mr. Dion</strong>).</li>
+                      <li>Enter <strong>Mr. Dion's own PIN</strong> and submit.</li>
                     </ol>
                   </div>
                   <div className="pt-2 border-t border-amber-200/60 text-[11px] font-bold text-amber-900 flex items-center gap-1">
-                    <span>🔄</span> Status: Hadir Inval (Substitusi Rekan)
+                    <span>🔄</span> Status: Attended as Inval (Substituted Colleague)
                   </div>
                 </div>
               </div>
@@ -425,7 +425,7 @@ export default function Tutorial() {
                 <div className="space-y-1.5">
                   <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                     <span>🎒</span>
-                    <span>1. Coba Shortcut Filter Jenjang:</span>
+                    <span>1. Try Grade Shortcut Tabs:</span>
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     <button
@@ -437,7 +437,7 @@ export default function Tutorial() {
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200"
                       }`}
                     >
-                      Semua (4)
+                      All (4)
                     </button>
                     <button
                       type="button"
@@ -481,7 +481,7 @@ export default function Tutorial() {
                 {/* Simulated Active Cards Selector */}
                 <div className="space-y-1.5">
                   <span className="text-xs font-bold text-slate-600 block">
-                    2. Pilih Kartu Sesi Tugas Anda:
+                    2. Select Your Assigned Duty Card:
                   </span>
                   <div className="flex flex-col gap-1.5">
                     {(simGradeFilter === "all" || simGradeFilter === "Grade 3-4") && (
@@ -586,7 +586,7 @@ export default function Tutorial() {
                     {/* Scheduled Teacher Selector (Cleanly Isolated) */}
                     <div>
                       <label className="text-xs font-bold text-slate-600 block mb-1">
-                        Pilih Guru Terjadwal:
+                        Select Scheduled Teacher:
                       </label>
                       <select
                         value={simTeacher}
@@ -595,25 +595,25 @@ export default function Tutorial() {
                       >
                         {simSession === "g34_b2_1f" && (
                           <>
-                            <option value="Mr. Kornelius">Mr. Kornelius (Terjadwal)</option>
+                            <option value="Mr. Kornelius">Mr. Kornelius (Scheduled)</option>
                             <option value="Ms. Destha">Ms. Destha</option>
                           </>
                         )}
                         {simSession === "g34_b2_2f" && (
                           <>
-                            <option value="Ms. Endah">Ms. Endah (Terjadwal)</option>
+                            <option value="Ms. Endah">Ms. Endah (Scheduled)</option>
                             <option value="Ms. Meitha">Ms. Meitha</option>
                           </>
                         )}
                         {simSession === "g56_b2_1f" && (
                           <>
-                            <option value="Mr. Hendro">Mr. Hendro (Terjadwal)</option>
+                            <option value="Mr. Hendro">Mr. Hendro (Scheduled)</option>
                             <option value="Mr. Percy">Mr. Percy</option>
                           </>
                         )}
                         {simSession === "g56_b2_2f" && (
                           <>
-                            <option value="Mr. Gideon">Mr. Gideon (Terjadwal)</option>
+                            <option value="Mr. Gideon">Mr. Gideon (Scheduled)</option>
                             <option value="Mr. Kornelius">Mr. Kornelius</option>
                           </>
                         )}
@@ -623,14 +623,14 @@ export default function Tutorial() {
                     {/* Substitute Teacher Selector */}
                     <div>
                       <label className="text-xs font-bold text-slate-600 block mb-1">
-                        🔄 Guru Pengganti / Inval (Optional: If replacing absent teacher):
+                        🔄 Substitute Teacher / Inval (Optional: If replacing absent teacher):
                       </label>
                       <select
                         value={simInval}
                         onChange={(e) => setSimInval(e.target.value)}
                         className="w-full text-xs font-medium p-2.5 rounded-xl border border-slate-200 bg-white text-slate-700"
                       >
-                        <option value="">-- Tidak ada pengganti (Hadir sendiri) --</option>
+                        <option value="">-- No substitute (Attending for myself) --</option>
                         <option value="Mr. Dion">Mr. Dion (Inval Substitute)</option>
                         <option value="Ms. Meitha">Ms. Meitha (Inval Substitute)</option>
                         <option value="Mr. Kornelius">Mr. Kornelius (Inval Substitute)</option>
