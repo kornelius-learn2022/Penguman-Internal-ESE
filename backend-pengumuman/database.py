@@ -22,11 +22,11 @@ SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL")
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
-    pool_size=25,
-    max_overflow=50,
-    pool_recycle=1800,
+    pool_size=5,
+    max_overflow=10,
+    pool_recycle=300,
     pool_pre_ping=True,
-    pool_timeout=25,
+    pool_timeout=15,
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

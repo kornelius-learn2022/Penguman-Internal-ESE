@@ -462,7 +462,14 @@ def delete_admin(
 
 # ==========================================
 # ENDPOINT JADWAL GURU (TEACHER SCHEDULES)
+# ==========================================
 
+_SCHEDULES_TTL = 60
+_schedules_cache = {}
+
+
+def invalidate_schedules_cache():
+    _schedules_cache.clear()
 
 
 @router.get("/schedules", response_model=List[schemas.TeacherScheduleResponse])
@@ -475,6 +482,13 @@ def get_teacher_schedules(
     """
     Mengambil seluruh daftar jadwal guru, dengan filter opsional berdasarkan nama guru, hari, atau kelas.
     """
+    cache_key = f"{teacher or ''}:{day or ''}:{class_name or ''}"
+    now_m = time_mod.monotonic()
+    if cache_key in _schedules_cache:
+        cached_res, exp_m = _schedules_cache[cache_key]
+        if now_m < exp_m:
+            return cached_res
+
     query = db.query(models.TeacherSchedule)
     if teacher:
         query = query.filter(models.TeacherSchedule.teacher_name.ilike(f"%{teacher}%"))
@@ -482,10 +496,13 @@ def get_teacher_schedules(
         query = query.filter(models.TeacherSchedule.day_of_week.ilike(f"%{day}%"))
     if class_name:
         query = query.filter(models.TeacherSchedule.class_name.ilike(f"%{class_name}%"))
-    return query.order_by(
+    raw = query.order_by(
         models.TeacherSchedule.teacher_name.asc(),
         models.TeacherSchedule.id_schedule.asc(),
     ).all()
+    results = [schemas.TeacherScheduleResponse.model_validate(item, from_attributes=True) for item in raw]
+    _schedules_cache[cache_key] = (results, now_m + _SCHEDULES_TTL)
+    return results
 
 
 @router.post("/schedules", response_model=schemas.TeacherScheduleResponse)
@@ -510,6 +527,7 @@ def create_teacher_schedule(
     db.add(new_schedule)
     db.commit()
     db.refresh(new_schedule)
+    invalidate_schedules_cache()
     return new_schedule
 
 
@@ -548,6 +566,7 @@ def update_teacher_schedule(
 
     db.commit()
     db.refresh(schedule)
+    invalidate_schedules_cache()
     return schedule
 
 
@@ -571,6 +590,7 @@ def delete_teacher_schedule(
 
     db.delete(schedule)
     db.commit()
+    invalidate_schedules_cache()
     return {"message": "Jadwal guru berhasil dihapus."}
 
 
@@ -640,6 +660,7 @@ def sync_master_schedules(
         db.query(models.TeacherSchedule).delete()
         db.bulk_save_objects(records)
         db.commit()
+        invalidate_schedules_cache()
 
     return {
         "message": f"Berhasil sinkronisasi {len(records)} jadwal dari master CSV.",
@@ -650,6 +671,15 @@ def sync_master_schedules(
 # ==========================================
 # ENDPOINT JADWAL DUTY GURU (TEACHER DUTIES)
 # ==========================================
+
+_DUTIES_TTL = 60
+_duties_cache = {}
+
+
+def invalidate_duties_cache():
+    _duties_cache.clear()
+
+
 @router.get("/duties", response_model=List[schemas.TeacherDutyResponse])
 def get_teacher_duties(
     teacher: Optional[str] = None,
@@ -661,6 +691,13 @@ def get_teacher_duties(
     """
     Mengambil seluruh daftar jadwal duty/piket guru, dengan filter opsional berdasarkan guru, hari, lokasi, atau kategori.
     """
+    cache_key = f"{teacher or ''}:{day or ''}:{location or ''}:{category or ''}"
+    now_m = time_mod.monotonic()
+    if cache_key in _duties_cache:
+        cached_res, exp_m = _duties_cache[cache_key]
+        if now_m < exp_m:
+            return cached_res
+
     query = db.query(models.TeacherDuty)
     if teacher:
         query = query.filter(models.TeacherDuty.teacher_name.ilike(f"%{teacher}%"))
@@ -671,12 +708,15 @@ def get_teacher_duties(
     if category:
         query = query.filter(models.TeacherDuty.category.ilike(f"%{category}%"))
 
-    return query.order_by(
+    raw = query.order_by(
         models.TeacherDuty.day_of_week.asc(),
         models.TeacherDuty.time_slot.asc(),
         models.TeacherDuty.location.asc(),
         models.TeacherDuty.id_duty.asc(),
     ).all()
+    results = [schemas.TeacherDutyResponse.model_validate(item, from_attributes=True) for item in raw]
+    _duties_cache[cache_key] = (results, now_m + _DUTIES_TTL)
+    return results
 
 
 @router.post("/duties", response_model=schemas.TeacherDutyResponse)
@@ -702,6 +742,8 @@ def create_teacher_duty(
     db.add(new_duty)
     db.commit()
     db.refresh(new_duty)
+    invalidate_duties_cache()
+    invalidate_locations_cache()
     return new_duty
 
 
@@ -742,6 +784,8 @@ def update_teacher_duty(
 
     db.commit()
     db.refresh(duty)
+    invalidate_duties_cache()
+    invalidate_locations_cache()
     return duty
 
 
@@ -765,6 +809,8 @@ def delete_teacher_duty(
 
     db.delete(duty)
     db.commit()
+    invalidate_duties_cache()
+    invalidate_locations_cache()
     return {"message": "Jadwal duty berhasil dihapus."}
 
 
@@ -836,6 +882,7 @@ def sync_master_duties(
         db.query(models.TeacherDuty).delete()
         db.bulk_save_objects(records)
         db.commit()
+        invalidate_schedules_cache()
 
     return {
         "message": f"Berhasil sinkronisasi {len(records)} jadwal duty dari master CSV.",
@@ -1161,11 +1208,24 @@ def parse_time_slot_range(time_slot: str):
     return None, None
 
 
+_LOCATIONS_TTL = 300
+_locations_cache = {"data": None, "exp": 0.0}
+
+
+def invalidate_locations_cache():
+    _locations_cache["data"] = None
+    _locations_cache["exp"] = 0.0
+
+
 @router.get("/duty-attendance/locations", response_model=List[str])
 def get_duty_locations(db: Session = Depends(get_db)):
     """
     Mengambil seluruh daftar lokasi tempat duty dari master teacher_duties dan Morning Devotion.
     """
+    now_m = time_mod.monotonic()
+    if _locations_cache["data"] is not None and now_m < _locations_cache["exp"]:
+        return _locations_cache["data"]
+
     results = (
         db.query(models.TeacherDuty.location)
         .distinct()
@@ -1173,6 +1233,9 @@ def get_duty_locations(db: Session = Depends(get_db)):
         .all()
     )
     locs = [r[0] for r in results if r[0]]
+    _locations_cache["data"] = locs
+    _locations_cache["exp"] = now_m + _LOCATIONS_TTL
+    return locs
     if "Morning Devotion" not in locs:
         locs.append("Morning Devotion")
     return locs
@@ -2907,12 +2970,31 @@ def seed_dummy_duty_attendance(
 # TEACHER / PIN MANAGEMENT
 # ==========================================
 
+_TEACHERS_TTL = 120
+_teachers_cache = {"public": None, "exp_pub": 0.0, "admin": None, "exp_adm": 0.0}
+
+
+def invalidate_teachers_cache():
+    _teachers_cache["public"] = None
+    _teachers_cache["exp_pub"] = 0.0
+    _teachers_cache["admin"] = None
+    _teachers_cache["exp_adm"] = 0.0
+
+
 @router.get("/teachers", response_model=List[schemas.TeacherPublicResponse])
 def get_all_teachers_public(db: Session = Depends(get_db)):
     """
     Mengambil daftar semua guru tanpa PIN (Untuk dropdown form absensi).
     """
-    return db.query(models.Teacher).order_by(models.Teacher.db_name.asc()).all()
+    now_m = time_mod.monotonic()
+    if _teachers_cache["public"] is not None and now_m < _teachers_cache["exp_pub"]:
+        return _teachers_cache["public"]
+    raw = db.query(models.Teacher).order_by(models.Teacher.db_name.asc()).all()
+    results = [schemas.TeacherPublicResponse.model_validate(item, from_attributes=True) for item in raw]
+    _teachers_cache["public"] = results
+    _teachers_cache["exp_pub"] = now_m + _TEACHERS_TTL
+    return results
+
 
 @router.get("/admin/teachers", response_model=List[schemas.TeacherResponse])
 def get_all_teachers_admin(
@@ -2922,7 +3004,14 @@ def get_all_teachers_admin(
     """
     Mengambil daftar semua guru beserta PIN mereka (Untuk admin).
     """
-    return db.query(models.Teacher).order_by(models.Teacher.db_name.asc()).all()
+    now_m = time_mod.monotonic()
+    if _teachers_cache["admin"] is not None and now_m < _teachers_cache["exp_adm"]:
+        return _teachers_cache["admin"]
+    raw = db.query(models.Teacher).order_by(models.Teacher.db_name.asc()).all()
+    results = [schemas.TeacherResponse.model_validate(item, from_attributes=True) for item in raw]
+    _teachers_cache["admin"] = results
+    _teachers_cache["exp_adm"] = now_m + _TEACHERS_TTL
+    return results
 
 @router.post("/admin/teachers", response_model=schemas.TeacherResponse)
 def create_teacher(
@@ -2945,6 +3034,7 @@ def create_teacher(
     db.add(new_t)
     db.commit()
     db.refresh(new_t)
+    invalidate_teachers_cache()
     return new_t
 
 @router.put("/admin/teachers/{id_teacher}/pin")
@@ -2988,6 +3078,7 @@ def update_teacher_full(
     
     db.commit()
     db.refresh(teacher)
+    invalidate_teachers_cache()
     return teacher
 
 @router.delete("/admin/teachers/{id_teacher}")
