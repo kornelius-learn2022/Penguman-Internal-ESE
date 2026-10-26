@@ -1,0 +1,55 @@
+name: Website Uptime Monitor to Telegram
+
+on:
+  schedule:
+    # Berjalan otomatis setiap 15 menit di GitHub Cloud (100% Gratis)
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # Tombol manual 'Run workflow' di GitHub Actions
+
+jobs:
+  check-uptime:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Periksa Status Frontend & Backend
+        id: healthcheck
+        run: |
+          BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}"
+          CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}"
+          
+          # 1. Cek Frontend
+          FE_CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 15 "https://pengumuman.klprojects.online/" || echo "000")
+          echo "Frontend HTTP Status: $FE_CODE"
+          
+          # 2. Cek Backend API
+          BE_CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 15 "https://pengumuman.klprojects.online/api/teachers" || echo "000")
+          echo "Backend HTTP Status: $BE_CODE"
+          
+          # Jika ada status yang bukan 200 (error / down / timeout)
+          if [ "$FE_CODE" != "200" ] || [ "$BE_CODE" != "200" ]; then
+            echo "ALERT: Terdeteksi website atau backend down!"
+            
+            if [ -z "$BOT_TOKEN" ] || [ -z "$CHAT_ID" ]; then
+              echo "PERINGATAN: TELEGRAM_BOT_TOKEN atau TELEGRAM_CHAT_ID belum disetel di GitHub Secrets."
+              exit 1
+            fi
+            
+            TIMESTAMP=$(TZ='Asia/Jakarta' date '+%d-%m-%Y %H:%M:%S WIB')
+            
+            # Format pesan Markdown untuk Telegram
+            MESSAGE="🚨 *[ALERT PENGUMUMAN ESE DOWN]* 🚨%0A%0A"
+            MESSAGE="${MESSAGE}🕒 *Waktu:* ${TIMESTAMP}%0A"
+            MESSAGE="${MESSAGE}🌐 *Frontend:* HTTP \`${FE_CODE}\`%0A"
+            MESSAGE="${MESSAGE}⚙️ *Backend API:* HTTP \`${BE_CODE}\`%0A"
+            MESSAGE="${MESSAGE}🔗 *URL:* https://pengumuman.klprojects.online%0A%0A"
+            MESSAGE="${MESSAGE}⚠️ *Status:* Layanan tidak merespons dengan normal. Harap segera periksa server!"
+            
+            curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+              -d "chat_id=${CHAT_ID}" \
+              -d "text=${MESSAGE}" \
+              -d "parse_mode=Markdown"
+            
+            echo "Notifikasi alert berhasil dikirim ke Telegram!"
+            exit 1
+          else
+            echo "Semua layanan normal (HTTP 200 OK)."
+          fi
