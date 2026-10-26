@@ -2,84 +2,25 @@ name: Pre-Duty Developer Healthcheck to Telegram
 
 on:
   schedule:
-    # Jadwal Cron Otomatis (Senin - Jumat) waktu WIB (UTC+7):
-    - cron: '5 0 * * 1-5'   # 07.05 WIB -> Sebelum Morning Duty (07.15)
-    - cron: '0 2 * * 1-5'   # 09.00 WIB -> Sebelum Break 1 (09.10)
-    - cron: '10 3 * * 1-5'  # 10.10 WIB -> Sebelum Break 1 Gr 5-6 (10.20)
-    - cron: '10 4 * * 1-5'  # 11.10 WIB -> Sebelum Break 2 (11.20 & 11.55)
-    - cron: '50 5 * * 1-5'  # 12.50 WIB -> Sebelum Go Home (13.00)
-  workflow_dispatch: # Memungkinkan tombol 'Run workflow' manual kapan saja untuk pengujian
+    # Berjalan setiap 10 menit selama jam sekolah (Senin - Jumat, 07.00 - 15.00 WIB / 00.00 - 08.00 UTC)
+    - cron: '*/10 0-8 * * 1-5'
+  workflow_dispatch: # Tombol 'Run workflow' manual untuk pengujian langsung kapan saja
 
 jobs:
   pre-duty-check:
     runs-on: ubuntu-latest
     steps:
-      - name: Jalankan Pre-Duty Healthcheck
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Jalankan Pre-Duty Dynamic Healthcheck
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}"
-          CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}"
-          
-          if [ -z "$BOT_TOKEN" ] || [ -z "$CHAT_ID" ]; then
-            echo "ERROR: TELEGRAM_BOT_TOKEN atau TELEGRAM_CHAT_ID belum disetel di GitHub Secrets."
-            exit 1
-          fi
-
-          # Ambil jam & menit WIB saat ini
-          JAM_MENIT=$(TZ='Asia/Jakarta' date '+%H:%M')
-          TANGGAL=$(TZ='Asia/Jakarta' date '+%d-%m-%Y')
-
-          # Tentukan nama sesi duty terdekat berdasarkan jam WIB
-          HOUR=$(TZ='Asia/Jakarta' date '+%H')
-          if [ "$HOUR" -lt 8 ]; then
-            SESI="Morning Duty (07.15 - 07.45 WIB)"
-          elif [ "$HOUR" -lt 10 ]; then
-            SESI="Break 1 - Gr 1-4 (09.10 - 09.35 WIB)"
-          elif [ "$HOUR" -lt 11 ]; then
-            SESI="Break 1 - Gr 5-6 (10.20 - 10.45 WIB)"
-          elif [ "$HOUR" -lt 12 ]; then
-            SESI="Break 2 (11.20 - 12.25 WIB)"
-          else
-            SESI="Go Home Duty (13.00 - 14.35 WIB)"
-          fi
-
-          # 1. Cek Frontend
-          FE_START=$(date +%s%N)
-          FE_CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 "https://pengumuman.klprojects.online/" || echo "000")
-          FE_END=$(date +%s%N)
-          FE_MS=$(( (FE_END - FE_START) / 1000000 ))
-
-          # 2. Cek Backend API
-          BE_START=$(date +%s%N)
-          BE_CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 "https://pengumuman.klprojects.online/api/teachers" || echo "000")
-          BE_END=$(date +%s%N)
-          BE_MS=$(( (BE_END - BE_START) / 1000000 ))
-
-          # Evaluasi Status
-          if [ "$FE_CODE" = "200" ] && [ "$BE_CODE" = "200" ]; then
-            HEADER="🟢 *[PRE-DUTY CHECK: WEB NORMAL]* 🟢"
-            SUMMARY="✅ *Status Web Sehat:* Presensi duty siap digunakan guru dengan lancar."
-          else
-            HEADER="🚨 *[PRE-DUTY ALERT: WEB ERROR!]* 🚨"
-            SUMMARY="⚠️ *PERINGATAN:* Web terindikasi down/bermasalah! Harap segera cek VPS sebelum guru melakukan scan presensi!"
-          fi
-
-          # Format pesan Markdown
-          MSG="${HEADER}%0A%0A"
-          MSG="${MSG}👨‍💻 *Halo Developer (Putra), duty akan segera dimulai!*%0A"
-          MSG="${MSG}⏰ *Sesi Terdekat:* ${SESI}%0A"
-          MSG="${MSG}🕒 *Waktu Cek:* ${JAM_MENIT} WIB (${TANGGAL})%0A%0A"
-          MSG="${MSG}📊 *Diagnosa Kesiapan Web:*%0A"
-          MSG="${MSG}• Frontend: HTTP \`${FE_CODE}\` (${FE_MS} ms)%0A"
-          MSG="${MSG}• Backend API: HTTP \`${BE_CODE}\` (${BE_MS} ms)%0A"
-          MSG="${MSG}• Server: \`pengumuman.klprojects.online\`%0A%0A"
-          MSG="${MSG}${SUMMARY}%0A"
-          MSG="${MSG}🔗 [Buka Web Presensi](https://pengumuman.klprojects.online/duty-attendance)"
-
-          # Kirim ke Telegram Developer
-          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
-            -d "chat_id=${CHAT_ID}" \
-            -d "text=${MSG}" \
-            -d "parse_mode=Markdown" \
-            -d "disable_web_page_preview=true"
-
-          echo "Pre-duty report berhasil dikirim ke Telegram developer."
+          python duty_precheck_worker.py
